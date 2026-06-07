@@ -1,0 +1,6 @@
+{
+  "name": "Car Asset Manager",
+  "description": "An asset management system for tracking cars, service history logs, and driver assignments.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
