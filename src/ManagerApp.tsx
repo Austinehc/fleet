@@ -14,6 +14,7 @@ interface ManagerAppProps {
   setDrivers: React.Dispatch<React.SetStateAction<Driver[]>>;
   userRole?: 'manager' | 'driver';
   setUserRole?: (role: 'manager' | 'driver') => void;
+  onSignOut?: () => void;
 }
 
 export default function ManagerApp(props: ManagerAppProps) {

@@ -321,3 +321,48 @@ export async function saveFuelLogToDB(carId: string, log: FuelLog): Promise<void
     console.warn('Odometer update from fuel log failed:', carError);
   }
 }
+
+// Delete Service Log from DB
+export async function deleteServiceLogFromDB(logId: string): Promise<void> {
+  if (!supabase) return;
+
+  const { error } = await supabase
+    .from('service_logs')
+    .delete()
+    .eq('id', logId);
+
+  if (error) {
+    console.error('Error deleting service log:', error);
+    throw error;
+  }
+}
+
+// Delete Revenue Log from DB
+export async function deleteRevenueLogFromDB(logId: string): Promise<void> {
+  if (!supabase) return;
+
+  const { error } = await supabase
+    .from('revenue_logs')
+    .delete()
+    .eq('id', logId);
+
+  if (error) {
+    console.error('Error deleting revenue log:', error);
+    throw error;
+  }
+}
+
+// Delete Fuel Log from DB
+export async function deleteFuelLogFromDB(logId: string): Promise<void> {
+  if (!supabase) return;
+
+  const { error } = await supabase
+    .from('fuel_logs')
+    .delete()
+    .eq('id', logId);
+
+  if (error) {
+    console.error('Error deleting fuel log:', error);
+    throw error;
+  }
+}

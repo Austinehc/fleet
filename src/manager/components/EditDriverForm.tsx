@@ -42,8 +42,8 @@ export default function EditDriverForm({
   };
 
   return (
-    <div className="fixed inset-0 z-55 bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in" id="edit-driver-modal">
-      <div className="bg-white rounded-2xl max-w-lg w-full border border-gray-100 overflow-hidden shadow-2xl flex flex-col" id="edit-driver-modal-box">
+    <div className="fixed inset-0 z-55 bg-gray-950/70 backdrop-blur-sm flex items-start justify-center p-4 py-8 overflow-y-auto animate-fade-in" id="edit-driver-modal">
+      <div className="bg-white rounded-2xl max-w-lg w-full border border-gray-100 overflow-hidden shadow-2xl flex flex-col max-h-screen my-auto overflow-y-auto" id="edit-driver-modal-box">
         
         <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-slate-50/50" id="edit-driver-hdr">
           <div>

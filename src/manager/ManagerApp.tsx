@@ -17,6 +17,7 @@ interface ManagerAppProps {
   setDrivers: React.Dispatch<React.SetStateAction<Driver[]>>;
   userRole?: 'manager' | 'driver';
   setUserRole?: (role: 'manager' | 'driver') => void;
+  onSignOut?: () => void;
 }
 
 export default function ManagerApp({
@@ -25,7 +26,8 @@ export default function ManagerApp({
   drivers,
   setDrivers,
   userRole = 'manager',
-  setUserRole
+  setUserRole,
+  onSignOut
 }: ManagerAppProps) {
   // Navigation View switcher
   const [activeTab, setActiveTab] = useState<'fleet' | 'staff' | 'finance'>('fleet');
@@ -77,6 +79,7 @@ export default function ManagerApp({
         onAddCarTrigger={() => setIsAddingCar(true)}
         onAddDriverTrigger={() => setIsAddingDriver(true)}
         cars={cars}
+        onSignOut={onSignOut}
       />
 
       {/* Main View Container Router */}

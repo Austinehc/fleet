@@ -19,13 +19,16 @@ import {
   deleteDriverFromDB,
   saveServiceLogToDB,
   saveRevenueLogToDB,
-  saveFuelLogToDB
+  saveFuelLogToDB,
+  deleteServiceLogFromDB,
+  deleteRevenueLogFromDB,
+  deleteFuelLogFromDB
 } from './lib/supabase';
-import { Car, Shield, Database, CloudLightning, Key, LogIn, UserPlus, Server, HelpCircle, LogOut } from 'lucide-react';
+import { Car, Shield, Database, Key, LogIn, UserPlus, Server, HelpCircle, LogOut } from 'lucide-react';
 
 export default function App() {
   const [dbConfigured, setDbConfigured] = useState<boolean>(isSupabaseConfigured());
-  const [useLocalSandbox, setUseLocalSandbox] = useState<boolean>(!isSupabaseConfigured());
+  const [useLocalSandbox, setUseLocalSandbox] = useState<boolean>(false);
 
   // --- Auth State ---
   const [user, setUser] = useState<any>(null);
@@ -84,7 +87,11 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setUser(session.user);
-        const role = session.user.user_metadata?.role || 'manager';
+        const params = new URLSearchParams(window.location.search);
+        const roleParam = params.get('role');
+        const role = roleParam === 'driver' || roleParam === 'manager'
+          ? roleParam
+          : (session.user.user_metadata?.role || 'manager');
         setUserRole(envLockedRole || role);
       }
       setAuthLoading(false);
@@ -97,7 +104,11 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setUser(session.user);
-        const role = session.user.user_metadata?.role || 'manager';
+        const params = new URLSearchParams(window.location.search);
+        const roleParam = params.get('role');
+        const role = roleParam === 'driver' || roleParam === 'manager'
+          ? roleParam
+          : (session.user.user_metadata?.role || 'manager');
         setUserRole(envLockedRole || role);
       } else {
         setUser(null);
@@ -136,6 +147,27 @@ export default function App() {
     }
 
     loadBackendData();
+  }, [supabase, user, useLocalSandbox, dbConfigured, userRole]);
+
+  // --- Periodic background poll updates from Supabase to keep driver & manager screens accurate live ---
+  useEffect(() => {
+    const shouldPoll = isSupabaseConfigured() && !useLocalSandbox && supabase && (user || userRole === 'driver');
+    if (!shouldPoll) return;
+
+    const intervalId = setInterval(async () => {
+      try {
+        const dbCars = await getCarsFromDB();
+        const dbDrivers = await getDriversFromDB();
+        
+        // Directly overwrite state to bypass triggering any feedback sync proxy loops
+        setCars(dbCars);
+        setDrivers(dbDrivers);
+      } catch (err) {
+        console.warn('Background database synchronization poll failed:', err);
+      }
+    }, 4000); // Poll every 4 seconds for snappy status updates
+
+    return () => clearInterval(intervalId);
   }, [supabase, user, useLocalSandbox, dbConfigured, userRole]);
 
   // --- Save Sandbox state to localStorage whenever it changes ---
@@ -269,12 +301,16 @@ export default function App() {
         // Check service logs changes
         const prevSvc = prevCar.serviceLogs || [];
         const nextSvc = nextCar.serviceLogs || [];
-        if (nextSvc.length !== prevSvc.length) {
-          const prevSvcIds = new Set(prevSvc.map(l => l.id));
-          for (const s of nextSvc) {
-            if (!prevSvcIds.has(s.id)) {
-              await saveServiceLogToDB(nextCar.id, s).catch(err => console.error('Supabase svc log fail:', err));
-            }
+        const prevSvcIds = new Set(prevSvc.map(l => l.id));
+        for (const s of nextSvc) {
+          if (!prevSvcIds.has(s.id)) {
+            await saveServiceLogToDB(nextCar.id, s).catch(err => console.error('Supabase svc log fail:', err));
+          }
+        }
+        const nextSvcIds = new Set(nextSvc.map(l => l.id));
+        for (const s of prevSvc) {
+          if (!nextSvcIds.has(s.id)) {
+            await deleteServiceLogFromDB(s.id).catch(err => console.error('Supabase delete svc log fail:', err));
           }
         }
 
@@ -291,16 +327,26 @@ export default function App() {
             await saveRevenueLogToDB(nextCar.id, r).catch(err => console.error('Supabase revenue change status fail:', err));
           }
         }
+        const nextRevIds = new Set(nextRev.map(l => l.id));
+        for (const r of prevRev) {
+          if (!nextRevIds.has(r.id)) {
+            await deleteRevenueLogFromDB(r.id).catch(err => console.error('Supabase delete revenue log fail:', err));
+          }
+        }
 
         // Check fuel logs changes
         const prevFuel = prevCar.fuelLogs || [];
         const nextFuel = nextCar.fuelLogs || [];
-        if (nextFuel.length !== prevFuel.length) {
-          const prevFuelIds = new Set(prevFuel.map(l => l.id));
-          for (const f of nextFuel) {
-            if (!prevFuelIds.has(f.id)) {
-              await saveFuelLogToDB(nextCar.id, f).catch(err => console.error('Supabase fuel log fail:', err));
-            }
+        const prevFuelIds = new Set(prevFuel.map(l => l.id));
+        for (const f of nextFuel) {
+          if (!prevFuelIds.has(f.id)) {
+            await saveFuelLogToDB(nextCar.id, f).catch(err => console.error('Supabase fuel log fail:', err));
+          }
+        }
+        const nextFuelIds = new Set(nextFuel.map(l => l.id));
+        for (const f of prevFuel) {
+          if (!nextFuelIds.has(f.id)) {
+            await deleteFuelLogFromDB(f.id).catch(err => console.error('Supabase delete fuel log fail:', err));
           }
         }
       }
@@ -395,11 +441,67 @@ export default function App() {
             </div>
           </div>
 
+          {/* Tab component for toggling auth login vs signup mode */}
+          <div className="flex border-b border-gray-150" id="auth-mode-tabs">
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('login');
+                setAuthError(null);
+                setAuthMsg(null);
+              }}
+              className={`flex-1 pb-2.5 text-center text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
+                authMode === 'login'
+                  ? 'border-indigo-600 text-indigo-600 font-black'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
+              id="auth-tab-login"
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('signup');
+                setAuthError(null);
+                setAuthMsg(null);
+              }}
+              className={`flex-1 pb-2.5 text-center text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
+                authMode === 'signup'
+                  ? 'border-indigo-600 text-indigo-600 font-black'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
+              id="auth-tab-signup"
+            >
+              Create Account
+            </button>
+          </div>
+
           <form onSubmit={handleAuthSubmit} className="space-y-4" id="main-auth-form">
             {authError && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-705 rounded-xl text-xs flex items-start gap-2.5" id="auth-error-msg-box">
-                <Shield className="w-4 h-4 shrink-0 mt-0.5 text-red-505 text-red-500" />
-                <span className="leading-relaxed font-semibold">{authError}</span>
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex flex-col gap-2" id="auth-error-msg-box">
+                <div className="flex items-start gap-2.5">
+                  <Shield className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
+                  <span className="leading-relaxed font-semibold">{authError}</span>
+                </div>
+                {authError.includes("Database error saving new user") && (
+                  <div className="mt-1 bg-white/90 border border-red-150 p-3 rounded-lg text-[11px] text-slate-700 font-normal space-y-2 leading-relaxed">
+                    <p className="font-bold text-red-800 flex items-center gap-1">💡 Supabase Trigger Conflict Detected</p>
+                    <p>
+                      Your Supabase database has a pre-existing <strong>PostgreSQL Trigger</strong> (typically <code>on_auth_user_created</code> on table <code>auth.users</code>) created from an old setup or separate project.
+                    </p>
+                    <p>
+                      When a new user is created under authentication, that trigger fails because of a missing or mismatching public table (e.g. <code>profiles</code>).
+                    </p>
+                    <p className="font-semibold text-slate-800">To fix this, go to your Supabase Dashboard, open the SQL Editor, and run:</p>
+                    <pre className="p-2 bg-slate-900 text-slate-50 font-mono text-[10px] rounded-lg overflow-x-auto select-all my-1.5 font-bold">
+                      DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+                    </pre>
+                    <p className="text-[10px] text-slate-500">
+                      Once this trigger is dropped, you can immediately create your account with no database error!
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -445,22 +547,6 @@ export default function App() {
               Authenticate Access
             </button>
           </form>
-
-          {/* Fallback sandbox launcher */}
-          <div className="border-t border-gray-150 pt-5 space-y-3" id="sandbox-fallback-area">
-            <p className="text-[10px] text-slate-450 text-center leading-relaxed font-semibold">
-              ⚠️ Developer Notice: Supabase is online! Want to test without creating a database user?
-            </p>
-            <button
-              type="button"
-              onClick={() => setUseLocalSandbox(true)}
-              className="w-full py-2 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-605 hover:text-indigo-600 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-3xs"
-              id="btn-trigger-sandbox"
-            >
-              <CloudLightning className="w-3.5 h-3.5 text-amber-500" />
-              Bypass Auth and Run Offline Local-First
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -500,18 +586,7 @@ export default function App() {
             </ol>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-2" id="setup-actions-block">
-            <button
-              type="button"
-              onClick={() => {
-                setUseLocalSandbox(true);
-              }}
-              className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 uppercase tracking-wide"
-              id="setup-btn-sandbox"
-            >
-              <CloudLightning className="w-4 h-4" />
-              Try Demo Sandbox First
-            </button>
+          <div className="pt-2" id="setup-actions-block">
             <button
               type="button"
               onClick={() => {
@@ -524,10 +599,10 @@ export default function App() {
                   alert('Supabase credentials are still unconfigured in properties. Please save variables first.');
                 }
               }}
-              className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-205 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer text-center transition-all shadow-3xs"
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all shadow-md hover:shadow-lg cursor-pointer text-center uppercase tracking-wider"
               id="setup-btn-recheck"
             >
-              Verify Settings Again
+              Verify Settings Again & Initialize
             </button>
           </div>
         </div>
@@ -535,83 +610,10 @@ export default function App() {
     );
   }
 
-  // --- Real-Time Sync Indicator Panel or Sign Out banner ---
-  const StatusOverlayInfo = () => {
-    return (
-      <div className="bg-slate-900 border-b border-slate-805 text-[11px] text-slate-400 px-4 py-2 flex flex-col sm:flex-row items-center justify-between gap-2 z-30 relative" id="cloud-sync-status-bar">
-        <div className="flex items-center gap-2">
-          {useLocalSandbox ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
-              <span>Running in <strong className="text-amber-400 font-bold uppercase text-[9px]">Offline Sandbox mode</strong> (Local browser storage).</span>
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm('Reset local sandbox storage to default demo data (3 premium cars, diagnostic histories, existing logs, and active drivers with PIN codes)?')) {
-                    localStorage.removeItem('fleet_cars');
-                    localStorage.removeItem('fleet_drivers');
-                    localStorage.removeItem('fleet_active_driver_id');
-                    setCars(initialCars);
-                    setDrivers(initialDrivers);
-                    // Force refresh active driver ID state if needed
-                    window.location.reload();
-                  }
-                }}
-                className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 px-2 py-0.5 rounded-[6px] text-[10px] font-black uppercase tracking-wider cursor-pointer shadow-3xs transition-all flex items-center gap-1"
-                title="Fill sandbox with 3 premium cars and 3 active pilots"
-                id="btn-sandbox-seed-reset"
-              >
-                🔄 Seed/Reset Demo Data
-              </button>
-            </div>
-          ) : (
-            <>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span className="flex flex-wrap items-center gap-1.5">
-                <span>Synchronized with <strong className="text-emerald-400 font-bold">Supabase CLOUD DB</strong>.</span>
-                <span className="text-[10px] text-slate-500">• User: {user?.email}</span>
-                <span className="px-1.5 bg-slate-800 text-indigo-400 rounded text-[9px] uppercase font-bold font-mono">
-                  {userRole} view
-                </span>
-              </span>
-            </>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          {isSupabaseConfigured() && useLocalSandbox && (
-            <button
-              onClick={() => {
-                setUseLocalSandbox(false);
-                setDbConfigured(true);
-              }}
-              className="text-indigo-400 hover:text-indigo-300 font-bold text-[10px] uppercase hover:underline cursor-pointer"
-              id="btn-reconnect-cloud"
-            >
-              🔌 Connect Cloud
-            </button>
-          )}
-
-          {user && (
-            <button
-              onClick={handleSignOut}
-              className="text-slate-500 hover:text-slate-300 font-semibold flex items-center gap-1 cursor-pointer"
-              id="state-bar-signout-btn"
-            >
-              <LogOut className="w-3 h-3 text-red-500" />
-              Sign Out
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   // Render the appropriate hub/application
   if (userRole === 'driver') {
     return (
       <div className="flex flex-col min-h-screen" id="driver-app-host">
-        <StatusOverlayInfo />
         <DriverApp
           cars={cars}
           setCars={setCarsWithSyncProxy}
@@ -619,6 +621,7 @@ export default function App() {
           setDrivers={setDriversWithSyncProxy}
           userRole={userRole}
           setUserRole={isLocked ? undefined : setUserRole}
+          onSignOut={handleSignOut}
         />
       </div>
     );
@@ -626,7 +629,6 @@ export default function App() {
 
   return (
     <div className="flex flex-col min-h-screen" id="manager-app-host">
-      <StatusOverlayInfo />
       <ManagerApp
         cars={cars}
         setCars={setCarsWithSyncProxy}
@@ -634,6 +636,7 @@ export default function App() {
         setDrivers={setDriversWithSyncProxy}
         userRole={userRole}
         setUserRole={isLocked ? undefined : setUserRole}
+        onSignOut={handleSignOut}
       />
     </div>
   );

@@ -21,14 +21,16 @@ export default function DriverLogForms({
   const [drvSvcCat, setDrvSvcCat] = useState<ServiceLog['category']>('Maintenance');
   const [drvSvcDesc, setDrvSvcDesc] = useState('');
   const [drvSvcCost, setDrvSvcCost] = useState<number>(0);
-  const [drvSvcMiles, setDrvSvcMiles] = useState<number>(assignedCar.mileage);
+  const [drvSvcMiles, setDrvSvcMiles] = useState<number | ''>(assignedCar.mileage);
+  const [lastCarId, setLastCarId] = useState<string>('');
 
-  // Sync mileage state when car changes
+  // Sync mileage state ONLY when the car ID changes so background polling doesn't overwrite input
   useEffect(() => {
-    if (assignedCar) {
+    if (assignedCar && assignedCar.id !== lastCarId) {
       setDrvSvcMiles(assignedCar.mileage);
+      setLastCarId(assignedCar.id);
     }
-  }, [assignedCar]);
+  }, [assignedCar, lastCarId]);
 
   // Cashing form state
   const [drvRevDate, setDrvRevDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -47,20 +49,26 @@ export default function DriverLogForms({
       return;
     }
 
+    const mileageNum = drvSvcMiles === '' ? 0 : Number(drvSvcMiles);
+    if (mileageNum < assignedCar.mileage) {
+      alert(`The entered mileage (${mileageNum} km) is less than the current mileage of the car (${assignedCar.mileage} km). Please enter a higher value.`);
+      return;
+    }
+    const nextMileage = mileageNum;
+
     const newSvc: ServiceLog = {
       id: `svc-${Date.now()}`,
       date: drvSvcDate,
       category: drvSvcCat,
       description: drvSvcDesc.trim(),
       cost: Number(drvSvcCost),
-      mileage: Number(drvSvcMiles),
+      mileage: nextMileage,
       performedBy: activeDriver.fullName
     };
 
     setCars(prev => prev.map(car => {
       if (car.id === assignedCar.id) {
         const currentSvc = car.serviceLogs || [];
-        const nextMileage = drvSvcMiles > car.mileage ? Number(drvSvcMiles) : car.mileage;
         return {
           ...car,
           mileage: nextMileage,
@@ -73,7 +81,7 @@ export default function DriverLogForms({
     // Reset Form Fields
     setDrvSvcDesc('');
     setDrvSvcCost(0);
-    setDrvSvcMiles(0);
+    setDrvSvcMiles(nextMileage);
     setDrvSvcDate(new Date().toISOString().split('T')[0]);
     setDrvSvcCat('Maintenance');
 
@@ -191,13 +199,45 @@ export default function DriverLogForms({
               <input
                 type="number"
                 required
-                min={assignedCar.mileage}
                 placeholder={String(assignedCar.mileage)}
-                value={drvSvcMiles || ''}
-                onChange={(e) => setDrvSvcMiles(Number(e.target.value))}
+                value={drvSvcMiles === '' ? '' : drvSvcMiles}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setDrvSvcMiles(val === '' ? '' : Number(val));
+                }}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 font-mono focus:outline-none"
                 id="drv-svc-input-miles"
               />
+              <div className="flex gap-1 mt-1 flex-wrap" id="mileage-increment-helpers">
+                <button
+                  type="button"
+                  onClick={() => setDrvSvcMiles(prev => Math.max(assignedCar.mileage, (prev || assignedCar.mileage) + 50))}
+                  className="bg-slate-100 hover:bg-slate-200 text-[9px] text-slate-600 font-extrabold px-2 py-0.5 rounded transition-all cursor-pointer"
+                >
+                  +50 km
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDrvSvcMiles(prev => Math.max(assignedCar.mileage, (prev || assignedCar.mileage) + 100))}
+                  className="bg-slate-100 hover:bg-slate-200 text-[9px] text-slate-600 font-extrabold px-2 py-0.5 rounded transition-all cursor-pointer"
+                >
+                  +100 km
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDrvSvcMiles(prev => Math.max(assignedCar.mileage, (prev || assignedCar.mileage) + 500))}
+                  className="bg-slate-100 hover:bg-slate-200 text-[9px] text-slate-600 font-extrabold px-2 py-0.5 rounded transition-all cursor-pointer"
+                >
+                  +500 km
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDrvSvcMiles(assignedCar.mileage)}
+                  className="bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-[9px] text-slate-500 font-extrabold px-2 py-0.5 rounded transition-all cursor-pointer ml-auto"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
           </div>
 

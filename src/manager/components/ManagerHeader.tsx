@@ -1,5 +1,5 @@
 import React from 'react';
-import { Car, User, Plus, Coins, TrendingUp, Users } from 'lucide-react';
+import { Car, User, Plus, Coins, TrendingUp, Users, LogOut } from 'lucide-react';
 import { CarAsset } from '../../types';
 
 interface ManagerHeaderProps {
@@ -10,6 +10,7 @@ interface ManagerHeaderProps {
   onAddCarTrigger: () => void;
   onAddDriverTrigger: () => void;
   cars?: CarAsset[];
+  onSignOut?: () => void;
 }
 
 export default function ManagerHeader({
@@ -19,7 +20,8 @@ export default function ManagerHeader({
   setUserRole,
   onAddCarTrigger,
   onAddDriverTrigger,
-  cars = []
+  cars = [],
+  onSignOut
 }: ManagerHeaderProps) {
   const pendingCount = cars.flatMap(car => car.revenueLogs || []).filter(r => r.status === 'Pending').length;
 
@@ -47,14 +49,18 @@ export default function ManagerHeader({
           {/* Quick Action Controls */}
           <div className="flex items-center gap-2.5 self-stretch md:self-center justify-end" id="btn-top-controls">
             
-            {/* Simple duty switcher link inside page headers as an explicit choice instead of forbidden slider */}
-            <a
-              href="?role=driver"
-              className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-205 text-slate-700 hover:text-indigo-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
-              id="link-go-to-driver-portal"
-            >
-              <span>Driver View ➔</span>
-            </a>
+            {onSignOut && (
+              <button
+                onClick={onSignOut}
+                className="px-3 py-2 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-650 hover:text-rose-705 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+                id="btn-nav-sign-out"
+              >
+                <LogOut className="w-3.5 h-3.5 text-rose-505" />
+                <span>Sign Out</span>
+              </button>
+            )}
+
+
 
             <button
               onClick={onAddDriverTrigger}

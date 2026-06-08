@@ -64,22 +64,20 @@ export default function DriverCarSpecs({
       <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider text-left block">Assigned Physical Asset</span>
       
       <div className="bg-white border border-gray-150 rounded-2xl overflow-hidden shadow-sm" id="drv-assigned-car-card">
-        {/* Photo area with modern fallback */}
-        <div className="h-44 bg-slate-900 relative flex items-center justify-center overflow-hidden" id="drv-car-img-area">
-          {assignedCar.photos && assignedCar.photos.length > 0 ? (
-            <img src={assignedCar.photos[0]} alt="Assigned Car photo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-          ) : (
-            <div className="flex flex-col items-center justify-center text-slate-500">
-              <Car className="w-10 h-10 text-slate-600 mb-2 animate-pulse" />
-              <span className="text-[10px] uppercase tracking-wide font-mono font-bold text-slate-500">Fleet Photographic Log</span>
-            </div>
-          )}
-          <span className="absolute top-3 left-3 bg-indigo-600 text-white font-black text-[9px] px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
-            {assignedCar.status}
-          </span>
-          <span className="absolute bottom-3 right-3 bg-slate-950/80 text-white font-mono text-[9px] px-2 py-0.5 rounded uppercase tracking-wider font-bold">
-            {assignedCar.plateNumber}
-          </span>
+        {/* Sleek status & registration header banner without cover photo */}
+        <div className="bg-slate-50 border-b border-gray-150 p-4 flex items-center justify-between" id="drv-car-img-area">
+          <div>
+            <span className="text-[9px] font-mono font-extrabold block text-slate-400 uppercase tracking-widest leading-none">Vehicle Status</span>
+            <span className="inline-block mt-1.5 bg-indigo-600 text-white font-black text-[9px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-3xs">
+              {assignedCar.status}
+            </span>
+          </div>
+          <div className="text-right">
+            <span className="text-[9px] font-mono font-extrabold block text-slate-400 uppercase tracking-widest leading-none">License Plate</span>
+            <span className="inline-block mt-1.5 bg-slate-900 border border-slate-750 text-white font-mono text-[10px] px-2 py-0.5 rounded font-extrabold tracking-wider uppercase shadow-3xs">
+              {assignedCar.plateNumber}
+            </span>
+          </div>
         </div>
 
         {/* Body Specs detail panel */}

@@ -91,57 +91,7 @@ export default function DriverAuth({
           </button>
         </form>
 
-        {/* Testing Bypass Block */}
-        <div className="border-t border-dashed border-gray-200 pt-4 space-y-2.5" id="drv-testing-bypass">
-          <div className="text-[10px] uppercase font-black text-amber-600 tracking-wider flex items-center justify-center gap-1 bg-amber-50 py-1.5 px-3 rounded-xl border border-amber-100">
-            <span>🛠️ Developer Testing Bypass</span>
-          </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              if (drivers.length > 0) {
-                onAuthSuccess(drivers[0].id, drivers[0].fullName);
-              } else {
-                onAuthSuccess("dummy-bypass-id", "Demo Test Driver");
-              }
-            }}
-            className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-indigo-600 text-white rounded-xl text-xs font-black transition-all hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer shadow-sm uppercase tracking-wider"
-            id="drv-direct-bypass"
-          >
-            ⚡ Direct Bypass (View Driver Side)
-          </button>
-
-          {drivers.length > 0 ? (
-            <div className="space-y-1.5 text-left">
-              <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block">Or quick bypass as registered driver:</span>
-              <div className="grid grid-cols-1 gap-1.5 max-h-36 overflow-y-auto pr-1" id="bypass-drivers-list">
-                {drivers.map(d => (
-                  <button
-                    key={d.id}
-                    type="button"
-                    onClick={() => {
-                      onAuthSuccess(d.id, d.fullName);
-                    }}
-                    className="w-full text-left px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs hover:bg-slate-100 hover:border-indigo-300 transition-colors cursor-pointer flex items-center justify-between"
-                  >
-                    <div className="min-w-0 pr-2">
-                      <span className="font-bold text-slate-800 block text-[11px] truncate">{d.fullName}</span>
-                      <span className="text-[9px] text-slate-400 font-mono block">Code Pin: <strong className="text-slate-600">{d.accessCode || 'N/A'}</strong></span>
-                    </div>
-                    <span className="text-[9px] bg-indigo-50 text-indigo-650 font-bold px-2 py-1 rounded-lg border border-indigo-100 shrink-0 uppercase tracking-wider">
-                      Bypass ⚡
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <p className="text-[10px] text-slate-400 italic bg-gray-50 p-2.5 rounded-xl text-center leading-normal">
-              No registered pilot lists available. Click the <strong>Direct Bypass</strong> above or register a driver via staff manager.
-            </p>
-          )}
-        </div>
 
         {/* Back Link and Helper text */}
         <div className="border-t border-gray-150 pt-4 text-center text-xs text-slate-400 font-medium space-y-3" id="drv-auth-footer-helpers">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Car, CheckCircle2 } from 'lucide-react';
+import { Car, CheckCircle2, LogOut } from 'lucide-react';
 import { CarAsset, Driver } from '../types';
 
 import DriverAuth from './components/DriverAuth';
@@ -15,6 +15,7 @@ interface DriverAppProps {
   setDrivers: React.Dispatch<React.SetStateAction<Driver[]>>;
   userRole?: 'manager' | 'driver';
   setUserRole?: (role: 'manager' | 'driver') => void;
+  onSignOut?: () => void;
 }
 
 export default function DriverApp({
@@ -23,31 +24,26 @@ export default function DriverApp({
   drivers,
   setDrivers,
   userRole,
-  setUserRole
+  setUserRole,
+  onSignOut
 }: DriverAppProps) {
   // --- Driver Portal State ---
   const [activeDriverId, setActiveDriverId] = useState<string>('');
   const [driverPortalTab, setDriverPortalTab] = useState<'log_work' | 'history'>('log_work');
   const [driverSuccessMsg, setDriverSuccessMsg] = useState<string | null>(null);
   const [driverLoginError, setDriverLoginError] = useState<string | null>(null);
-  const [dummyAssignedCarId, setDummyAssignedCarId] = useState<string>('');
 
   // Keep driver authenticated across refreshes
   useEffect(() => {
     const savedId = localStorage.getItem('fleet_active_driver_id');
     if (savedId) {
-      if (savedId === 'dummy-bypass-id' || drivers.some(d => d.id === savedId)) {
+      if (drivers.some(d => d.id === savedId)) {
         setActiveDriverId(savedId);
+      } else {
+        localStorage.removeItem('fleet_active_driver_id');
       }
     }
   }, [drivers]);
-
-  // Sync initial dummy car if empty
-  useEffect(() => {
-    if (!dummyAssignedCarId && cars.length > 0) {
-      setDummyAssignedCarId(cars[0].id);
-    }
-  }, [cars, dummyAssignedCarId]);
 
   const triggerDriverSuccess = (msg: string) => {
     setDriverSuccessMsg(msg);
@@ -63,22 +59,10 @@ export default function DriverApp({
     triggerDriverSuccess(`Welcome back, ${fullName}! Access authorized.`);
   };
 
-  const activeDriver = activeDriverId === 'dummy-bypass-id'
-    ? {
-        id: 'dummy-bypass-id',
-        fullName: 'Demo Test Driver',
-        licenseNumber: 'DL-TEST-999388',
-        nrcNumber: 'NRC-TEST-1234',
-        email: 'driver@testcompany.com',
-        phone: '555-0199',
-        status: 'Active' as const,
-        assignedCarId: dummyAssignedCarId || cars[0]?.id || 'dummy-car-id',
-        createdAt: new Date().toISOString()
-      }
-    : drivers.find(d => d.id === activeDriverId);
+  const activeDriver = drivers.find(d => d.id === activeDriverId);
 
   const assignedCar = activeDriver
-    ? (cars.find(c => c.id === activeDriver.assignedCarId) || (activeDriverId === 'dummy-bypass-id' && cars.length > 0 ? cars[0] : null))
+    ? (cars.find(c => c.id === activeDriver.assignedCarId) || null)
     : null;
 
   return (
@@ -104,6 +88,17 @@ export default function DriverApp({
 
           {/* Top Banner Controls */}
           <div className="flex items-center gap-3 self-stretch md:self-center justify-end" id="btn-top-controls">
+            {onSignOut && (
+              <button
+                onClick={onSignOut}
+                className="px-3 py-1.5 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-650 hover:text-rose-705 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+                id="btn-nav-supabase-sign-out"
+              >
+                <LogOut className="w-3.5 h-3.5 text-rose-505" />
+                <span>Sign Out</span>
+              </button>
+            )}
+
             {activeDriver && (
               <div className="flex items-center gap-2.5" id="driver-logged-in-panel">
                 <span className="text-xs text-indigo-600 font-bold hidden sm:inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg">
@@ -167,19 +162,7 @@ export default function DriverApp({
                   cars={cars}
                   drivers={drivers}
                   setCars={setCars}
-                  setDrivers={(val) => {
-                    if (activeDriverId === 'dummy-bypass-id') {
-                      if (typeof val === 'function') {
-                        const dummyRecord = { id: 'dummy-bypass-id', assignedCarId: dummyAssignedCarId || cars[0]?.id || '' };
-                        const simulated = val([dummyRecord as any]);
-                        const updatedDummy = simulated.find(d => d.id === 'dummy-bypass-id');
-                        if (updatedDummy) {
-                          setDummyAssignedCarId(updatedDummy.assignedCarId || '');
-                        }
-                      }
-                    }
-                    setDrivers(val);
-                  }}
+                  setDrivers={setDrivers}
                   triggerSuccess={triggerDriverSuccess}
                 />
 

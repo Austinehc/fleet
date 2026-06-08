@@ -444,32 +444,13 @@ export default function FleetDashboard({
                       }`}
                       id={`car-card-${car.id}`}
                     >
-                      {/* Image Cover Plate overlay */}
-                      <div className="relative h-40 bg-gray-100 overflow-hidden" id={`card-img-wrap-${car.id}`}>
-                        <img
-                          src={car.photos[0] || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=600&auto=format&fit=crop&q=80'}
-                          alt={`${car.make} ${car.model}`}
-                          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                          referrerPolicy="no-referrer"
-                        />
-                        
-                        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm border border-gray-200 text-gray-805 font-mono font-bold text-[10px] px-2 py-0.5 rounded shadow-sm uppercase" id={`plate-lbl-${car.id}`}>
-                          {car.plateNumber}
-                        </div>
-
-                        <div className="absolute top-3 right-3 flex items-center gap-1.5" id={`status-lbl-wrap-${car.id}`}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEditCar(car);
-                            }}
-                            className="bg-white/95 hover:bg-indigo-50 border border-gray-200 hover:border-indigo-300 text-gray-700 hover:text-indigo-600 p-1.5 rounded-full shadow-sm transition-all flex items-center justify-center cursor-pointer z-15"
-                            title="Edit Vehicle details"
-                            id={`btn-edit-car-card-${car.id}`}
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-                          <span className={`text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full uppercase shadow-2xs ${
+                      {/* Elegant Text Header instead of Cover Photo */}
+                      <div className="bg-slate-50 border-b border-gray-150 p-3.5 flex items-center justify-between" id={`card-img-wrap-${car.id}`}>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-white border border-gray-250 text-gray-805 font-mono font-bold text-[10px] px-2 py-0.5 rounded shadow-3xs uppercase" id={`plate-lbl-${car.id}`}>
+                            {car.plateNumber}
+                          </span>
+                          <span className={`text-[9px] font-extrabold tracking-wide px-2 py-0.5 rounded-full uppercase shadow-3xs ${
                             car.status === 'Available' ? 'bg-emerald-500 text-white' :
                             car.status === 'Assigned' ? 'bg-indigo-600 text-white' :
                             car.status === 'Maintenance' ? 'bg-amber-500 text-white' :
@@ -478,6 +459,18 @@ export default function FleetDashboard({
                             {car.status}
                           </span>
                         </div>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditCar(car);
+                          }}
+                          className="bg-white hover:bg-slate-100 border border-gray-200 hover:border-indigo-300 text-gray-700 hover:text-indigo-600 p-1.5 rounded-lg shadow-3xs transition-all flex items-center justify-center cursor-pointer"
+                          title="Edit Vehicle details"
+                          id={`btn-edit-car-card-${car.id}`}
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
                       </div>
 
                       {/* Card Content Box */}
@@ -543,43 +536,38 @@ export default function FleetDashboard({
             {selectedCar ? (
               <div className="bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm sticky top-24 text-left animate-fade-in" id="vehicle-details-card">
                 
-                {/* Visual Cover Header */}
-                <div className="relative h-56 bg-slate-100" id="detail-img-pane">
-                  <img
-                    src={selectedCar.photos[0] || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=600&auto=format&fit=crop&q=80'}
-                    alt={`${selectedCar.make} ${selectedCar.model}`}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                  
-                  <button
-                    onClick={() => {
-                      setNewCarPhoto(''); 
-                      setShowCamera(true);
-                    }}
-                    className="absolute bottom-3 right-3 bg-black/75 hover:bg-black text-white p-2 text-xs font-semibold rounded-lg flex items-center gap-1.5 backdrop-blur-xs cursor-pointer shadow-sm transition-all font-sans"
-                    id="btn-update-photo"
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                    Replace Cover Image
-                  </button>
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-gray-900/15 to-transparent flex flex-col justify-end p-5 text-left">
-                    <p className="text-[10px] text-indigo-300 font-mono font-bold tracking-wider uppercase">Active Fleet Asset</p>
-                    <h2 className="text-white text-lg font-black tracking-tight mt-0.5 uppercase">
-                      {selectedCar.make} {selectedCar.model}
-                    </h2>
-                    <div className="flex flex-wrap items-center gap-2 mt-1.5" id="detail-indicators-row">
-                      <span className="text-[10px] font-mono font-extrabold px-2 py-0.5 bg-white/20 text-white rounded text-center uppercase tracking-wide border border-white/10">
-                        {selectedCar.plateNumber}
-                      </span>
-                      <span className="text-[10px] text-gray-200 font-bold">
-                        • {selectedCar.year} Model
-                      </span>
-                      <span className="text-[10px] text-gray-200 font-bold">
-                        • {selectedCar.color}
-                      </span>
+                {/* Visual Cover Header replaced with slate text header */}
+                <div className="bg-slate-900 p-5 relative border-b border-slate-800" id="detail-img-pane">
+                  <div className="flex items-center justify-between gap-4" id="detail-header-inner">
+                    <div className="text-left">
+                      <p className="text-[10px] text-indigo-400 font-mono font-bold tracking-wider uppercase">Active Fleet Asset</p>
+                      <h2 className="text-white text-base font-black tracking-tight mt-1 uppercase">
+                        {selectedCar.make} {selectedCar.model}
+                      </h2>
+                      <div className="flex flex-wrap items-center gap-2 mt-2" id="detail-indicators-row">
+                        <span className="text-[10px] font-mono font-extrabold px-2.5 py-0.5 bg-slate-800 text-slate-100 border border-slate-705 rounded text-center uppercase tracking-wide">
+                          {selectedCar.plateNumber}
+                        </span>
+                        <span className="text-[10px] text-slate-300 font-bold">
+                          • {selectedCar.year}
+                        </span>
+                        <span className="text-[10px] text-slate-300 font-bold">
+                          • {selectedCar.color}
+                        </span>
+                      </div>
                     </div>
+
+                    <button
+                      onClick={() => {
+                        setNewCarPhoto(''); 
+                        setShowCamera(true);
+                      }}
+                      className="bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200 hover:text-white px-3 py-1.5 text-[10px] font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-3xs transition-all font-sans shrink-0 self-start"
+                      id="btn-update-photo"
+                    >
+                      <Camera className="w-3.5 h-3.5 text-indigo-400" />
+                      Attach Photo
+                    </button>
                   </div>
                 </div>
 
@@ -866,7 +854,21 @@ export default function FleetDashboard({
                                   { id: '30d', label: '30 Days' },
                                   { id: 'this_month', label: 'This Month' },
                                   { id: 'last_month', label: 'Last Month' }
-                                ]}
+                                ].map(period => (
+                                  <button
+                                    key={period.id}
+                                    type="button"
+                                    onClick={() => setSelectedFinancePeriod(period.id as any)}
+                                    className={`px-2.5 py-1 text-[10px] font-bold rounded-lg cursor-pointer transition-all ${
+                                      selectedFinancePeriod === period.id
+                                        ? 'bg-indigo-650 text-white shadow-3xs border border-indigo-650'
+                                        : 'bg-white hover:bg-slate-100 text-slate-600 border border-gray-200'
+                                    }`}
+                                    id={`btn-period-${period.id}`}
+                                  >
+                                    {period.label}
+                                  </button>
+                                ))}
                               </div>
                             </div>
                             <div className="flex items-center gap-2 text-left self-start sm:self-auto">

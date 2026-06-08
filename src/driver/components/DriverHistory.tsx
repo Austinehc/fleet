@@ -92,10 +92,7 @@ export default function DriverHistory({
           <span className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider font-sans">💰 Cashing Receipts Ledger</span>
           <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1" id="drv-hist-rev-list">
             {(() => {
-              const matchedLogs = (assignedCar.revenueLogs || []).filter(r => 
-                r.driverId === activeDriver.id || 
-                (activeDriver.id === 'dummy-bypass-id' && (r.driverId === 'drv-sarah-01' || r.driverId === 'drv-marcus-03' || !r.driverId))
-              );
+              const matchedLogs = (assignedCar.revenueLogs || []).filter(r => r.driverId === activeDriver.id);
               return matchedLogs.length > 0 ? (
                 matchedLogs.map((rev) => {
                 const isExpanded = expandedLogId === rev.id;
