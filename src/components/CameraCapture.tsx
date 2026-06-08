@@ -26,6 +26,7 @@ export default function CameraCapture({ onPhotoCaptured, onClose }: CameraCaptur
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [uploadOption, setUploadOption] = useState<'camera' | 'upload' | 'preset'>('preset');
+  const [isUploading, setIsUploading] = useState<boolean>(false);
 
   // Stop camera stream when component unmounts
   useEffect(() => {
@@ -111,10 +112,23 @@ export default function CameraCapture({ onPhotoCaptured, onClose }: CameraCaptur
     setCapturedImage(url);
   };
 
-  const saveSelectedPhoto = () => {
+  const saveSelectedPhoto = async () => {
     if (capturedImage) {
-      onPhotoCaptured(capturedImage);
-      onClose();
+      setIsUploading(true);
+      try {
+        const { uploadToCloudinary, isCloudinaryConfigured } = await import('../lib/cloudinary');
+        let uploadUrl = capturedImage;
+        if (isCloudinaryConfigured() && capturedImage.startsWith('data:image/')) {
+          uploadUrl = await uploadToCloudinary(capturedImage);
+        }
+        onPhotoCaptured(uploadUrl);
+        onClose();
+      } catch (err: any) {
+        console.error(err);
+        alert('Failed to upload image to Cloudinary. Please try again.');
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -353,17 +367,28 @@ export default function CameraCapture({ onPhotoCaptured, onClose }: CameraCaptur
             </button>
             <button
               onClick={saveSelectedPhoto}
-              disabled={!capturedImage}
+              disabled={!capturedImage || isUploading}
               className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                capturedImage
+                isUploading
+                  ? 'bg-indigo-400 text-white cursor-not-allowed'
+                  : capturedImage
                   ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-indigo-500/10 cursor-pointer'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
               id="btn-confirm-capture"
               type="button"
             >
-              <Check className="w-3.5 h-3.5" />
-              Use This Image
+              {isUploading ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  Use This Image
+                </>
+              )}
             </button>
           </div>
         </div>

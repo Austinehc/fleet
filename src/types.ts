@@ -60,5 +60,6 @@ export interface Driver {
   status: 'Active' | 'On Leave' | 'Suspended' | 'Inactive';
   assignedCarId: string | null; // ID of the CarAsset
   profilePicture?: string; // Base64 or URL
+  accessCode?: string; // 6-digit random alphanumeric code
   createdAt: string;
 }
