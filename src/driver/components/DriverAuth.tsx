@@ -7,13 +7,15 @@ interface DriverAuthProps {
   onAuthSuccess: (driverId: string, fullName: string) => void;
   driverLoginError: string | null;
   setDriverLoginError: (err: string | null) => void;
+  triggerErrorToast?: (msg: string) => void;
 }
 
 export default function DriverAuth({
   drivers,
   onAuthSuccess,
   driverLoginError,
-  setDriverLoginError
+  setDriverLoginError,
+  triggerErrorToast
 }: DriverAuthProps) {
   const [enteredDriverCode, setEnteredDriverCode] = useState('');
 
@@ -22,7 +24,9 @@ export default function DriverAuth({
     setDriverLoginError(null);
     const trimmedCode = enteredDriverCode.trim();
     if (trimmedCode.length !== 6) {
-      setDriverLoginError('The access code must be exactly 6 characters.');
+      const charErr = 'The access code must be exactly 6 characters.';
+      setDriverLoginError(charErr);
+      if (triggerErrorToast) triggerErrorToast(charErr);
       return;
     }
     const matchedDrv = drivers.find(
@@ -32,7 +36,11 @@ export default function DriverAuth({
       onAuthSuccess(matchedDrv.id, matchedDrv.fullName);
       setEnteredDriverCode('');
     } else {
-      setDriverLoginError('Invalid/unknown access code. Please verify the code or contact your system manager.');
+      const unknownErr = 'Invalid/unknown access code. Please verify the code or contact your system manager.';
+      setDriverLoginError(unknownErr);
+      if (triggerErrorToast) {
+        triggerErrorToast('Invalid Access Code: Passkey verification failed.');
+      }
     }
   };
 

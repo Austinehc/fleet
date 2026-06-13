@@ -49,6 +49,7 @@ export default function App() {
   const lastSyncedCarsStr = React.useRef<string>('');
   const lastSyncedDriversStr = React.useRef<string>('');
   const writeTransactionsInFlight = React.useRef<number>(0);
+  const lastLocalUpdateTime = React.useRef<number>(0);
 
   // --- Current Active UI Role ---
   const [userRole, setUserRole] = useState<'manager' | 'driver'>(() => {
@@ -184,11 +185,17 @@ export default function App() {
       if (writeTransactionsInFlight.current > 0) {
         return;
       }
+      // If we made a local update within the last 8 seconds, do not overwrite state with poll data to prevent flicker/double-sync
+      if (Date.now() - lastLocalUpdateTime.current < 8000) {
+        return;
+      }
       try {
         const dbCars = await getCarsFromDB();
         if (writeTransactionsInFlight.current > 0) return;
+        if (Date.now() - lastLocalUpdateTime.current < 8000) return;
         const dbDrivers = await getDriversFromDB();
         if (writeTransactionsInFlight.current > 0) return;
+        if (Date.now() - lastLocalUpdateTime.current < 8000) return;
         
         // Save database outputs as currently synced
         lastSyncedCarsStr.current = JSON.stringify(dbCars);
@@ -456,6 +463,7 @@ export default function App() {
 
   // Proxy wrapper setters
   const setCarsWithSyncProxy = (value: React.SetStateAction<CarAsset[]>) => {
+    lastLocalUpdateTime.current = Date.now();
     setCars(prev => {
       const next = typeof value === 'function' ? value(prev) : value;
       syncCarsToSupabase(prev, next);
@@ -464,6 +472,7 @@ export default function App() {
   };
 
   const setDriversWithSyncProxy = (value: React.SetStateAction<Driver[]>) => {
+    lastLocalUpdateTime.current = Date.now();
     setDrivers(prev => {
       const next = typeof value === 'function' ? value(prev) : value;
       syncDriversToSupabase(prev, next);

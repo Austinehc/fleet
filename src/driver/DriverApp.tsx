@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Car, CheckCircle2, LogOut } from 'lucide-react';
+import { Car, CheckCircle2, LogOut, Loader2, XCircle, AlertTriangle } from 'lucide-react';
 import { CarAsset, Driver } from '../types';
 
 import DriverAuth from './components/DriverAuth';
@@ -30,7 +30,10 @@ export default function DriverApp({
   // --- Driver Portal State ---
   const [activeDriverId, setActiveDriverId] = useState<string>('');
   const [driverPortalTab, setDriverPortalTab] = useState<'log_work' | 'history'>('log_work');
-  const [driverSuccessMsg, setDriverSuccessMsg] = useState<string | null>(null);
+  const [driverToast, setDriverToast] = useState<{
+    msg: string;
+    type: 'success' | 'loading' | 'error';
+  } | null>(null);
   const [driverLoginError, setDriverLoginError] = useState<string | null>(null);
 
   // Keep driver authenticated across refreshes
@@ -49,18 +52,42 @@ export default function DriverApp({
   const hasSavedId = !!localStorage.getItem('fleet_active_driver_id');
   const isDriverLoading = hasSavedId && drivers.length === 0;
 
+  const triggerDriverToast = (msg: string, type: 'success' | 'loading' | 'error' = 'success', duration: number = 4500) => {
+    setDriverToast({ msg, type });
+    if (type !== 'loading') {
+      setTimeout(() => {
+        setDriverToast(prev => prev?.msg === msg ? null : prev);
+      }, duration);
+    }
+  };
+
   const triggerDriverSuccess = (msg: string) => {
-    setDriverSuccessMsg(msg);
-    setTimeout(() => {
-      setDriverSuccessMsg(null);
-    }, 4500);
+    triggerDriverToast(msg, 'success');
+  };
+
+  const triggerErrorToast = (msg: string) => {
+    triggerDriverToast(msg, 'error', 5000);
   };
 
   const handleAuthSuccess = (driverId: string, fullName: string) => {
-    setActiveDriverId(driverId);
-    localStorage.setItem('fleet_active_driver_id', driverId);
-    setDriverLoginError(null);
-    triggerDriverSuccess(`Welcome back, ${fullName}! Access authorized.`);
+    // Show a loading toast for verifying the duty key
+    setDriverToast({
+      msg: `Verifying Duty Key: Validating shift credentials for ${fullName}...`,
+      type: 'loading'
+    });
+
+    setTimeout(() => {
+      setActiveDriverId(driverId);
+      localStorage.setItem('fleet_active_driver_id', driverId);
+      setDriverLoginError(null);
+      setDriverToast({
+        msg: `Duty Key Verified Successfully! Welcome back, ${fullName}!`,
+        type: 'success'
+      });
+      setTimeout(() => {
+        setDriverToast(prev => prev?.type === 'success' ? null : prev);
+      }, 4000);
+    }, 1200); // 1.2s authentic verification simulation
   };
 
   const activeDriver = drivers.find(d => d.id === activeDriverId);
@@ -130,11 +157,43 @@ export default function DriverApp({
       <main className="flex-1 max-w-7xl mx-auto w-full" id="dashboard-body">
         <div className="flex-1 bg-slate-50/60 py-8 px-4 sm:px-6 md:px-8 max-w-5xl mx-auto w-full space-y-6" id="driver-portal-wrapper">
           
-          {/* Dynamic Success Toast */}
-          {driverSuccessMsg && (
-            <div className="bg-emerald-600 text-white p-4 rounded-xl shadow-lg border border-emerald-500 flex items-center gap-3 animate-fade-in fixed bottom-8 right-8 z-50 max-w-md" id="drv-success-toast">
-              <CheckCircle2 className="w-5 h-5 shrink-0" />
-              <span className="text-xs font-semibold">{driverSuccessMsg}</span>
+          {/* Dynamic Duty Key & Action Status Toasts (Loading, Success, Error) */}
+          {driverToast && (
+            <div 
+              className={`fixed bottom-8 right-8 z-50 max-w-sm rounded-2xl p-4 shadow-2xl border flex items-center gap-3.5 animate-fade-in font-sans transition-all duration-300 ${
+                driverToast.type === 'loading' 
+                  ? 'bg-slate-900 border-slate-800 text-slate-100'
+                  : driverToast.type === 'error'
+                  ? 'bg-rose-50 border-rose-200 text-rose-950 shadow-rose-100'
+                  : 'bg-emerald-600 border-emerald-550 text-white shadow-emerald-990/10'
+              }`} 
+              id="drv-status-toast"
+            >
+              {driverToast.type === 'loading' && (
+                <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0">
+                  <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
+                </div>
+              )}
+              {driverToast.type === 'success' && (
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-400/20">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+                </div>
+              )}
+              {driverToast.type === 'error' && (
+                <div className="w-8 h-8 rounded-lg bg-rose-200/50 flex items-center justify-center shrink-0 border border-rose-300">
+                  <XCircle className="w-4 h-4 text-rose-600" />
+                </div>
+              )}
+              <div className="text-left">
+                <span className="text-[10px] uppercase tracking-wider font-extrabold opacity-75 block">
+                  {driverToast.type === 'loading' 
+                    ? 'Security Clearance' 
+                    : driverToast.type === 'error'
+                    ? 'Authentication Error'
+                    : 'Success Triggered'}
+                </span>
+                <span className="text-xs font-semibold leading-normal block mt-0.5">{driverToast.msg}</span>
+              </div>
             </div>
           )}
 
@@ -152,6 +211,7 @@ export default function DriverApp({
               onAuthSuccess={handleAuthSuccess}
               driverLoginError={driverLoginError}
               setDriverLoginError={setDriverLoginError}
+              triggerErrorToast={triggerErrorToast}
             />
           ) : (
             <div className="space-y-6 animate-fade-in" id="driver-active-portal">
