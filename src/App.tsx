@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { CarAsset, Driver } from './types';
 import { initialCars, initialDrivers } from './data';
 import ManagerApp from './ManagerApp';
@@ -25,6 +25,10 @@ import {
   deleteFuelLogFromDB
 } from './lib/supabase';
 import { Car, Shield, Database, Key, LogIn, UserPlus, Server, HelpCircle, LogOut } from 'lucide-react';
+import { errorHandler } from './lib/errorHandling';
+import { stateManager, updateCarDriverAssignment } from './lib/stateManager';
+import { UI_CONSTANTS } from './lib/constants';
+import { useDebouncedCallback, useThrottledCallback } from './lib/performance';
 
 export default function App() {
   const [dbConfigured, setDbConfigured] = useState<boolean>(isSupabaseConfigured());

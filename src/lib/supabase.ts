@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { CarAsset, Driver, ServiceLog, RevenueLog, FuelLog } from '../types';
+import { errorHandler, FleetError } from './errorHandling';
+import { DB_CONSTANTS } from './constants';
+import { validateEmail, validateVIN, validatePlateNumber, sanitizeString } from './validation';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -17,35 +20,37 @@ export const supabase = isSupabaseConfigured()
 export async function getCarsFromDB(): Promise<CarAsset[]> {
   if (!supabase) return [];
 
-  const { data: dbCars, error: carsError } = await supabase
-    .from('cars')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const { data, error } = await errorHandler.handleAsync(
+    async () => {
+      const { data: dbCars, error: carsError } = await supabase!
+        .from('cars')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  if (carsError) {
-    console.error('Error loading cars:', carsError);
-    throw carsError;
+      if (carsError) throw carsError;
+
+      // Load all sub-records with error handling
+      const [svcResult, revResult, fuelResult] = await Promise.allSettled([
+        supabase!.from('service_logs').select('*').order('date', { ascending: false }),
+        supabase!.from('revenue_logs').select('*').order('date', { ascending: false }),
+        supabase!.from('fuel_logs').select('*').order('date', { ascending: false })
+      ]);
+
+      const dbSvc = svcResult.status === 'fulfilled' ? svcResult.value.data || [] : [];
+      const dbRev = revResult.status === 'fulfilled' ? revResult.value.data || [] : [];
+      const dbFuel = fuelResult.status === 'fulfilled' ? fuelResult.value.data || [] : [];
+
+      return { dbCars, dbSvc, dbRev, dbFuel };
+    },
+    'Load cars from database'
+  );
+
+  if (error) {
+    console.error('Error loading cars:', error);
+    throw error;
   }
 
-  // Load all sub-records (service_logs, revenue_logs, fuel_logs)
-  const { data: dbSvc, error: svcError } = await supabase
-    .from('service_logs')
-    .select('*')
-    .order('date', { ascending: false });
-
-  const { data: dbRev, error: revError } = await supabase
-    .from('revenue_logs')
-    .select('*')
-    .order('date', { ascending: false });
-
-  const { data: dbFuel, error: fuelError } = await supabase
-    .from('fuel_logs')
-    .select('*')
-    .order('date', { ascending: false });
-
-  if (svcError || revError || fuelError) {
-    console.error('Error loading sub-logs:', { svcError, revError, fuelError });
-  }
+  const { dbCars, dbSvc, dbRev, dbFuel } = data!;
 
   const serviceLogsMap = (dbSvc || []).reduce((acc: any, log: any) => {
     if (!acc[log.car_id]) acc[log.car_id] = [];

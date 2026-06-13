@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
-import { Camera } from 'lucide-react';
+import { Camera, AlertCircle, CheckCircle } from 'lucide-react';
 import { CarAsset, ServiceLog } from '../../types';
+import { 
+  validateVIN, 
+  validatePlateNumber, 
+  validateNumber, 
+  sanitizeString,
+  validateDescription 
+} from '../../lib/validation';
+import { VALIDATION_LIMITS, VEHICLE_STATUS, ERROR_MESSAGES } from '../../lib/constants';
+import { useDebouncedCallback } from '../../lib/performance';
 
 interface AddCarFormProps {
   onAddCar: (newCar: CarAsset) => void;
@@ -26,35 +35,199 @@ export default function AddCarForm({
   const [newCarMileage, setNewCarMileage] = useState<number>(0);
   const [newCarStatus, setNewCarStatus] = useState<CarAsset['status']>('Available');
 
+  // Validation states
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Initial service state
   const [includeInitialService, setIncludeInitialService] = useState(false);
   const [initialServiceBy, setInitialServiceBy] = useState('');
   const [initialServiceCost, setInitialServiceCost] = useState<number>(0);
   const [initialServiceDesc, setInitialServiceDesc] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Debounced validation functions
+  const validateField = useDebouncedCallback((field: string, value: any) => {
+    const newErrors = { ...errors };
+
+    switch (field) {
+      case 'make':
+      case 'model':
+        if (!value.trim()) {
+          newErrors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+        } else if (value.length > VALIDATION_LIMITS.NAME_MAX_LENGTH) {
+          newErrors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} must be less than ${VALIDATION_LIMITS.NAME_MAX_LENGTH} characters`;
+        } else {
+          delete newErrors[field];
+        }
+        break;
+
+      case 'year':
+        const currentYear = new Date().getFullYear();
+        const yearValidation = validateNumber(value, 1900, currentYear + 1, 'Year');
+        if (!yearValidation.valid) {
+          newErrors[field] = yearValidation.error!;
+        } else {
+          delete newErrors[field];
+        }
+        break;
+
+      case 'plate':
+        const plateValidation = validatePlateNumber(value);
+        if (!plateValidation.valid) {
+          newErrors[field] = plateValidation.error!;
+        } else {
+          delete newErrors[field];
+        }
+        break;
+
+      case 'vin':
+        const vinValidation = validateVIN(value);
+        if (!vinValidation.valid) {
+          newErrors[field] = vinValidation.error!;
+        } else {
+          delete newErrors[field];
+        }
+        break;
+
+      case 'mileage':
+        const mileageValidation = validateNumber(value, 0, 1000000, 'Mileage');
+        if (!mileageValidation.valid) {
+          newErrors[field] = mileageValidation.error!;
+        } else {
+          delete newErrors[field];
+        }
+        break;
+
+      case 'color':
+        if (!value.trim()) {
+          newErrors[field] = 'Color is required';
+        } else if (value.length > VALIDATION_LIMITS.NAME_MAX_LENGTH) {
+          newErrors[field] = `Color must be less than ${VALIDATION_LIMITS.NAME_MAX_LENGTH} characters`;
+        } else {
+          delete newErrors[field];
+        }
+        break;
+
+      case 'initialServiceDesc':
+        if (value.trim()) {
+          const descValidation = validateDescription(value);
+          if (!descValidation.valid) {
+            newErrors[field] = descValidation.error!;
+          } else {
+            delete newErrors[field];
+          }
+        } else {
+          delete newErrors[field];
+        }
+        break;
+    }
+
+    setErrors(newErrors);
+  }, 300);
+
+  // Input change handlers with validation
+  const handleMakeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = sanitizeString(e.target.value);
+    setNewCarMake(value);
+    validateField('make', value);
+  };
+
+  const handleModelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = sanitizeString(e.target.value);
+    setNewCarModel(value);
+    validateField('model', value);
+  };
+
+  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    setNewCarYear(value);
+    validateField('year', value);
+  };
+
+  const handlePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase();
+    setNewCarPlate(value);
+    validateField('plate', value);
+  };
+
+  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = sanitizeString(e.target.value);
+    setNewCarColor(value);
+    validateField('color', value);
+  };
+
+  const handleVinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase();
+    setNewCarVin(value);
+    validateField('vin', value);
+  };
+
+  const handleMileageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value) || 0;
+    setNewCarMileage(value);
+    validateField('mileage', value);
+  };
+
+  const handleServiceDescChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setInitialServiceDesc(value);
+    if (includeInitialService) {
+      validateField('initialServiceDesc', value);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCarMake.trim() || !newCarModel.trim() || !newCarPlate.trim() || !newCarColor.trim()) {
-      alert('Please fill out all mandatory fields tagged with an asterisk.');
+    setIsSubmitting(true);
+
+    // Validate all fields
+    const validationErrors: Record<string, string> = {};
+
+    if (!newCarMake.trim()) validationErrors.make = 'Make is required';
+    if (!newCarModel.trim()) validationErrors.model = 'Model is required';
+    if (!newCarPlate.trim()) validationErrors.plate = 'Plate number is required';
+    if (!newCarColor.trim()) validationErrors.color = 'Color is required';
+    if (!newCarVin.trim()) validationErrors.vin = 'VIN is required';
+
+    // Additional validations
+    const plateValidation = validatePlateNumber(newCarPlate);
+    if (!plateValidation.valid) validationErrors.plate = plateValidation.error!;
+
+    const vinValidation = validateVIN(newCarVin);
+    if (!vinValidation.valid) validationErrors.vin = vinValidation.error!;
+
+    const yearValidation = validateNumber(newCarYear, 1900, new Date().getFullYear() + 1, 'Year');
+    if (!yearValidation.valid) validationErrors.year = yearValidation.error!;
+
+    const mileageValidation = validateNumber(newCarMileage, 0, 1000000, 'Mileage');
+    if (!mileageValidation.valid) validationErrors.mileage = mileageValidation.error!;
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setIsSubmitting(false);
       return;
     }
 
-    const newCarId = `car-${Date.now()}`;
-    const initialServices: ServiceLog[] = [];
+    try {
+      const newCarId = `car-${Date.now()}`;
+      const initialServices: ServiceLog[] = [];
 
-    if (includeInitialService) {
-      initialServices.push({
-        id: `svc-${Date.now()}`,
-        date: new Date().toISOString().split('T')[0],
-        category: 'Inspection',
-        description: initialServiceDesc.trim() || 'Logged initial fleet readiness checks & fluid levels verification.',
-        cost: Number(initialServiceCost) || 0,
-        mileage: Number(newCarMileage) || 0,
-        performedBy: initialServiceBy.trim() || 'Fleet Prep Express'
-      });
-    }
+      if (includeInitialService && initialServiceDesc.trim()) {
+        const descValidation = validateDescription(initialServiceDesc);
+        if (descValidation.valid) {
+          initialServices.push({
+            id: `svc-${Date.now()}`,
+            date: new Date().toISOString().split('T')[0],
+            category: 'Inspection',
+            description: descValidation.value!,
+            cost: Math.max(0, initialServiceCost),
+            mileage: newCarMileage,
+            performedBy: sanitizeString(initialServiceBy) || 'System Admin'
+          });
+        }
+      }
 
-    const createdCar: CarAsset = {
+      const createdCar: CarAsset = {
       id: newCarId,
       make: newCarMake.trim(),
       model: newCarModel.trim(),
@@ -71,9 +244,15 @@ export default function AddCarForm({
       createdAt: new Date().toISOString()
     };
 
-    onAddCar(createdCar);
-    setNewCarPhoto(''); // clear after success
-    onClose();
+      onAddCar(createdCar);
+      setNewCarPhoto(''); // clear after success
+      onClose();
+    } catch (error) {
+      console.error('Error creating car:', error);
+      setErrors({ submit: 'Failed to create car. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

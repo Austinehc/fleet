@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
-import { Key, UserCheck, Shield, ChevronLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Key, UserCheck, Shield, ChevronLeft, Clock, AlertTriangle } from 'lucide-react';
 import { Driver } from '../../types';
+import { validatePinFormat, verifyPin, pinAttemptTracker } from '../../lib/auth';
+import { errorHandler, FleetError } from '../../lib/errorHandling';
+import { UI_CONSTANTS, ERROR_MESSAGES, AUTH_CONSTANTS } from '../../lib/constants';
+import { useDebouncedCallback } from '../../lib/performance';
 
 interface DriverAuthProps {
   drivers: Driver[];
@@ -18,29 +22,136 @@ export default function DriverAuth({
   triggerErrorToast
 }: DriverAuthProps) {
   const [enteredDriverCode, setEnteredDriverCode] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lockoutTime, setLockoutTime] = useState(0);
+  const [attemptCount, setAttemptCount] = useState(0);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Update lockout timer
+  useEffect(() => {
+    if (lockoutTime > 0) {
+      const timer = setInterval(() => {
+        const remaining = pinAttemptTracker.getRemainingLockoutTime('driver_auth');
+        setLockoutTime(remaining);
+        if (remaining === 0) {
+          setAttemptCount(0);
+        }
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [lockoutTime]);
+
+  // Debounced input validation
+  const validateInput = useDebouncedCallback((code: string) => {
+    if (code.length > 0) {
+      const validation = validatePinFormat(code);
+      if (!validation.valid && code.length === AUTH_CONSTANTS.PIN_LENGTH) {
+        setDriverLoginError(validation.error || 'Invalid PIN format');
+      } else if (validation.valid) {
+        setDriverLoginError(null);
+      }
+    }
+  }, 300);
+
+  // Handle input change with validation
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase();
+    setEnteredDriverCode(value);
+    validateInput(value);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setDriverLoginError(null);
-    const trimmedCode = enteredDriverCode.trim();
-    if (trimmedCode.length !== 6) {
-      const charErr = 'The access code must be exactly 6 characters.';
-      setDriverLoginError(charErr);
-      if (triggerErrorToast) triggerErrorToast(charErr);
+    
+    // Check if user is locked out
+    if (!pinAttemptTracker.canAttempt('driver_auth')) {
+      const remaining = pinAttemptTracker.getRemainingLockoutTime('driver_auth');
+      setLockoutTime(remaining);
+      const minutes = Math.ceil(remaining / 60000);
+      const lockoutMsg = `Too many failed attempts. Try again in ${minutes} minutes.`;
+      setDriverLoginError(lockoutMsg);
+      if (triggerErrorToast) triggerErrorToast(lockoutMsg);
       return;
     }
-    const matchedDrv = drivers.find(
-      d => d.accessCode?.trim().toUpperCase() === trimmedCode.toUpperCase()
+
+    setIsSubmitting(true);
+    setDriverLoginError(null);
+
+    const { data: validationResult, error: validationError } = errorHandler.handleSync(
+      () => validatePinFormat(enteredDriverCode.trim()),
+      'PIN validation'
     );
-    if (matchedDrv) {
-      onAuthSuccess(matchedDrv.id, matchedDrv.fullName);
-      setEnteredDriverCode('');
-    } else {
-      const unknownErr = 'Invalid/unknown access code. Please verify the code or contact your system manager.';
-      setDriverLoginError(unknownErr);
-      if (triggerErrorToast) {
-        triggerErrorToast('Invalid Access Code: Passkey verification failed.');
+
+    if (validationError || !validationResult?.valid) {
+      const errorMsg = validationResult?.error || ERROR_MESSAGES.VALIDATION_ERROR;
+      setDriverLoginError(errorMsg);
+      if (triggerErrorToast) triggerErrorToast(errorMsg);
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      // Find driver and verify PIN
+      const trimmedCode = enteredDriverCode.trim().toUpperCase();
+      let matchedDriver: Driver | null = null;
+      let authSuccess = false;
+
+      // In a real app, PINs would be hashed in the database
+      // For now, we'll simulate secure comparison while keeping existing functionality
+      for (const driver of drivers) {
+        if (driver.accessCode?.trim().toUpperCase() === trimmedCode) {
+          matchedDriver = driver;
+          authSuccess = true;
+          break;
+        }
       }
+
+      if (authSuccess && matchedDriver) {
+        // Record successful attempt
+        pinAttemptTracker.recordAttempt('driver_auth', true);
+        
+        // Clear form and proceed
+        setEnteredDriverCode('');
+        setAttemptCount(0);
+        onAuthSuccess(matchedDriver.id, matchedDriver.fullName);
+      } else {
+        // Record failed attempt
+        pinAttemptTracker.recordAttempt('driver_auth', false);
+        const newAttemptCount = attemptCount + 1;
+        setAttemptCount(newAttemptCount);
+
+        const remainingAttempts = AUTH_CONSTANTS.MAX_LOGIN_ATTEMPTS - newAttemptCount;
+        let errorMsg = 'Invalid access code. Please verify and try again.';
+        
+        if (remainingAttempts > 0) {
+          errorMsg += ` ${remainingAttempts} attempts remaining.`;
+        } else {
+          errorMsg = 'Account temporarily locked due to multiple failed attempts.';
+          const lockoutMs = pinAttemptTracker.getRemainingLockoutTime('driver_auth');
+          setLockoutTime(lockoutMs);
+        }
+
+        setDriverLoginError(errorMsg);
+        if (triggerErrorToast) {
+          triggerErrorToast('Authentication failed');
+        }
+
+        // Log security event
+        errorHandler.logError(
+          new FleetError(
+            'Driver authentication failed',
+            'AUTH_FAILED',
+            'medium',
+            { attemptCount: newAttemptCount, code: trimmedCode.substring(0, 2) + '****' }
+          ),
+          'Driver Authentication'
+        );
+      }
+    } catch (error) {
+      errorHandler.logError(error as Error, 'Driver Authentication Error');
+      setDriverLoginError(ERROR_MESSAGES.OPERATION_FAILED);
+      if (triggerErrorToast) triggerErrorToast(ERROR_MESSAGES.OPERATION_FAILED);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -73,29 +184,58 @@ export default function DriverAuth({
           </div>
         )}
 
+        {/* Lockout Warning */}
+        {lockoutTime > 0 && (
+          <div className="p-3.5 bg-amber-50 border border-amber-100 text-amber-700 rounded-2xl text-xs text-left leading-relaxed flex items-start gap-2.5" id="drv-lockout-warning">
+            <Clock className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+            <div>
+              <div className="font-semibold">Account Temporarily Locked</div>
+              <div>Time remaining: {Math.ceil(lockoutTime / 60000)} minutes</div>
+            </div>
+          </div>
+        )}
+
+        {/* Security Status */}
+        {attemptCount > 0 && lockoutTime === 0 && (
+          <div className="p-3 bg-orange-50 border border-orange-100 text-orange-700 rounded-xl text-xs text-center flex items-center justify-center gap-2" id="drv-attempt-warning">
+            <AlertTriangle className="w-4 h-4 text-orange-600" />
+            <span>{AUTH_CONSTANTS.MAX_LOGIN_ATTEMPTS - attemptCount} attempts remaining</span>
+          </div>
+        )}
+
         {/* Login credentials Form code */}
         <form onSubmit={handleSubmit} className="space-y-5 text-left" id="drv-code-form">
           <div className="space-y-1.5">
             <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-wider">Your personal access code (6 digits)</label>
             <input
               type="text"
-              maxLength={6}
+              maxLength={AUTH_CONSTANTS.PIN_LENGTH}
               required
               placeholder="e.g. ABC123"
               value={enteredDriverCode}
-              onChange={(e) => setEnteredDriverCode(e.target.value.toUpperCase())}
-              className="w-full bg-slate-50 border border-gray-200 focus:border-indigo-500 rounded-xl px-4 py-3 text-base text-center font-mono font-black uppercase text-slate-800 tracking-widest focus:outline-none transition-colors"
+              onChange={handleInputChange}
+              disabled={isSubmitting || lockoutTime > 0}
+              className={`w-full bg-slate-50 border focus:border-indigo-500 rounded-xl px-4 py-3 text-base text-center font-mono font-black uppercase text-slate-800 tracking-widest focus:outline-none transition-colors ${
+                isSubmitting || lockoutTime > 0 
+                  ? 'opacity-50 cursor-not-allowed border-gray-200' 
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
               id="drv-input-access-code"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2 uppercase tracking-widest"
+            disabled={isSubmitting || lockoutTime > 0 || enteredDriverCode.length !== AUTH_CONSTANTS.PIN_LENGTH}
+            className={`w-full py-3 rounded-xl text-xs font-black transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 uppercase tracking-widest ${
+              isSubmitting || lockoutTime > 0 || enteredDriverCode.length !== AUTH_CONSTANTS.PIN_LENGTH
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg'
+            }`}
             id="drv-btn-authenticate"
           >
             <UserCheck className="w-4 h-4" />
-            Access Driver Station
+            {isSubmitting ? 'Authenticating...' : 'Access Driver Station'}
           </button>
         </form>
 
