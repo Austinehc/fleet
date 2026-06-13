@@ -53,20 +53,36 @@ export default function App() {
 
   // --- Current Active UI Role ---
   const [userRole, setUserRole] = useState<'manager' | 'driver'>(() => {
+    // First, check if role is locked by environment variable
+    const envLockedRole = (import.meta as any).env?.VITE_APP_ROLE;
+    if (envLockedRole === 'driver' || envLockedRole === 'manager') {
+      return envLockedRole;
+    }
+    
+    // Then check URL parameters
     const params = new URLSearchParams(window.location.search);
     const roleParam = params.get('role');
     if (roleParam === 'driver' || roleParam === 'manager') {
       return roleParam;
     }
+    
+    // Finally check localStorage
     const savedRole = localStorage.getItem('fleet_user_role');
     if (savedRole === 'driver' || savedRole === 'manager') {
       return savedRole;
     }
+    
     return 'manager';
   });
 
   // Sync URL query updates with userRole state dynamically
   useEffect(() => {
+    // Don't allow role changes if locked by environment
+    const envLockedRole = (import.meta as any).env?.VITE_APP_ROLE;
+    if (envLockedRole === 'driver' || envLockedRole === 'manager') {
+      return; // Skip URL-based role switching when environment role is set
+    }
+    
     const handleLocationChange = () => {
       const params = new URLSearchParams(window.location.search);
       const roleParam = params.get('role');
@@ -86,6 +102,12 @@ export default function App() {
 
   // Sync userRole state updates to localStorage
   useEffect(() => {
+    // Don't save to localStorage if role is locked by environment
+    const envLockedRole = (import.meta as any).env?.VITE_APP_ROLE;
+    if (envLockedRole === 'driver' || envLockedRole === 'manager') {
+      return; // Skip localStorage updates when environment role is set
+    }
+    
     localStorage.setItem('fleet_user_role', userRole);
   }, [userRole]);
 
