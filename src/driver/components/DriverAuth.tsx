@@ -73,7 +73,7 @@ export default function DriverAuth({
               type="text"
               maxLength={6}
               required
-              placeholder="e.g. AD3F89"
+              placeholder="e.g. ABC123"
               value={enteredDriverCode}
               onChange={(e) => setEnteredDriverCode(e.target.value.toUpperCase())}
               className="w-full bg-slate-50 border border-gray-200 focus:border-indigo-500 rounded-xl px-4 py-3 text-base text-center font-mono font-black uppercase text-slate-800 tracking-widest focus:outline-none transition-colors"

@@ -36,14 +36,18 @@ export default function DriverApp({
   // Keep driver authenticated across refreshes
   useEffect(() => {
     const savedId = localStorage.getItem('fleet_active_driver_id');
-    if (savedId) {
+    if (savedId && drivers.length > 0) {
       if (drivers.some(d => d.id === savedId)) {
         setActiveDriverId(savedId);
       } else {
+        // Only clear if drivers loaded but the ID is truly stale (e.g. deleted by manager)
         localStorage.removeItem('fleet_active_driver_id');
       }
     }
   }, [drivers]);
+
+  const hasSavedId = !!localStorage.getItem('fleet_active_driver_id');
+  const isDriverLoading = hasSavedId && drivers.length === 0;
 
   const triggerDriverSuccess = (msg: string) => {
     setDriverSuccessMsg(msg);
@@ -135,7 +139,14 @@ export default function DriverApp({
           )}
 
           {/* Driver Auth Gate or Logged In Workspace */}
-          {!activeDriver ? (
+          {isDriverLoading ? (
+            <div className="bg-white border border-gray-150 rounded-2xl p-8 shadow-sm text-center max-w-sm mx-auto space-y-4 my-12" id="driver-loading-gate">
+              <div className="w-10 h-10 bg-indigo-50 border border-indigo-150 rounded-xl flex items-center justify-center animate-spin mx-auto">
+                <Car className="w-5 h-5 text-indigo-600 animate-pulse" />
+              </div>
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider font-sans">Verifying Duty Passkey...</p>
+            </div>
+          ) : !activeDriver ? (
             <DriverAuth
               drivers={drivers}
               onAuthSuccess={handleAuthSuccess}

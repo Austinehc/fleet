@@ -9,6 +9,7 @@ import AddDriverForm from './components/AddDriverForm';
 import EditCarForm from './components/EditCarForm';
 import EditDriverForm from './components/EditDriverForm';
 import CameraCapture from '../components/CameraCapture';
+import { Car } from 'lucide-react';
 
 interface ManagerAppProps {
   cars: CarAsset[];
@@ -18,6 +19,7 @@ interface ManagerAppProps {
   userRole?: 'manager' | 'driver';
   setUserRole?: (role: 'manager' | 'driver') => void;
   onSignOut?: () => void;
+  dataLoading?: boolean;
 }
 
 export default function ManagerApp({
@@ -27,7 +29,8 @@ export default function ManagerApp({
   setDrivers,
   userRole = 'manager',
   setUserRole,
-  onSignOut
+  onSignOut,
+  dataLoading = false
 }: ManagerAppProps) {
   // Navigation View switcher
   const [activeTab, setActiveTab] = useState<'fleet' | 'staff' | 'finance'>('fleet');
@@ -62,14 +65,42 @@ export default function ManagerApp({
     setIsAddingCar(false);
   };
 
-  const handleUpdateCar = (updatedCar: CarAsset) => {
+  const handleUpdateCar = (updatedCar: CarAsset, newAssignedDriverId: string | null) => {
+    // 1. Update the car asset list
     setCars(prev => prev.map(c => c.id === updatedCar.id ? updatedCar : c));
+
+    // 2. Safely synchronize driver assignments
+    setDrivers(prev => prev.map(d => {
+      // If driver was assigned to this car but is now unassigned, reset their assignedCarId (use null, not undefined)
+      if (d.assignedCarId === updatedCar.id && d.id !== newAssignedDriverId) {
+        return { ...d, assignedCarId: null, status: 'On Leave' as const };
+      }
+      // If driver is the new assignee, set their assignedCarId
+      if (newAssignedDriverId && d.id === newAssignedDriverId) {
+        return { ...d, assignedCarId: updatedCar.id, status: 'Active' as const };
+      }
+      return d;
+    }));
+
     setEditingCar(null);
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen flex flex-col font-sans text-gray-800" id="manager-system-portal-root">
+    <div className="bg-slate-50 min-h-screen flex flex-col font-sans text-gray-800 animate-none relative" id="manager-system-portal-root">
       
+      {/* Dynamic Toast instead of a blocking page-overlay */}
+      {dataLoading && (
+        <div className="fixed bottom-6 right-6 z-100 bg-slate-900 border border-slate-800 text-white rounded-2xl py-3 px-4 shadow-2xl flex items-center gap-3.5 animate-pulse font-sans max-w-sm" id="manager-sync-toast">
+          <div className="w-6 h-6 shrink-0 bg-slate-850 rounded-lg flex items-center justify-center animate-spin">
+            <Car className="w-3.5 h-3.5 text-indigo-400" />
+          </div>
+          <div className="text-left animate-none">
+            <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-150">Synchronizing Fleet Ledger</h4>
+            <p className="text-[10px] text-slate-400 leading-tight mt-0.5">Reading latest asset states and log histories...</p>
+          </div>
+        </div>
+      )}
+
       {/* Dynamic Header with role toggle URL helpers */}
       <ManagerHeader
         activeTab={activeTab}
@@ -138,6 +169,7 @@ export default function ManagerApp({
       {editingCar && (
         <EditCarForm
           car={editingCar}
+          drivers={drivers}
           onClose={() => setEditingCar(null)}
           onSave={handleUpdateCar}
         />

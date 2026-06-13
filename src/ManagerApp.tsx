@@ -15,6 +15,7 @@ interface ManagerAppProps {
   userRole?: 'manager' | 'driver';
   setUserRole?: (role: 'manager' | 'driver') => void;
   onSignOut?: () => void;
+  dataLoading?: boolean;
 }
 
 export default function ManagerApp(props: ManagerAppProps) {

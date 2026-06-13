@@ -51,7 +51,7 @@ export default function DriverHistory({
                     {isExpanded && (
                       <div className="p-3 bg-white border border-indigo-100/80 rounded-lg space-y-2 text-[10px]" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between border-b border-indigo-50 pb-1.5 font-bold text-indigo-900">
-                          <span>📁 Maintenance Activity Report</span>
+                          <span> Maintenance Activity Report</span>
                           <span className="font-mono text-[8px] text-indigo-400">ID: SVC-{log.id.toUpperCase()}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-slate-550 font-normal">
@@ -89,7 +89,7 @@ export default function DriverHistory({
 
         {/* Cashings tracked list */}
         <div className="space-y-2 text-left" id="drv-hist-rev-section">
-          <span className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider font-sans">💰 Cashing Receipts Ledger</span>
+          <span className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider font-sans">Cashing Receipts Ledger</span>
           <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1" id="drv-hist-rev-list">
             {(() => {
               const matchedLogs = (assignedCar.revenueLogs || []).filter(r => r.driverId === activeDriver.id);

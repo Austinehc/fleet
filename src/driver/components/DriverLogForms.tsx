@@ -85,7 +85,7 @@ export default function DriverLogForms({
     setDrvSvcDate(new Date().toISOString().split('T')[0]);
     setDrvSvcCat('Maintenance');
 
-    triggerSuccess('✅ Maintenance / Service Event logged successfully, and auto-synced with Manager Hub!');
+    triggerSuccess('Maintenance / Service Event logged successfully, and auto-synced with Manager Hub!');
   };
 
   const handleDriverAddRevenueLog = (e: React.FormEvent) => {
@@ -127,7 +127,7 @@ export default function DriverLogForms({
     setDrvRevDate(new Date().toISOString().split('T')[0]);
     setDrvRevCat('Fare');
 
-    triggerSuccess('✅ Cashing / Revenue receipt submitted successfully! Waiting for manager approval.');
+    triggerSuccess('Cashing / Revenue receipt submitted successfully! Waiting for manager approval.');
   };
 
   return (
@@ -144,7 +144,7 @@ export default function DriverLogForms({
             type="button"
             onClick={() => setDriverLogSubTab('maintenance')}
             className={`px-3 py-1 text-[10px] font-bold rounded-lg cursor-pointer transition-all ${
-              driverLogSubTab === 'maintenance' ? 'bg-white text-indigo-750 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+              driverLogSubTab === 'maintenance' ? 'bg-indigo-650 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
             }`}
             id="drv-sub-btn-svc"
           >
@@ -154,7 +154,7 @@ export default function DriverLogForms({
             type="button"
             onClick={() => setDriverLogSubTab('cashing')}
             className={`px-3 py-1 text-[10px] font-bold rounded-lg cursor-pointer transition-all ${
-              driverLogSubTab === 'cashing' ? 'bg-white text-emerald-650 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+              driverLogSubTab === 'cashing' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
             }`}
             id="drv-sub-btn-cashing"
           >
@@ -270,7 +270,7 @@ export default function DriverLogForms({
 
           <button
             type="submit"
-            className="w-full py-2 bg-indigo-650 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer text-center font-sans"
+            className="w-full py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer text-center font-sans"
             id="drv-svc-submit"
           >
             Commit Maintenance / Service Event log
@@ -300,9 +300,8 @@ export default function DriverLogForms({
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none"
                 id="drv-rev-input-cat relative"
               >
-                <option value="Fare">Fare / Passenger Shift</option>
+                <option value="Fare">Fare</option>
                 <option value="Rental">Rental Yield</option>
-                <option value="Delivery">Delivery Contract</option>
                 <option value="Contract">Trip Contract</option>
                 <option value="Other">Other</option>
               </select>

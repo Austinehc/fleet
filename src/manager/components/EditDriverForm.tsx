@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Driver } from '../../types';
+import { Camera, Upload } from 'lucide-react';
 
 interface EditDriverFormProps {
   driver: Driver;
@@ -20,6 +21,40 @@ export default function EditDriverForm({
   const [editDrvStatus, setEditDrvStatus] = useState<Driver['status']>(driver.status);
   const [editDrvAccessCode, setEditDrvAccessCode] = useState(driver.accessCode || '');
 
+  // Photograph upload state
+  const [editDrvPhoto, setEditDrvPhoto] = useState<string>(driver.profilePicture || '');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size exceeds the 5MB safety limit.');
+        return;
+      }
+      setIsUploadingPhoto(true);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        try {
+          const { uploadToCloudinary, isCloudinaryConfigured } = await import('../../lib/cloudinary');
+          if (isCloudinaryConfigured()) {
+            const url = await uploadToCloudinary(base64);
+            setEditDrvPhoto(url);
+          } else {
+            setEditDrvPhoto(base64);
+          }
+        } catch (err) {
+          console.error(err);
+          setEditDrvPhoto(base64);
+        } finally {
+          setIsUploadingPhoto(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editDrvName.trim() || !editDrvLicense.trim() || !editDrvNrc.trim()) {
@@ -35,32 +70,62 @@ export default function EditDriverForm({
       email: editDrvEmail.trim(),
       phone: editDrvPhone.trim(),
       status: editDrvStatus,
-      accessCode: editDrvAccessCode.trim().toUpperCase()
+      accessCode: editDrvAccessCode.trim().toUpperCase(),
+      profilePicture: editDrvPhoto || undefined
     };
 
     onSave(updatedDriver);
   };
 
   return (
-    <div className="fixed inset-0 z-55 bg-gray-950/70 backdrop-blur-sm flex items-start justify-center p-4 py-8 overflow-y-auto animate-fade-in" id="edit-driver-modal">
-      <div className="bg-white rounded-2xl max-w-lg w-full border border-gray-100 overflow-hidden shadow-2xl flex flex-col max-h-screen my-auto overflow-y-auto" id="edit-driver-modal-box">
+    <div className="fixed inset-0 z-55 bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in" id="edit-driver-modal">
+      <div className="bg-white rounded-2xl max-w-lg w-full border border-gray-150 overflow-hidden shadow-2xl flex flex-col max-h-[90vh] md:max-h-[min(560px,85vh)]" id="edit-driver-modal-box">
         
-        <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-slate-50/50" id="edit-driver-hdr">
-          <div>
-            <h3 className="text-base font-bold text-gray-950">Edit Staff Profile</h3>
-            <p className="text-xs text-gray-400">Update identification, contacts, status, or credentials for {driver.fullName}.</p>
+        <div className="p-4 border-b border-gray-150 flex items-center justify-between bg-slate-50/50" id="edit-driver-hdr">
+          <div className="text-left">
+            <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg inline-block">
+              Staff Directory Editor
+            </span>
+            <h3 className="text-sm font-bold text-gray-950 mt-0.5">Edit Staff Profile</h3>
+            <p className="text-[11px] text-gray-400 leading-tight">Update identification, status, or credentials for {driver.fullName}.</p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-100 rounded-lg text-sm"
+            className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-150 rounded-xl text-xs font-bold"
             id="btn-close-edit-driver-modal"
           >
-            ✕
+            ✕ Close
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-left" id="edit-driver-form">
+        <form onSubmit={handleSubmit} className="p-5 space-y-3.5 text-left overflow-y-auto flex-1" id="edit-driver-form">
           
+          {/* Driver Portrait Snapshot Area */}
+          <div className="space-y-1.5" id="edit-driver-pic-box">
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider font-sans">
+              Driver Photograph
+            </label>
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 bg-gray-100 border border-gray-200 rounded-full overflow-hidden shadow-inner shrink-0 relative group" id="drv-pic-display">
+                {editDrvPhoto ? (
+                  <img src={editDrvPhoto} alt="Snapshot Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 text-[8px] p-1 text-center bg-gray-50 uppercase tracking-wide font-black">
+                    <Camera className="w-3.5 h-3.5 text-gray-300 mb-0.5" /> No Photo
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1 flex-1">
+                <label className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-750 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer w-max select-none">
+                  <Upload className="w-3 h-3" />
+                  <span>{isUploadingPhoto ? 'Uploading...' : 'Upload Picture'}</span>
+                  <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                </label>
+                <p className="text-[9px] text-gray-400">Portrait formats (.jpeg, .png) up to 5MB.</p>
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Driver Full Name*</label>
             <input
@@ -69,7 +134,7 @@ export default function EditDriverForm({
               placeholder="e.g. Sarah Jenkins"
               value={editDrvName}
               onChange={(e) => setEditDrvName(e.target.value)}
-              className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium text-gray-900"
+              className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
               id="edit-input-drv-name"
             />
           </div>
@@ -83,7 +148,7 @@ export default function EditDriverForm({
                 placeholder="e.g. 523456/11/1"
                 value={editDrvNrc}
                 onChange={(e) => setEditDrvNrc(e.target.value)}
-                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono uppercase font-medium text-gray-900"
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-mono uppercase font-medium text-gray-900"
                 id="edit-input-drv-nrc"
               />
             </div>
@@ -95,7 +160,7 @@ export default function EditDriverForm({
                 placeholder="e.g. DL-TX4810931"
                 value={editDrvLicense}
                 onChange={(e) => setEditDrvLicense(e.target.value)}
-                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono uppercase font-medium text-gray-900"
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-mono uppercase font-medium text-gray-900"
                 id="edit-input-drv-license"
               />
             </div>
@@ -109,7 +174,7 @@ export default function EditDriverForm({
                 placeholder="s.jenkins@corp.com"
                 value={editDrvEmail}
                 onChange={(e) => setEditDrvEmail(e.target.value)}
-                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium text-gray-900"
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
                 id="edit-input-drv-email"
               />
             </div>
@@ -120,7 +185,7 @@ export default function EditDriverForm({
                 placeholder="(512) 555-0199"
                 value={editDrvPhone}
                 onChange={(e) => setEditDrvPhone(e.target.value)}
-                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium text-gray-900"
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
                 id="edit-input-drv-phone"
               />
             </div>
@@ -131,7 +196,7 @@ export default function EditDriverForm({
             <select
               value={editDrvStatus}
               onChange={(e) => setEditDrvStatus(e.target.value as Driver['status'])}
-              className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-700 font-semibold mb-4 cursor-pointer"
+              className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 text-gray-700 font-semibold mb-4 cursor-pointer"
               id="edit-select-drv-status"
             >
               <option value="Active">Active</option>
@@ -151,7 +216,7 @@ export default function EditDriverForm({
                 placeholder="e.g. AD3F89"
                 value={editDrvAccessCode}
                 onChange={(e) => setEditDrvAccessCode(e.target.value.toUpperCase())}
-                className="flex-1 bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono font-bold uppercase text-gray-900 tracking-widest text-center"
+                className="flex-1 bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-mono font-bold uppercase text-gray-900 tracking-widest text-center"
                 id="edit-input-drv-access-code"
               />
               <button
@@ -164,7 +229,7 @@ export default function EditDriverForm({
                   }
                   setEditDrvAccessCode(code);
                 }}
-                className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl border border-indigo-100 transition-all cursor-pointer"
+                className="px-3 py-2 bg-indigo-5 level bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl border border-indigo-100 transition-all cursor-pointer"
               >
                 Regenerate
               </button>
@@ -174,7 +239,7 @@ export default function EditDriverForm({
             </p>
           </div>
 
-          <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3" id="edit-drv-actions">
+          <div className="pt-4 border-t border-gray-150 flex items-center justify-end gap-3" id="edit-drv-actions">
             <button
               type="button"
               onClick={onClose}
@@ -185,7 +250,7 @@ export default function EditDriverForm({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md hover:shadow-indigo-500/10 transition-all cursor-pointer"
+              className="px-5 py-2 bg-indigo-600 hover:bg-indigo-750 text-white rounded-xl text-xs font-semibold shadow-md hover:shadow-indigo-550/10 transition-all cursor-pointer"
               id="btn-edit-driver-submit"
             >
               Save Profile Changes

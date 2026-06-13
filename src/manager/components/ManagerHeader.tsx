@@ -85,8 +85,8 @@ export default function ManagerHeader({
       </header>
 
       {/* Sub-navigation Menu bar */}
-      <div className="bg-slate-50 border-b border-gray-200/80 text-left" id="manager-sub-navigation">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between py-2.5 text-left">
+      <div className="bg-slate-50 border-b border-gray-200/80 text-left overflow-x-auto no-scrollbar" id="manager-sub-navigation">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between py-2.5 text-left min-w-max">
           <div className="flex gap-2">
             <button
               type="button"
@@ -132,11 +132,6 @@ export default function ManagerHeader({
                 </span>
               )}
             </button>
-          </div>
-          
-          <div className="text-[11px] text-indigo-705 font-bold bg-indigo-50/70 border border-indigo-100 px-3 py-1 rounded-full flex items-center gap-1.5">
-            <TrendingUp className="w-3 h-3 text-indigo-505" />
-            <span className="font-sans">Real-Time Enterprise Tracker Active</span>
           </div>
         </div>
       </div>

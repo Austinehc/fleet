@@ -22,28 +22,6 @@ export default function StaffManager({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'On Leave' | 'Suspended' | 'Inactive'>('All');
   const [justRegeneratedCode, setJustRegeneratedCode] = useState<{ [key: string]: boolean }>({});
-  const [selectedDriverIds, setSelectedDriverIds] = useState<string[]>([]);
-
-  const handleToggleSelect = (driverId: string) => {
-    setSelectedDriverIds(prev =>
-      prev.includes(driverId)
-        ? prev.filter(id => id !== driverId)
-        : [...prev, driverId]
-    );
-  };
-
-  const handleBulkStatusChange = (newStatus: 'Active' | 'On Leave' | 'Suspended' | 'Inactive') => {
-    selectedDriverIds.forEach(id => {
-      const drv = drivers.find(d => d.id === id);
-      if (drv) {
-        onUpdateDriver({
-          ...drv,
-          status: newStatus
-        });
-      }
-    });
-    setSelectedDriverIds([]);
-  };
 
   const handleRegenerateCode = (driver: Driver) => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -133,96 +111,7 @@ export default function StaffManager({
 
       </div>
 
-      {/* Select All and Bulk Actions Toolbar */}
-      {filteredDrivers.length > 0 && (
-        <div className="bg-white border border-gray-200/80 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-3xs" id="bulk-actions-toolbar">
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="flex items-center h-5">
-              <input
-                type="checkbox"
-                checked={filteredDrivers.length > 0 && filteredDrivers.every(d => selectedDriverIds.includes(d.id))}
-                onChange={() => {
-                  const allFilteredSelected = filteredDrivers.every(d => selectedDriverIds.includes(d.id));
-                  if (allFilteredSelected) {
-                    const filteredIds = filteredDrivers.map(d => d.id);
-                    setSelectedDriverIds(prev => prev.filter(id => !filteredIds.includes(id)));
-                  } else {
-                    const filteredIds = filteredDrivers.map(d => d.id);
-                    setSelectedDriverIds(prev => {
-                      const union = new Set([...prev, ...filteredIds]);
-                      return Array.from(union);
-                    });
-                  }
-                }}
-                className="w-4.5 h-4.5 text-indigo-600 bg-slate-50 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-                id="checkbox-select-all-drivers"
-              />
-            </div>
-            <label htmlFor="checkbox-select-all-drivers" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
-              {filteredDrivers.every(d => selectedDriverIds.includes(d.id)) ? 'Deselect All Candidates' : 'Select All Filtered Pilots'}
-            </label>
-            {selectedDriverIds.length > 0 && (
-              <span className="text-[11px] px-2.5 py-1 bg-indigo-50 text-indigo-600 font-extrabold rounded-full border border-indigo-150 animate-pulse">
-                {selectedDriverIds.length} SELECTED
-              </span>
-            )}
-          </div>
 
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1">Bulk Status Update:</span>
-            <button
-              onClick={() => handleBulkStatusChange('Active')}
-              disabled={selectedDriverIds.length === 0}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1 cursor-pointer border ${
-                selectedDriverIds.length > 0
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-3xs hover:bg-emerald-700'
-                  : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-              }`}
-              id="bulk-btn-set-active"
-            >
-              <Check className="w-3.5 h-3.5" />
-              Set Active
-            </button>
-            <button
-              onClick={() => handleBulkStatusChange('On Leave')}
-              disabled={selectedDriverIds.length === 0}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1 cursor-pointer border ${
-                selectedDriverIds.length > 0
-                  ? 'bg-amber-500 text-white border-amber-500 shadow-3xs hover:bg-amber-600'
-                  : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-              }`}
-              id="bulk-btn-set-onleave"
-            >
-              Set On Leave
-            </button>
-            <button
-              onClick={() => handleBulkStatusChange('Suspended')}
-              disabled={selectedDriverIds.length === 0}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1 cursor-pointer border ${
-                selectedDriverIds.length > 0
-                  ? 'bg-rose-600 text-white border-rose-600 shadow-3xs hover:bg-rose-700'
-                  : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-              }`}
-              id="bulk-btn-set-suspended"
-            >
-              <AlertTriangle className="w-3.5 h-3.5" />
-              Set Suspended
-            </button>
-            <button
-              onClick={() => handleBulkStatusChange('Inactive')}
-              disabled={selectedDriverIds.length === 0}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1 cursor-pointer border ${
-                selectedDriverIds.length > 0
-                  ? 'bg-slate-600 text-white border-slate-600 shadow-3xs hover:bg-slate-700'
-                  : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-              }`}
-              id="bulk-btn-set-inactive"
-            >
-              Set Inactive
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Main Drivers List / Desk Cards */}
       {filteredDrivers.length === 0 ? (
@@ -255,17 +144,6 @@ export default function StaffManager({
                 <div className="p-5 border-b border-gray-100 bg-gradient-to-b from-slate-50/60 to-white">
                   <div className="flex items-start gap-3.5">
                     
-                    {/* Selection Checkbox */}
-                    <div className="flex items-center shrink-0 h-12">
-                      <input
-                        type="checkbox"
-                        checked={selectedDriverIds.includes(drv.id)}
-                        onChange={() => handleToggleSelect(drv.id)}
-                        className="w-4.5 h-4.5 text-indigo-600 bg-slate-50 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-                        id={`driver-select-checkbox-${drv.id}`}
-                      />
-                    </div>
-
                     {drv.profilePicture ? (
                       <img
                         src={drv.profilePicture}
