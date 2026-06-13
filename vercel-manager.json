@@ -1,0 +1,22 @@
+{
+  "name": "fleet-manager-portal",
+  "version": 2,
+  "buildCommand": "npm run build:manager",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": "vite",
+  "env": {
+    "VITE_APP_ROLE": "manager"
+  },
+  "build": {
+    "env": {
+      "VITE_APP_ROLE": "manager"
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}

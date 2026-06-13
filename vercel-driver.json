@@ -1,0 +1,22 @@
+{
+  "name": "fleet-driver-portal",
+  "version": 2,
+  "buildCommand": "npm run build:driver",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": "vite",
+  "env": {
+    "VITE_APP_ROLE": "driver"
+  },
+  "build": {
+    "env": {
+      "VITE_APP_ROLE": "driver"
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}

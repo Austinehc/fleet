@@ -6,3 +6,19 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Vercel
+.vercel
+
+# Local development
+server.js
+*.local
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+Thumbs.db
