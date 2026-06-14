@@ -24,7 +24,7 @@ export const initialCars: CarAsset[] = [
     serviceLogs: [
       {
         id: 'svc-01-oil',
-        date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
         category: 'Oil Change',
         description: 'Engine oil and hybrid system coolant service.',
         cost: 120,
@@ -33,7 +33,7 @@ export const initialCars: CarAsset[] = [
       },
       {
         id: 'svc-02-tire',
-        date: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
         category: 'Tire Service',
         description: 'Rotated and balanced all-weather tires.',
         cost: 65,
@@ -44,7 +44,7 @@ export const initialCars: CarAsset[] = [
     fuelLogs: [
       {
         id: 'fuel-01',
-        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
         liters: 32,
         cost: 58,
         mileage: 124100,
@@ -52,7 +52,7 @@ export const initialCars: CarAsset[] = [
       },
       {
         id: 'fuel-02',
-        date: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
         liters: 35,
         cost: 61,
         mileage: 123500,
@@ -62,7 +62,7 @@ export const initialCars: CarAsset[] = [
     revenueLogs: [
       {
         id: 'rev-01-fare',
-        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
         amount: 320,
         category: 'Fare',
         description: 'Airport executive shuttle service shift completed.',
@@ -72,7 +72,7 @@ export const initialCars: CarAsset[] = [
       },
       {
         id: 'rev-02-rental',
-        date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
         amount: 240,
         category: 'Rental',
         description: 'Multi-hour private rental booking.',
@@ -82,7 +82,7 @@ export const initialCars: CarAsset[] = [
       },
       {
         id: 'rev-pending-01',
-        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
         amount: 450,
         category: 'Contract',
         description: 'Weekend corporate shuttle delegation contract. Awaiting manager validation.',
@@ -107,7 +107,7 @@ export const initialCars: CarAsset[] = [
     serviceLogs: [
       {
         id: 'svc-03-insp',
-        date: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
         category: 'Inspection',
         description: 'Corporate registration & safety inspection completed successfully.',
         cost: 85,
@@ -118,7 +118,7 @@ export const initialCars: CarAsset[] = [
     fuelLogs: [
       {
         id: 'fuel-03',
-        date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
         liters: 45,
         cost: 80,
         mileage: 89100,
@@ -128,7 +128,7 @@ export const initialCars: CarAsset[] = [
     revenueLogs: [
       {
         id: 'rev-03-delivery',
-        date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
         amount: 195,
         category: 'Delivery',
         description: 'Corporate document express delivery contract.',
@@ -138,7 +138,7 @@ export const initialCars: CarAsset[] = [
       },
       {
         id: 'rev-pending-02',
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0] || '',
         amount: 280,
         category: 'Fare',
         description: 'Standard city rideshare collection sheet logged by pilot.',
@@ -163,7 +163,7 @@ export const initialCars: CarAsset[] = [
     serviceLogs: [
       {
         id: 'svc-04-repair',
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0] || '',
         category: 'Repair',
         description: 'HV Battery cell diagnostic inspection and minor charging port harness repair.',
         cost: 350,
@@ -175,7 +175,7 @@ export const initialCars: CarAsset[] = [
     revenueLogs: [
       {
         id: 'rev-04-fare',
-        date: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
         amount: 150,
         category: 'Fare',
         description: 'Eco-Express green fares collection sheet.',

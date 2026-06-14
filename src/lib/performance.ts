@@ -1,8 +1,8 @@
 /**
- * Performance optimization utilities
+ * Performance optimization utilities with React hooks
  */
 
-import React, { useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useCallback, useMemo, useRef, useEffect, useState } from 'react';
 import { UI_CONSTANTS } from './constants';
 
 // Memoization helper for expensive calculations
@@ -19,7 +19,7 @@ export function useDebouncedCallback<T extends (...args: any[]) => any>(
   delay: number = UI_CONSTANTS.DEBOUNCE_DELAY
 ): T {
   const callbackRef = useRef(callback);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Update callback ref when callback changes
   useEffect(() => {
@@ -64,19 +64,103 @@ export function useThrottledCallback<T extends (...args: any[]) => any>(
   );
 }
 
+// Optimized polling hook with smart intervals
+export function useOptimizedPolling(
+  pollFunction: () => Promise<void>,
+  interval: number = 30000, // Default 30 seconds instead of 4
+  dependencies: React.DependencyList = []
+): { isPolling: boolean; forceRefresh: () => void; stopPolling: () => void; startPolling: () => void } {
+  const [isPolling, setIsPolling] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastPollRef = useRef(0);
+  const isActiveRef = useRef(true);
+
+  // Handle page visibility to pause polling when tab is inactive
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      isActiveRef.current = !document.hidden;
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        // Resume polling when tab becomes active again
+        const timeSinceLastPoll = Date.now() - lastPollRef.current;
+        if (timeSinceLastPoll > interval) {
+          forceRefresh();
+        }
+        startPolling();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [interval]);
+
+  const startPolling = useCallback(() => {
+    if (!isActiveRef.current || intervalRef.current) return;
+
+    setIsPolling(true);
+    intervalRef.current = setInterval(async () => {
+      if (isActiveRef.current) {
+        try {
+          await pollFunction();
+          lastPollRef.current = Date.now();
+        } catch (error) {
+          console.error('Polling error:', error);
+        }
+      }
+    }, interval);
+  }, [pollFunction, interval]);
+
+  const stopPolling = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setIsPolling(false);
+  }, []);
+
+  const forceRefresh = useCallback(async () => {
+    try {
+      await pollFunction();
+      lastPollRef.current = Date.now();
+    } catch (error) {
+      console.error('Force refresh error:', error);
+    }
+  }, [pollFunction]);
+
+  // Start/stop polling based on dependencies
+  useEffect(() => {
+    if (isActiveRef.current) {
+      startPolling();
+    }
+    return stopPolling;
+  }, dependencies);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return stopPolling;
+  }, [stopPolling]);
+
+  return { isPolling, forceRefresh, stopPolling, startPolling };
+}
+
 // Intersection observer hook for lazy loading
 export function useIntersectionObserver(
   elementRef: React.RefObject<Element>,
   options: IntersectionObserverInit = {}
 ) {
-  const [isIntersecting, setIsIntersecting] = React.useState(false);
+  const [isIntersecting, setIsIntersecting] = useState(false);
 
   useEffect(() => {
     const element = elementRef.current;
     if (!element) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => setIsIntersecting(entry.isIntersecting),
+      ([entry]) => {
+        if (entry) {
+          setIsIntersecting(entry.isIntersecting);
+        }
+      },
       options
     );
 
@@ -94,7 +178,7 @@ export function useVirtualList<T>(
   containerHeight: number,
   overscan: number = 5
 ) {
-  const [scrollTop, setScrollTop] = React.useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
 
   const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
   const endIndex = Math.min(
@@ -118,9 +202,9 @@ export function useVirtualList<T>(
 
 // Image lazy loading with placeholder
 export function useLazyImage(src: string, placeholder?: string) {
-  const [imageSrc, setImageSrc] = React.useState(placeholder || '');
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [hasError, setHasError] = React.useState(false);
+  const [imageSrc, setImageSrc] = useState(placeholder || '');
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     if (!src) return;
@@ -208,3 +292,25 @@ class PerformanceMonitor {
 }
 
 export const performanceMonitor = new PerformanceMonitor();
+
+// Memoized component wrapper
+export function memo<P extends object>(
+  Component: React.ComponentType<P>,
+  propsAreEqual?: (prevProps: P, nextProps: P) => boolean
+): React.ComponentType<P> {
+  return React.memo(Component, propsAreEqual);
+}
+
+// Hook for expensive calculations with dependency tracking
+export function useExpensiveCalculation<T>(
+  calculateFn: () => T,
+  dependencies: React.DependencyList,
+  label?: string
+): T {
+  return useMemo(() => {
+    const endTiming = label ? performanceMonitor.startTiming(label) : undefined;
+    const result = calculateFn();
+    endTiming?.();
+    return result;
+  }, dependencies);
+}

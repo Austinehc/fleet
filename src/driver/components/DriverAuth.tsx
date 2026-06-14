@@ -5,6 +5,7 @@ import { validatePinFormat, verifyPin, pinAttemptTracker } from '../../lib/auth'
 import { errorHandler, FleetError } from '../../lib/errorHandling';
 import { UI_CONSTANTS, ERROR_MESSAGES, AUTH_CONSTANTS } from '../../lib/constants';
 import { useDebouncedCallback } from '../../lib/performance';
+import { authService } from '../../lib/authService';
 
 interface DriverAuthProps {
   drivers: Driver[];
@@ -38,6 +39,7 @@ export default function DriverAuth({
       }, 1000);
       return () => clearInterval(timer);
     }
+    return undefined;
   }, [lockoutTime]);
 
   // Debounced input validation
@@ -90,30 +92,11 @@ export default function DriverAuth({
     }
 
     try {
-      // Find driver and verify PIN
+      // Find driver first
       const trimmedCode = enteredDriverCode.trim().toUpperCase();
-      let matchedDriver: Driver | null = null;
-      let authSuccess = false;
-
-      // In a real app, PINs would be hashed in the database
-      // For now, we'll simulate secure comparison while keeping existing functionality
-      for (const driver of drivers) {
-        if (driver.accessCode?.trim().toUpperCase() === trimmedCode) {
-          matchedDriver = driver;
-          authSuccess = true;
-          break;
-        }
-      }
-
-      if (authSuccess && matchedDriver) {
-        // Record successful attempt
-        pinAttemptTracker.recordAttempt('driver_auth', true);
-        
-        // Clear form and proceed
-        setEnteredDriverCode('');
-        setAttemptCount(0);
-        onAuthSuccess(matchedDriver.id, matchedDriver.fullName);
-      } else {
+      const matchedDriver = drivers.find(d => d.accessCode?.trim().toUpperCase() === trimmedCode);
+      
+      if (!matchedDriver) {
         // Record failed attempt
         pinAttemptTracker.recordAttempt('driver_auth', false);
         const newAttemptCount = attemptCount + 1;
@@ -131,6 +114,38 @@ export default function DriverAuth({
         }
 
         setDriverLoginError(errorMsg);
+        if (triggerErrorToast) triggerErrorToast('Authentication failed');
+        return;
+      }
+
+      // Use secure PIN verification via RPC call
+      const authResult = await authService.authenticateDriver(matchedDriver.id, trimmedCode);
+      
+      if (authResult.success) {
+        // Record successful attempt
+        pinAttemptTracker.recordAttempt('driver_auth', true);
+        
+        // Clear form and proceed
+        setEnteredDriverCode('');
+        setAttemptCount(0);
+        onAuthSuccess(matchedDriver.id, matchedDriver.fullName);
+      } else {
+        // Record failed attempt
+        pinAttemptTracker.recordAttempt('driver_auth', false);
+        const newAttemptCount = attemptCount + 1;
+        setAttemptCount(newAttemptCount);
+
+        const remainingAttempts = AUTH_CONSTANTS.MAX_LOGIN_ATTEMPTS - newAttemptCount;
+        let errorMsg = authResult.error || 'Invalid access code. Please verify and try again.';
+        
+        if (remainingAttempts > 0 && !authResult.error?.includes('locked')) {
+          errorMsg += ` ${remainingAttempts} attempts remaining.`;
+        } else if (authResult.error?.includes('locked')) {
+          const lockoutMs = pinAttemptTracker.getRemainingLockoutTime('driver_auth');
+          setLockoutTime(lockoutMs);
+        }
+
+        setDriverLoginError(errorMsg);
         if (triggerErrorToast) {
           triggerErrorToast('Authentication failed');
         }
@@ -138,10 +153,14 @@ export default function DriverAuth({
         // Log security event
         errorHandler.logError(
           new FleetError(
-            'Driver authentication failed',
+            'Driver authentication failed via secure RPC',
             'AUTH_FAILED',
             'medium',
-            { attemptCount: newAttemptCount, code: trimmedCode.substring(0, 2) + '****' }
+            { 
+              attemptCount: newAttemptCount, 
+              driverId: matchedDriver.id,
+              code: trimmedCode.substring(0, 2) + '****' 
+            }
           ),
           'Driver Authentication'
         );

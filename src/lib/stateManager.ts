@@ -1,8 +1,9 @@
 /**
- * Centralized state management to prevent race conditions
+ * Centralized state management with transaction support
  */
 
 import { CarAsset, Driver } from '../types';
+import { errorHandler } from './errorHandling';
 
 export type StateUpdateType = 'car' | 'driver' | 'batch';
 
@@ -14,10 +15,89 @@ export interface StateUpdate {
   timestamp: number;
 }
 
+export interface Transaction {
+  id: string;
+  updates: StateUpdate[];
+  status: 'pending' | 'committed' | 'rolled_back';
+  timestamp: number;
+}
+
 class StateManager {
   private updateQueue: StateUpdate[] = [];
   private isProcessing = false;
   private readonly processingDelay = 100; // ms
+  private transactions: Map<string, Transaction> = new Map();
+  private locks: Set<string> = new Set();
+
+  // Begin transaction for atomic updates
+  beginTransaction(): string {
+    const transactionId = crypto.randomUUID();
+    this.transactions.set(transactionId, {
+      id: transactionId,
+      updates: [],
+      status: 'pending',
+      timestamp: Date.now()
+    });
+    return transactionId;
+  }
+
+  // Add update to transaction
+  addToTransaction(transactionId: string, update: StateUpdate): boolean {
+    const transaction = this.transactions.get(transactionId);
+    if (!transaction || transaction.status !== 'pending') {
+      return false;
+    }
+
+    // Check for locks
+    if (this.locks.has(update.id)) {
+      throw new Error(`Resource ${update.id} is locked by another operation`);
+    }
+
+    transaction.updates.push(update);
+    return true;
+  }
+
+  // Commit transaction atomically
+  async commitTransaction(
+    transactionId: string,
+    executeUpdates: (updates: StateUpdate[]) => Promise<void>
+  ): Promise<boolean> {
+    const transaction = this.transactions.get(transactionId);
+    if (!transaction || transaction.status !== 'pending') {
+      return false;
+    }
+
+    // Lock all resources
+    const lockedResources = new Set<string>();
+    try {
+      for (const update of transaction.updates) {
+        if (this.locks.has(update.id)) {
+          throw new Error(`Resource ${update.id} is locked`);
+        }
+        this.locks.add(update.id);
+        lockedResources.add(update.id);
+      }
+
+      // Execute all updates atomically
+      await executeUpdates(transaction.updates);
+      
+      transaction.status = 'committed';
+      return true;
+    } catch (error) {
+      // Rollback on error
+      transaction.status = 'rolled_back';
+      errorHandler.logError(error as Error, `Transaction rollback: ${transactionId}`);
+      throw error;
+    } finally {
+      // Release locks
+      lockedResources.forEach(id => this.locks.delete(id));
+      
+      // Cleanup old transactions
+      setTimeout(() => {
+        this.transactions.delete(transactionId);
+      }, 60000); // Keep for 1 minute for debugging
+    }
+  }
 
   // Add update to queue with conflict resolution
   queueUpdate(update: StateUpdate): void {
@@ -112,6 +192,23 @@ class StateManager {
       }
     };
   }
+
+  // Get transaction status
+  getTransactionStatus(transactionId: string): Transaction | undefined {
+    return this.transactions.get(transactionId);
+  }
+
+  // Cleanup expired transactions
+  cleanupExpiredTransactions(): void {
+    const now = Date.now();
+    const expiry = 5 * 60 * 1000; // 5 minutes
+
+    for (const [id, transaction] of this.transactions) {
+      if (now - transaction.timestamp > expiry) {
+        this.transactions.delete(id);
+      }
+    }
+  }
 }
 
 export const stateManager = new StateManager();
@@ -142,33 +239,123 @@ export function updateDriverInList(
   );
 }
 
-// Atomic car-driver assignment update
-export function updateCarDriverAssignment(
+// Atomic car-driver assignment update with transaction support
+export async function updateCarDriverAssignment(
   cars: CarAsset[],
   drivers: Driver[],
   carId: string,
   newDriverId: string | null,
-  previousDriverId?: string | null
-): { cars: CarAsset[]; drivers: Driver[] } {
-  const updatedDrivers = drivers.map(driver => {
-    // Clear previous driver assignment
-    if (previousDriverId && driver.id === previousDriverId) {
-      return { ...driver, assignedCarId: null, status: 'On Leave' as const };
+  previousDriverId?: string | null,
+  persistFn?: (cars: CarAsset[], drivers: Driver[]) => Promise<void>
+): Promise<{ cars: CarAsset[]; drivers: Driver[]; success: boolean }> {
+  
+  // Start transaction
+  const transactionId = stateManager.beginTransaction();
+  
+  try {
+    // Add updates to transaction
+    if (previousDriverId) {
+      stateManager.addToTransaction(transactionId, {
+        id: previousDriverId,
+        type: 'driver',
+        operation: 'update',
+        data: { assignedCarId: null, status: 'On Leave' },
+        timestamp: Date.now()
+      });
     }
-    
-    // Set new driver assignment
-    if (newDriverId && driver.id === newDriverId) {
-      return { ...driver, assignedCarId: carId, status: 'Active' as const };
+
+    if (newDriverId) {
+      stateManager.addToTransaction(transactionId, {
+        id: newDriverId,
+        type: 'driver',
+        operation: 'update',
+        data: { assignedCarId: carId, status: 'Active' },
+        timestamp: Date.now()
+      });
     }
-    
-    return driver;
-  });
 
-  const updatedCars = cars.map(car =>
-    car.id === carId
-      ? { ...car, status: newDriverId ? 'Assigned' as const : 'Available' as const }
-      : car
-  );
+    stateManager.addToTransaction(transactionId, {
+      id: carId,
+      type: 'car',
+      operation: 'update',
+      data: { status: newDriverId ? 'Assigned' : 'Available' },
+      timestamp: Date.now()
+    });
 
-  return { cars: updatedCars, drivers: updatedDrivers };
+    // Apply updates
+    const updatedDrivers = drivers.map(driver => {
+      // Clear previous driver assignment
+      if (previousDriverId && driver.id === previousDriverId) {
+        return { ...driver, assignedCarId: null, status: 'On Leave' as const };
+      }
+      
+      // Set new driver assignment
+      if (newDriverId && driver.id === newDriverId) {
+        return { ...driver, assignedCarId: carId, status: 'Active' as const };
+      }
+      
+      return driver;
+    });
+
+    const updatedCars = cars.map(car =>
+      car.id === carId
+        ? { ...car, status: newDriverId ? 'Assigned' as const : 'Available' as const }
+        : car
+    );
+
+    // Commit transaction
+    const success = await stateManager.commitTransaction(transactionId, async (updates) => {
+      if (persistFn) {
+        await persistFn(updatedCars, updatedDrivers);
+      }
+    });
+
+    return { cars: updatedCars, drivers: updatedDrivers, success };
+
+  } catch (error) {
+    errorHandler.logError(error as Error, 'Car driver assignment transaction failed');
+    return { cars, drivers, success: false };
+  }
+}
+
+// Batch update multiple entities atomically
+export async function batchUpdate<T>(
+  items: T[],
+  updates: Array<{ id: string; changes: Partial<T> }>,
+  persistFn?: (items: T[]) => Promise<void>
+): Promise<{ items: T[]; success: boolean }> {
+  
+  const transactionId = stateManager.beginTransaction();
+  
+  try {
+    // Add all updates to transaction
+    updates.forEach(update => {
+      stateManager.addToTransaction(transactionId, {
+        id: update.id,
+        type: 'batch',
+        operation: 'update',
+        data: update.changes,
+        timestamp: Date.now()
+      });
+    });
+
+    // Apply updates
+    const updatedItems = items.map(item => {
+      const update = updates.find(u => (item as any).id === u.id);
+      return update ? { ...item, ...update.changes } : item;
+    });
+
+    // Commit transaction
+    const success = await stateManager.commitTransaction(transactionId, async () => {
+      if (persistFn) {
+        await persistFn(updatedItems);
+      }
+    });
+
+    return { items: updatedItems, success };
+
+  } catch (error) {
+    errorHandler.logError(error as Error, 'Batch update transaction failed');
+    return { items, success: false };
+  }
 }

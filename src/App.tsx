@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CarAsset, Driver } from './types';
 import { initialCars, initialDrivers } from './data';
 import ManagerApp from './ManagerApp';
@@ -24,23 +24,25 @@ import {
   deleteRevenueLogFromDB,
   deleteFuelLogFromDB
 } from './lib/supabase';
-import { Car, Shield, Database, Key, LogIn, UserPlus, Server, HelpCircle, LogOut } from 'lucide-react';
-import { errorHandler } from './lib/errorHandling';
-import { stateManager, updateCarDriverAssignment } from './lib/stateManager';
-import { UI_CONSTANTS } from './lib/constants';
-import { useDebouncedCallback, useThrottledCallback } from './lib/performance';
+import { Car, Shield, Database, LogIn } from 'lucide-react';
+import { useOptimizedPolling } from './lib/performance';
+import { authService, AuthState } from './lib/authService';
 
 export default function App() {
   const [dbConfigured, setDbConfigured] = useState<boolean>(isSupabaseConfigured());
   const [useLocalSandbox, setUseLocalSandbox] = useState<boolean>(false);
 
-  // --- Auth State ---
-  const [user, setUser] = useState<any>(null);
-  const [authLoading, setAuthLoading] = useState<boolean>(true);
+  // --- Auth State from AuthService ---
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    profile: null,
+    session: null,
+    loading: true,
+  });
   const [authEmail, setAuthEmail] = useState<string>('');
   const [authPassword, setAuthPassword] = useState<string>('');
+  const [authFullName, setAuthFullName] = useState<string>('');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [authRole, setAuthRole] = useState<'manager' | 'driver'>('manager');
   const [authError, setAuthError] = useState<string | null>(null);
   const [authMsg, setAuthMsg] = useState<string | null>(null);
 
@@ -79,30 +81,33 @@ export default function App() {
     return 'manager';
   });
 
-  // Sync URL query updates with userRole state dynamically
+  // Subscribe to auth service changes
   useEffect(() => {
-    // Don't allow role changes if locked by environment
+    const unsubscribe = authService.subscribe(setAuthState);
+    return unsubscribe;
+  }, []);
+
+  // Update role based on auth state or URL parameters
+  useEffect(() => {
     const envLockedRole = (import.meta as any).env?.VITE_APP_ROLE;
     if (envLockedRole === 'driver' || envLockedRole === 'manager') {
-      return; // Skip URL-based role switching when environment role is set
+      setUserRole(envLockedRole);
+      return;
     }
     
-    const handleLocationChange = () => {
-      const params = new URLSearchParams(window.location.search);
-      const roleParam = params.get('role');
-      if (roleParam === 'driver') {
-        setUserRole('driver');
-        localStorage.setItem('fleet_user_role', 'driver');
-      } else if (roleParam === 'manager') {
-        setUserRole('manager');
-        localStorage.setItem('fleet_user_role', 'manager');
-      }
-    };
+    // Check URL parameters
+    const params = new URLSearchParams(window.location.search);
+    const roleParam = params.get('role');
+    if (roleParam === 'driver' || roleParam === 'manager') {
+      setUserRole(roleParam);
+      return;
+    }
     
-    handleLocationChange();
-    window.addEventListener('popstate', handleLocationChange);
-    return () => window.removeEventListener('popstate', handleLocationChange);
-  }, []);
+    // Use role from auth service if available
+    if (authState.profile?.role) {
+      setUserRole(authState.profile.role);
+    }
+  }, [authState.profile]);
 
   // Sync userRole state updates to localStorage
   useEffect(() => {
@@ -119,54 +124,10 @@ export default function App() {
   const envLockedRole = (import.meta as any).env?.VITE_APP_ROLE;
   const isLocked = !!envLockedRole;
 
-  // --- Authentication state synchronization on start ---
-  useEffect(() => {
-    if (!dbConfigured || !supabase) {
-      setAuthLoading(false);
-      return;
-    }
-
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setUser(session.user);
-        const params = new URLSearchParams(window.location.search);
-        const roleParam = params.get('role');
-        const role = roleParam === 'driver' || roleParam === 'manager'
-          ? roleParam
-          : (session.user.user_metadata?.role || 'manager');
-        setUserRole(envLockedRole || role);
-      }
-      setAuthLoading(false);
-    }).catch(err => {
-      console.error('Session retrieve error:', err);
-      setAuthLoading(false);
-    });
-
-    // Listen to Auth State Changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        setUser(session.user);
-        const params = new URLSearchParams(window.location.search);
-        const roleParam = params.get('role');
-        const role = roleParam === 'driver' || roleParam === 'manager'
-          ? roleParam
-          : (session.user.user_metadata?.role || 'manager');
-        setUserRole(envLockedRole || role);
-      } else {
-        setUser(null);
-      }
-    });
-
-    return () => {
-      subscription?.unsubscribe();
-    };
-  }, [dbConfigured]);
-
   // --- Push changes from Supabase to State or Fallback to LocalStorage ---
   useEffect(() => {
     async function loadBackendData() {
-      const shouldLoadFromDb = isSupabaseConfigured() && !useLocalSandbox && supabase && (user || userRole === 'driver');
+      const shouldLoadFromDb = isSupabaseConfigured() && !useLocalSandbox && supabase && (authState.user || userRole === 'driver');
       if (!shouldLoadFromDb) {
         // Fallback or Local Storage Loading
         const savedCars = localStorage.getItem('fleet_cars');
@@ -199,14 +160,11 @@ export default function App() {
     }
 
     loadBackendData();
-  }, [supabase, user, useLocalSandbox, dbConfigured, userRole]);
+  }, [supabase, authState.user, useLocalSandbox, dbConfigured, userRole]);
 
-  // --- Periodic background poll updates from Supabase to keep driver & manager screens accurate live ---
-  useEffect(() => {
-    const shouldPoll = isSupabaseConfigured() && !useLocalSandbox && supabase && (user || userRole === 'driver');
-    if (!shouldPoll) return;
-
-    const intervalId = setInterval(async () => {
+  // --- Optimized periodic background poll updates from Supabase to keep driver & manager screens accurate live ---
+  const { startPolling, stopPolling } = useOptimizedPolling(
+    async () => {
       // Avoid overwriting local state or making fetch request if write transactions are actively in flight
       if (writeTransactionsInFlight.current > 0) {
         return;
@@ -233,10 +191,20 @@ export default function App() {
       } catch (err) {
         console.warn('Background database synchronization poll failed:', err);
       }
-    }, 4000); // Poll every 4 seconds for snappy status updates
+    },
+    5000 // Optimized interval: 5 seconds for responsive updates
+  );
 
-    return () => clearInterval(intervalId);
-  }, [supabase, user, useLocalSandbox, dbConfigured, userRole]);
+  useEffect(() => {
+    const shouldPoll = isSupabaseConfigured() && !useLocalSandbox && supabase && (authState.user || userRole === 'driver');
+    if (shouldPoll) {
+      startPolling();
+    } else {
+      stopPolling();
+    }
+
+    return () => stopPolling();
+  }, [supabase, authState.user, useLocalSandbox, dbConfigured, userRole, startPolling, stopPolling]);
 
   // --- Save Sandbox state to localStorage whenever it changes ---
   useEffect(() => {
@@ -267,39 +235,30 @@ export default function App() {
       return;
     }
 
+    if (authMode === 'signup' && !authFullName) {
+      setAuthError('Please provide your full name for account creation.');
+      return;
+    }
+
     try {
       if (authMode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({
-          email: authEmail,
-          password: authPassword,
-          options: {
-            data: {
-              role: authRole
-            }
-          }
-        });
-
-        if (error) throw error;
+        const result = await authService.signUpManager(authEmail, authPassword, authFullName);
         
-        if (data.user && data.session) {
-          setUser(data.user);
-          setUserRole(envLockedRole || authRole);
+        if (result.success) {
           setAuthMsg('Account registered successfully! Welcome.');
+          setAuthMode('login'); // Switch to login after successful signup
         } else {
-          setAuthMsg('Registration initiated! Please verify your password / verification link if required.');
+          setAuthError(result.error || 'Registration failed');
         }
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: authEmail,
-          password: authPassword
-        });
+        const result = await authService.signIn(authEmail, authPassword);
 
-        if (error) throw error;
-
-        if (data.user) {
-          setUser(data.user);
-          const role = data.user.user_metadata?.role || 'manager';
-          setUserRole(envLockedRole || role);
+        if (result.success) {
+          // Auth service will handle state updates via subscription
+          setAuthEmail('');
+          setAuthPassword('');
+        } else {
+          setAuthError(result.error || 'Authentication failed');
         }
       }
     } catch (err: any) {
@@ -309,12 +268,10 @@ export default function App() {
   };
 
   const handleSignOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
-    setUser(null);
+    await authService.signOut();
     setAuthEmail('');
     setAuthPassword('');
+    setAuthFullName('');
   };
 
   // --- Wrapped State Proxy Sync Engine ---
@@ -507,7 +464,7 @@ export default function App() {
   };
 
   // --- Render Authentication and Connection Setup Panel ---
-  if (authLoading) {
+  if (authState.loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-805 space-y-4" id="auth-loading-screen">
         <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center animate-spin">
@@ -522,7 +479,7 @@ export default function App() {
   }
 
   // Show Auth Card if Supabase is Configured and user is NOT logged in currently, AND we have not bypassed with Local Sandbox
-  if (dbConfigured && !user && !useLocalSandbox && userRole === 'manager') {
+  if (dbConfigured && !authState.user && !useLocalSandbox && userRole === 'manager') {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col items-center justify-center p-4 relative overflow-hidden" id="auth-unauthenticated-screen">
         {/* Abstract background blur circles */}
@@ -623,6 +580,21 @@ export default function App() {
                 id="auth-input-email"
               />
             </div>
+
+            {authMode === 'signup' && (
+              <div className="space-y-1">
+                <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={authFullName}
+                  onChange={(e) => setAuthFullName(e.target.value)}
+                  placeholder="e.g. John Smith"
+                  className="w-full bg-slate-50 border border-gray-200 focus:border-indigo-500 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:outline-none transition-colors"
+                  id="auth-input-fullname"
+                />
+              </div>
+            )}
 
             <div className="space-y-1">
               <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Access PIN / Password</label>
