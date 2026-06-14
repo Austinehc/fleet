@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Key, UserCheck, Shield, Clock, AlertTriangle } from 'lucide-react';
+import { UserCheck, Shield, Clock, AlertTriangle } from 'lucide-react';
 import { Driver } from '../../types';
 import { validatePinFormat, pinAttemptTracker } from '../../lib/auth';
 import { errorHandler, FleetError } from '../../lib/errorHandling';
@@ -184,8 +184,8 @@ export default function DriverAuth({
         
         {/* Brand/Security Icon */}
         <div className="space-y-3">
-          <div className="w-14 h-14 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
-            <Key className="w-6 h-6" id="drv-pin-header-icon" />
+          <div className="w-16 h-16 flex items-center justify-center mx-auto">
+            <img src="/logo.svg" alt="North Links" className="w-full h-full object-contain" />
           </div>
           <div className="space-y-1">
             <h3 className="font-extrabold text-gray-900 text-base uppercase font-sans tracking-wide">North Links Driver portal</h3>

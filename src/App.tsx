@@ -23,7 +23,7 @@ import {
   deleteRevenueLogFromDB,
   deleteFuelLogFromDB
 } from './lib/supabase';
-import { Car, Shield, Database, LogIn } from 'lucide-react';
+import { Shield, Database, LogIn } from 'lucide-react';
 import { useOptimizedPolling } from './lib/performance';
 import { authService, AuthState } from './lib/authService';
 
@@ -447,8 +447,8 @@ export default function App() {
   if (authState.loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-805 space-y-4" id="auth-loading-screen">
-        <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center animate-spin">
-          <Car className="w-6 h-6 text-indigo-600" />
+        <div className="w-16 h-16 flex items-center justify-center animate-pulse">
+          <img src="/logo.svg" alt="North Links" className="w-full h-full object-contain" />
         </div>
         <div className="text-center animate-none">
           <p className="font-bold text-sm tracking-wider uppercase font-sans text-slate-800">Fleet Cloud Assets</p>
@@ -468,8 +468,8 @@ export default function App() {
 
         <div className="max-w-md w-full bg-white border border-gray-200/80 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 z-10 animate-fade-in" id="auth-form-card">
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center mx-auto shadow-md">
-              <Car className="w-6 h-6 text-white" />
+            <div className="w-16 h-16 flex items-center justify-center mx-auto">
+              <img src="/logo.svg" alt="North Links" className="w-full h-full object-contain" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900 tracking-tight uppercase font-sans">North links Manager Portal</h2>
@@ -558,7 +558,9 @@ export default function App() {
       <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col items-center justify-center p-4 relative" id="auth-unconfigured-screen">
         <div className="max-w-xl w-full bg-white border border-gray-200 rounded-3xl shadow-xl p-6 sm:p-8 space-y-6" id="setup-card">
           <div className="text-center space-y-2">
-            <Database className="w-12 h-12 text-indigo-600 mx-auto animate-pulse" />
+            <div className="w-16 h-16 flex items-center justify-center mx-auto">
+              <img src="/logo.svg" alt="North Links" className="w-full h-full object-contain" />
+            </div>
             <h1 className="text-lg font-bold text-slate-900 font-sans uppercase tracking-wide">Backend Database Needed</h1>
             <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
               Ready to migrate to a real Supabase database and Cloudinary storage? Please define the credentials in your local environment parameters.
