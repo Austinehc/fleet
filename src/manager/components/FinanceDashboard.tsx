@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Coins, Check, CheckCircle2, Clock, Car, Search, FileText, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { ResponsiveContainer, ComposedChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { CarAsset } from '../../types';
-// @ts-ignore
-import html2pdf from 'html2pdf.js';
 
 interface FinanceDashboardProps {
   cars: CarAsset[];
@@ -282,10 +280,14 @@ export default function FinanceDashboard({
     };
 
     try {
-      // @ts-ignore
-      const pdfExporter = html2pdf.default || html2pdf;
+      // Access html2pdf from global window object (loaded via CDN)
+      const html2pdf = (window as any).html2pdf;
+      if (!html2pdf) {
+        alert('PDF export library not loaded. Please refresh the page and try again.');
+        return;
+      }
       
-      pdfExporter()
+      html2pdf()
         .set(opt)
         .from(element)
         .save()
