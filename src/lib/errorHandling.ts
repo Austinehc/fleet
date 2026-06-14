@@ -9,7 +9,7 @@ export interface AppError {
   message: string;
   details?: any;
   timestamp: number;
-  stack?: string;
+  stack: string;
 }
 
 export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
@@ -46,7 +46,7 @@ class ErrorHandler {
       message: error.message,
       details: error instanceof FleetError ? error.details : { context },
       timestamp: Date.now(),
-      stack: error.stack,
+      stack: error.stack || '',
     };
 
     // Add to log

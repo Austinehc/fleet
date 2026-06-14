@@ -1,5 +1,5 @@
 import React from 'react';
-import { Car, AlertTriangle, Gauge, Wrench } from 'lucide-react';
+import { AlertTriangle, Gauge, Wrench } from 'lucide-react';
 import { CarAsset, Driver } from '../../types';
 
 interface DriverCarSpecsProps {

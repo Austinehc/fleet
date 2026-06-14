@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, AlertCircle, CheckCircle } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import { CarAsset, ServiceLog } from '../../types';
 import { 
   validateVIN, 
@@ -8,8 +8,6 @@ import {
   sanitizeString,
   validateDescription 
 } from '../../lib/validation';
-import { VALIDATION_LIMITS, VEHICLE_STATUS, ERROR_MESSAGES } from '../../lib/constants';
-import { useDebouncedCallback } from '../../lib/performance';
 
 interface AddCarFormProps {
   onAddCar: (newCar: CarAsset) => void;
@@ -35,176 +33,45 @@ export default function AddCarForm({
   const [newCarMileage, setNewCarMileage] = useState<number>(0);
   const [newCarStatus, setNewCarStatus] = useState<CarAsset['status']>('Available');
 
-  // Validation states
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   // Initial service state
   const [includeInitialService, setIncludeInitialService] = useState(false);
   const [initialServiceBy, setInitialServiceBy] = useState('');
   const [initialServiceCost, setInitialServiceCost] = useState<number>(0);
   const [initialServiceDesc, setInitialServiceDesc] = useState('');
 
-  // Debounced validation functions
-  const validateField = useDebouncedCallback((field: string, value: any) => {
-    const newErrors = { ...errors };
-
-    switch (field) {
-      case 'make':
-      case 'model':
-        if (!value.trim()) {
-          newErrors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
-        } else if (value.length > VALIDATION_LIMITS.NAME_MAX_LENGTH) {
-          newErrors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} must be less than ${VALIDATION_LIMITS.NAME_MAX_LENGTH} characters`;
-        } else {
-          delete newErrors[field];
-        }
-        break;
-
-      case 'year':
-        const currentYear = new Date().getFullYear();
-        const yearValidation = validateNumber(value, 1900, currentYear + 1, 'Year');
-        if (!yearValidation.valid) {
-          newErrors[field] = yearValidation.error!;
-        } else {
-          delete newErrors[field];
-        }
-        break;
-
-      case 'plate':
-        const plateValidation = validatePlateNumber(value);
-        if (!plateValidation.valid) {
-          newErrors[field] = plateValidation.error!;
-        } else {
-          delete newErrors[field];
-        }
-        break;
-
-      case 'vin':
-        const vinValidation = validateVIN(value);
-        if (!vinValidation.valid) {
-          newErrors[field] = vinValidation.error!;
-        } else {
-          delete newErrors[field];
-        }
-        break;
-
-      case 'mileage':
-        const mileageValidation = validateNumber(value, 0, 1000000, 'Mileage');
-        if (!mileageValidation.valid) {
-          newErrors[field] = mileageValidation.error!;
-        } else {
-          delete newErrors[field];
-        }
-        break;
-
-      case 'color':
-        if (!value.trim()) {
-          newErrors[field] = 'Color is required';
-        } else if (value.length > VALIDATION_LIMITS.NAME_MAX_LENGTH) {
-          newErrors[field] = `Color must be less than ${VALIDATION_LIMITS.NAME_MAX_LENGTH} characters`;
-        } else {
-          delete newErrors[field];
-        }
-        break;
-
-      case 'initialServiceDesc':
-        if (value.trim()) {
-          const descValidation = validateDescription(value);
-          if (!descValidation.valid) {
-            newErrors[field] = descValidation.error!;
-          } else {
-            delete newErrors[field];
-          }
-        } else {
-          delete newErrors[field];
-        }
-        break;
-    }
-
-    setErrors(newErrors);
-  }, 300);
-
-  // Input change handlers with validation
-  const handleMakeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = sanitizeString(e.target.value);
-    setNewCarMake(value);
-    validateField('make', value);
-  };
-
-  const handleModelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = sanitizeString(e.target.value);
-    setNewCarModel(value);
-    validateField('model', value);
-  };
-
-  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    setNewCarYear(value);
-    validateField('year', value);
-  };
-
-  const handlePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toUpperCase();
-    setNewCarPlate(value);
-    validateField('plate', value);
-  };
-
-  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = sanitizeString(e.target.value);
-    setNewCarColor(value);
-    validateField('color', value);
-  };
-
-  const handleVinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toUpperCase();
-    setNewCarVin(value);
-    validateField('vin', value);
-  };
-
-  const handleMileageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value) || 0;
-    setNewCarMileage(value);
-    validateField('mileage', value);
-  };
-
-  const handleServiceDescChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setInitialServiceDesc(value);
-    if (includeInitialService) {
-      validateField('initialServiceDesc', value);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Validate all fields
-    const validationErrors: Record<string, string> = {};
-
-    if (!newCarMake.trim()) validationErrors.make = 'Make is required';
-    if (!newCarModel.trim()) validationErrors.model = 'Model is required';
-    if (!newCarPlate.trim()) validationErrors.plate = 'Plate number is required';
-    if (!newCarColor.trim()) validationErrors.color = 'Color is required';
-    if (!newCarVin.trim()) validationErrors.vin = 'VIN is required';
+    // Basic validation
+    if (!newCarMake.trim() || !newCarModel.trim() || !newCarPlate.trim() || !newCarColor.trim()) {
+      alert('Please fill in all required fields (Make, Model, Plate, Color)');
+      return;
+    }
 
     // Additional validations
     const plateValidation = validatePlateNumber(newCarPlate);
-    if (!plateValidation.valid) validationErrors.plate = plateValidation.error!;
+    if (!plateValidation.valid) {
+      alert(plateValidation.error!);
+      return;
+    }
 
-    const vinValidation = validateVIN(newCarVin);
-    if (!vinValidation.valid) validationErrors.vin = vinValidation.error!;
+    if (newCarVin.trim()) {
+      const vinValidation = validateVIN(newCarVin);
+      if (!vinValidation.valid) {
+        alert(vinValidation.error!);
+        return;
+      }
+    }
 
     const yearValidation = validateNumber(newCarYear, 1900, new Date().getFullYear() + 1, 'Year');
-    if (!yearValidation.valid) validationErrors.year = yearValidation.error!;
+    if (!yearValidation.valid) {
+      alert(yearValidation.error!);
+      return;
+    }
 
     const mileageValidation = validateNumber(newCarMileage, 0, 1000000, 'Mileage');
-    if (!mileageValidation.valid) validationErrors.mileage = mileageValidation.error!;
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      setIsSubmitting(false);
+    if (!mileageValidation.valid) {
+      alert(mileageValidation.error!);
       return;
     }
 
@@ -217,7 +84,7 @@ export default function AddCarForm({
         if (descValidation.valid) {
           initialServices.push({
             id: `svc-${Date.now()}`,
-            date: new Date().toISOString().split('T')[0],
+            date: new Date().toISOString().split('T')[0] || '',
             category: 'Inspection',
             description: descValidation.value!,
             cost: Math.max(0, initialServiceCost),
@@ -249,9 +116,7 @@ export default function AddCarForm({
       onClose();
     } catch (error) {
       console.error('Error creating car:', error);
-      setErrors({ submit: 'Failed to create car. Please try again.' });
-    } finally {
-      setIsSubmitting(false);
+      alert('Failed to create car. Please try again.');
     }
   };
 
@@ -444,7 +309,7 @@ export default function AddCarForm({
                       type="number"
                       placeholder="0"
                       value={initialServiceCost || ''}
-                      onChange={(e) => setIncludeInitialService && setInitialServiceCost(Number(e.target.value))}
+                      onChange={(e) => includeInitialService && setInitialServiceCost(Number(e.target.value))}
                       className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs"
                       id="input-init-serv-cost"
                     />

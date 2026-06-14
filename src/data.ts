@@ -5,9 +5,6 @@
 
 import { CarAsset, Driver } from './types';
 
-// Helper to generate IDs
-const uuid = () => Math.random().toString(36).substring(2, 9);
-
 export const initialCars: CarAsset[] = [
   {
     id: 'car-prius-01',

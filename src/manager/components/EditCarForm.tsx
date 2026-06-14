@@ -1,20 +1,16 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { CarAsset, Driver, ServiceLog } from '../../types';
 import { 
   Wrench, 
   User, 
   Settings, 
-  Calendar, 
   Activity, 
   Mail, 
   Phone, 
   Plus, 
-  Coins, 
   ShieldCheck, 
   Gauge, 
   Check, 
-  Clock, 
-  FileText,
   Upload,
   Camera
 } from 'lucide-react';
@@ -106,7 +102,7 @@ export default function EditCarForm({
 
     const newLog: ServiceLog = {
       id: `svc-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split('T')[0] || '',
       category: logCategory,
       description: logDescription.trim(),
       cost: Number(logCost),

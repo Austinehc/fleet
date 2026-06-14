@@ -1,23 +1,18 @@
-import React from 'react';
-import { Car, User, Plus, Coins, TrendingUp, Users, LogOut } from 'lucide-react';
+import { Car, User, Plus, Coins, Users, LogOut } from 'lucide-react';
 import { CarAsset } from '../../types';
 
 interface ManagerHeaderProps {
   activeTab: 'fleet' | 'staff' | 'finance';
   setActiveTab: (tab: 'fleet' | 'staff' | 'finance') => void;
-  userRole: 'manager' | 'driver';
-  setUserRole?: (role: 'manager' | 'driver') => void;
   onAddCarTrigger: () => void;
   onAddDriverTrigger: () => void;
   cars?: CarAsset[];
-  onSignOut?: () => void;
+  onSignOut?: (() => void) | undefined;
 }
 
 export default function ManagerHeader({
   activeTab,
   setActiveTab,
-  userRole,
-  setUserRole,
   onAddCarTrigger,
   onAddDriverTrigger,
   cars = [],

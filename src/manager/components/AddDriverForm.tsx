@@ -87,10 +87,14 @@ export default function AddDriverForm({
       phone: newDrvPhone || 'Unspecified',
       status: newDrvStatus,
       assignedCarId: newDrvAssignedCarId || null,
-      profilePicture: newDrvPhoto || undefined,
       accessCode: code,
       createdAt: new Date().toISOString()
     };
+    
+    // Add profilePicture only if provided
+    if (newDrvPhoto) {
+      createdDriver.profilePicture = newDrvPhoto;
+    }
 
     // Update state
     setDrivers(prev => [createdDriver, ...prev]);

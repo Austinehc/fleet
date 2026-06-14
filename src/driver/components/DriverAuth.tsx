@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Key, UserCheck, Shield, ChevronLeft, Clock, AlertTriangle } from 'lucide-react';
 import { Driver } from '../../types';
-import { validatePinFormat, verifyPin, pinAttemptTracker } from '../../lib/auth';
+import { validatePinFormat, pinAttemptTracker } from '../../lib/auth';
 import { errorHandler, FleetError } from '../../lib/errorHandling';
-import { UI_CONSTANTS, ERROR_MESSAGES, AUTH_CONSTANTS } from '../../lib/constants';
+import { ERROR_MESSAGES, AUTH_CONSTANTS } from '../../lib/constants';
 import { useDebouncedCallback } from '../../lib/performance';
 import { authService } from '../../lib/authService';
 

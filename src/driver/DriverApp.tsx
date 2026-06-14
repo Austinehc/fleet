@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Car, CheckCircle2, LogOut, Loader2, XCircle, AlertTriangle } from 'lucide-react';
+import { Car, CheckCircle2, LogOut, Loader2, XCircle } from 'lucide-react';
 import { CarAsset, Driver } from '../types';
 
 import DriverAuth from './components/DriverAuth';
@@ -13,8 +13,6 @@ interface DriverAppProps {
   setCars: React.Dispatch<React.SetStateAction<CarAsset[]>>;
   drivers: Driver[];
   setDrivers: React.Dispatch<React.SetStateAction<Driver[]>>;
-  userRole?: 'manager' | 'driver';
-  setUserRole?: (role: 'manager' | 'driver') => void;
   onSignOut?: () => void;
 }
 
@@ -23,8 +21,6 @@ export default function DriverApp({
   setCars,
   drivers,
   setDrivers,
-  userRole,
-  setUserRole,
   onSignOut
 }: DriverAppProps) {
   // --- Driver Portal State ---

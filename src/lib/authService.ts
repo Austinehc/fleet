@@ -4,7 +4,7 @@
 
 import { supabase } from './supabase';
 import { User, Session } from '@supabase/supabase-js';
-import { errorHandler, FleetError } from './errorHandling';
+import { errorHandler } from './errorHandling';
 
 export interface UserProfile {
   id: string;
@@ -56,7 +56,7 @@ class AuthService {
       }
 
       // Listen for auth changes
-      supabase.auth.onAuthStateChange(async (event, session) => {
+      supabase.auth.onAuthStateChange(async (_event, session) => {
         await this.handleSessionChange(session);
       });
 
@@ -165,7 +165,7 @@ class AuthService {
     }
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       });

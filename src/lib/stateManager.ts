@@ -304,7 +304,7 @@ export async function updateCarDriverAssignment(
     );
 
     // Commit transaction
-    const success = await stateManager.commitTransaction(transactionId, async (updates) => {
+    const success = await stateManager.commitTransaction(transactionId, async (_updates) => {
       if (persistFn) {
         await persistFn(updatedCars, updatedDrivers);
       }

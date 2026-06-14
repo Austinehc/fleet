@@ -30,7 +30,10 @@ export function generateSecurePin(): string {
   crypto.getRandomValues(array);
   
   for (let i = 0; i < 6; i++) {
-    result += chars[array[i] % chars.length];
+    const arrayValue = array[i];
+    if (arrayValue !== undefined) {
+      result += chars[arrayValue % chars.length];
+    }
   }
   return result;
 }

@@ -1,8 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { CarAsset, Driver, ServiceLog, RevenueLog, FuelLog } from '../types';
-import { errorHandler, FleetError } from './errorHandling';
-import { DB_CONSTANTS } from './constants';
-import { validateEmail, validateVIN, validatePlateNumber, sanitizeString } from './validation';
+import { errorHandler } from './errorHandling';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';

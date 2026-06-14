@@ -17,7 +17,7 @@ export default function DriverLogForms({
   const [driverLogSubTab, setDriverLogSubTab] = useState<'maintenance' | 'cashing'>('maintenance');
 
   // Maintenance form state
-  const [drvSvcDate, setDrvSvcDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [drvSvcDate, setDrvSvcDate] = useState<string>(new Date().toISOString().split('T')[0] || '');
   const [drvSvcCat, setDrvSvcCat] = useState<ServiceLog['category']>('Maintenance');
   const [drvSvcDesc, setDrvSvcDesc] = useState('');
   const [drvSvcCost, setDrvSvcCost] = useState<number>(0);
@@ -33,7 +33,7 @@ export default function DriverLogForms({
   }, [assignedCar, lastCarId]);
 
   // Cashing form state
-  const [drvRevDate, setDrvRevDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [drvRevDate, setDrvRevDate] = useState<string>(new Date().toISOString().split('T')[0] || '');
   const [drvRevCat, setDrvRevCat] = useState<RevenueLog['category']>('Fare');
   const [drvRevDesc, setDrvRevDesc] = useState('');
   const [drvRevAmount, setDrvRevAmount] = useState<number>(0);
@@ -82,7 +82,7 @@ export default function DriverLogForms({
     setDrvSvcDesc('');
     setDrvSvcCost(0);
     setDrvSvcMiles(nextMileage);
-    setDrvSvcDate(new Date().toISOString().split('T')[0]);
+    setDrvSvcDate(new Date().toISOString().split('T')[0] || '');
     setDrvSvcCat('Maintenance');
 
     triggerSuccess('Maintenance / Service Event logged successfully, and auto-synced with Manager Hub!');
@@ -124,7 +124,7 @@ export default function DriverLogForms({
     // Reset Form
     setDrvRevAmount(0);
     setDrvRevDesc('');
-    setDrvRevDate(new Date().toISOString().split('T')[0]);
+    setDrvRevDate(new Date().toISOString().split('T')[0] || '');
     setDrvRevCat('Fare');
 
     triggerSuccess('Cashing / Revenue receipt submitted successfully! Waiting for manager approval.');

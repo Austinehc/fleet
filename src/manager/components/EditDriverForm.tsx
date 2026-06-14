@@ -70,9 +70,13 @@ export default function EditDriverForm({
       email: editDrvEmail.trim(),
       phone: editDrvPhone.trim(),
       status: editDrvStatus,
-      accessCode: editDrvAccessCode.trim().toUpperCase(),
-      profilePicture: editDrvPhoto || undefined
+      accessCode: editDrvAccessCode.trim().toUpperCase()
     };
+    
+    // Add profilePicture only if provided
+    if (editDrvPhoto) {
+      updatedDriver.profilePicture = editDrvPhoto;
+    }
 
     onSave(updatedDriver);
   };

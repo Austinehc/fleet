@@ -1,4 +1,3 @@
-import React from 'react';
 import { Driver } from '../../types';
 
 interface DriverProfileProps {

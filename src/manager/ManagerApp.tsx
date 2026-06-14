@@ -16,8 +16,6 @@ interface ManagerAppProps {
   setCars: React.Dispatch<React.SetStateAction<CarAsset[]>>;
   drivers: Driver[];
   setDrivers: React.Dispatch<React.SetStateAction<Driver[]>>;
-  userRole?: 'manager' | 'driver';
-  setUserRole?: (role: 'manager' | 'driver') => void;
   onSignOut?: () => void;
   dataLoading?: boolean;
 }
@@ -27,8 +25,6 @@ export default function ManagerApp({
   setCars,
   drivers,
   setDrivers,
-  userRole = 'manager',
-  setUserRole,
   onSignOut,
   dataLoading = false
 }: ManagerAppProps) {
@@ -38,7 +34,6 @@ export default function ManagerApp({
   // Trigger Sheet Modals state
   const [isAddingCar, setIsAddingCar] = useState(false);
   const [isAddingDriver, setIsAddingDriver] = useState(false);
-  const [isManagingDrivers, setIsManagingDrivers] = useState(false);
   const [editingCar, setEditingCar] = useState<CarAsset | null>(null);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
 
@@ -48,12 +43,6 @@ export default function ManagerApp({
 
   // Fleet dashboard highlight car selection
   const [selectedCarId, setSelectedCarId] = useState<string | null>(null);
-
-  // Handlers for driver additions & saves
-  const handleAddNewDriver = (newDrv: Driver) => {
-    setDrivers(prev => [...prev, newDrv]);
-    setIsAddingDriver(false);
-  };
 
   const handleUpdateDriver = (updatedDrv: Driver) => {
     setDrivers(prev => prev.map(d => d.id === updatedDrv.id ? updatedDrv : d));
@@ -105,8 +94,6 @@ export default function ManagerApp({
       <ManagerHeader
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        userRole={userRole}
-        setUserRole={setUserRole}
         onAddCarTrigger={() => setIsAddingCar(true)}
         onAddDriverTrigger={() => setIsAddingDriver(true)}
         cars={cars}
@@ -126,7 +113,6 @@ export default function ManagerApp({
             onEditDriver={setEditingDriver}
             onManageDrivers={() => {
               setActiveTab('staff');
-              setIsManagingDrivers(true);
             }}
             setShowCamera={setShowCamera}
             setNewCarPhoto={setNewCarPhoto}

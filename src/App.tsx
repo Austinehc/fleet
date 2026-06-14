@@ -41,8 +41,6 @@ export default function App() {
   });
   const [authEmail, setAuthEmail] = useState<string>('');
   const [authPassword, setAuthPassword] = useState<string>('');
-  const [authFullName, setAuthFullName] = useState<string>('');
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [authError, setAuthError] = useState<string | null>(null);
   const [authMsg, setAuthMsg] = useState<string | null>(null);
 
@@ -129,11 +127,17 @@ export default function App() {
     async function loadBackendData() {
       const shouldLoadFromDb = isSupabaseConfigured() && !useLocalSandbox && supabase && (authState.user || userRole === 'driver');
       if (!shouldLoadFromDb) {
-        // Fallback or Local Storage Loading
-        const savedCars = localStorage.getItem('fleet_cars');
-        const savedDrivers = localStorage.getItem('fleet_drivers');
-        setCars(savedCars ? JSON.parse(savedCars) : initialCars);
-        setDrivers(savedDrivers ? JSON.parse(savedDrivers) : initialDrivers);
+        // Only load initial mock data if we're in sandbox mode
+        if (useLocalSandbox) {
+          const savedCars = localStorage.getItem('fleet_cars');
+          const savedDrivers = localStorage.getItem('fleet_drivers');
+          setCars(savedCars ? JSON.parse(savedCars) : initialCars);
+          setDrivers(savedDrivers ? JSON.parse(savedDrivers) : initialDrivers);
+        } else {
+          // If Supabase is configured but user not authenticated, don't load any data yet
+          setCars([]);
+          setDrivers([]);
+        }
         return;
       }
 
@@ -153,7 +157,9 @@ export default function App() {
         setCars(dbCars);
         setDrivers(dbDrivers);
       } catch (err: any) {
-        console.error('Error fetching dynamic Supabase records, falling back:', err);
+        console.error('Error fetching dynamic Supabase records, falling back to empty state:', err);
+        setCars([]);
+        setDrivers([]);
       } finally {
         setDataLoading(false);
       }
@@ -235,31 +241,15 @@ export default function App() {
       return;
     }
 
-    if (authMode === 'signup' && !authFullName) {
-      setAuthError('Please provide your full name for account creation.');
-      return;
-    }
-
     try {
-      if (authMode === 'signup') {
-        const result = await authService.signUpManager(authEmail, authPassword, authFullName);
-        
-        if (result.success) {
-          setAuthMsg('Account registered successfully! Welcome.');
-          setAuthMode('login'); // Switch to login after successful signup
-        } else {
-          setAuthError(result.error || 'Registration failed');
-        }
-      } else {
-        const result = await authService.signIn(authEmail, authPassword);
+      const result = await authService.signIn(authEmail, authPassword);
 
-        if (result.success) {
-          // Auth service will handle state updates via subscription
-          setAuthEmail('');
-          setAuthPassword('');
-        } else {
-          setAuthError(result.error || 'Authentication failed');
-        }
+      if (result.success) {
+        // Auth service will handle state updates via subscription
+        setAuthEmail('');
+        setAuthPassword('');
+      } else {
+        setAuthError(result.error || 'Authentication failed');
       }
     } catch (err: any) {
       console.error(err);
@@ -271,7 +261,6 @@ export default function App() {
     await authService.signOut();
     setAuthEmail('');
     setAuthPassword('');
-    setAuthFullName('');
   };
 
   // --- Wrapped State Proxy Sync Engine ---
@@ -492,45 +481,9 @@ export default function App() {
               <Car className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900 tracking-tight uppercase font-sans">Fleet Assets Cloud Portal</h2>
-              <p className="text-xs text-slate-450 mt-1">Connect your verified credentials to begin tracking fleet operations.</p>
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight uppercase font-sans">Fleet Manager Portal</h2>
+              <p className="text-xs text-slate-450 mt-1">Sign in with your manager credentials to access the fleet management system.</p>
             </div>
-          </div>
-
-          {/* Tab component for toggling auth login vs signup mode */}
-          <div className="flex border-b border-gray-150" id="auth-mode-tabs">
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('login');
-                setAuthError(null);
-                setAuthMsg(null);
-              }}
-              className={`flex-1 pb-2.5 text-center text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
-                authMode === 'login'
-                  ? 'border-indigo-600 text-indigo-600 font-black'
-                  : 'border-transparent text-slate-400 hover:text-slate-600'
-              }`}
-              id="auth-tab-login"
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('signup');
-                setAuthError(null);
-                setAuthMsg(null);
-              }}
-              className={`flex-1 pb-2.5 text-center text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
-                authMode === 'signup'
-                  ? 'border-indigo-600 text-indigo-600 font-black'
-                  : 'border-transparent text-slate-400 hover:text-slate-600'
-              }`}
-              id="auth-tab-signup"
-            >
-              Create Account
-            </button>
           </div>
 
           <form onSubmit={handleAuthSubmit} className="space-y-4" id="main-auth-form">
@@ -575,29 +528,14 @@ export default function App() {
                 required
                 value={authEmail}
                 onChange={(e) => setAuthEmail(e.target.value)}
-                placeholder="e.g. user@fleetcorp.com"
+                placeholder="e.g. manager@fleetcorp.com"
                 className="w-full bg-slate-50 border border-gray-200 focus:border-indigo-500 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:outline-none transition-colors"
                 id="auth-input-email"
               />
             </div>
 
-            {authMode === 'signup' && (
-              <div className="space-y-1">
-                <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={authFullName}
-                  onChange={(e) => setAuthFullName(e.target.value)}
-                  placeholder="e.g. John Smith"
-                  className="w-full bg-slate-50 border border-gray-200 focus:border-indigo-500 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:outline-none transition-colors"
-                  id="auth-input-fullname"
-                />
-              </div>
-            )}
-
             <div className="space-y-1">
-              <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Access PIN / Password</label>
+              <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Manager Password</label>
               <input
                 type="password"
                 required
@@ -615,7 +553,7 @@ export default function App() {
               id="auth-btn-submit"
             >
               <LogIn className="w-4 h-4" />
-              Authenticate Access
+              Sign In to Manager Portal
             </button>
           </form>
         </div>
@@ -683,33 +621,37 @@ export default function App() {
 
   // Render the appropriate hub/application
   if (userRole === 'driver') {
+    const driverProps = {
+      cars,
+      setCars: setCarsWithSyncProxy,
+      drivers,
+      setDrivers: setDriversWithSyncProxy,
+      userRole,
+      onSignOut: handleSignOut,
+      ...(isLocked ? {} : { setUserRole })
+    };
+
     return (
       <div className="flex flex-col min-h-screen" id="driver-app-host">
-        <DriverApp
-          cars={cars}
-          setCars={setCarsWithSyncProxy}
-          drivers={drivers}
-          setDrivers={setDriversWithSyncProxy}
-          userRole={userRole}
-          setUserRole={isLocked ? undefined : setUserRole}
-          onSignOut={handleSignOut}
-        />
+        <DriverApp {...driverProps} />
       </div>
     );
   }
 
+  const managerProps = {
+    cars,
+    setCars: setCarsWithSyncProxy,
+    drivers,
+    setDrivers: setDriversWithSyncProxy,
+    userRole,
+    onSignOut: handleSignOut,
+    dataLoading,
+    ...(isLocked ? {} : { setUserRole })
+  };
+
   return (
     <div className="flex flex-col min-h-screen" id="manager-app-host">
-      <ManagerApp
-        cars={cars}
-        setCars={setCarsWithSyncProxy}
-        drivers={drivers}
-        setDrivers={setDriversWithSyncProxy}
-        userRole={userRole}
-        setUserRole={isLocked ? undefined : setUserRole}
-        onSignOut={handleSignOut}
-        dataLoading={dataLoading}
-      />
+      <ManagerApp {...managerProps} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { User, Edit, Trash2, Key, RefreshCw, Search, Phone, Mail, FileText, Check, AlertTriangle, ShieldAlert, Plus, Car } from 'lucide-react';
+import { useState } from 'react';
+import { User, Edit, Trash2, Key, RefreshCw, Search, Phone, Mail, Check, Car } from 'lucide-react';
 import { Driver, CarAsset } from '../../types';
 
 interface StaffManagerProps {

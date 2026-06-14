@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Coins, Check, CheckCircle2, Clock, Car, Search, FileText, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
-import { ResponsiveContainer, ComposedChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from 'recharts';
-import { CarAsset, RevenueLog } from '../../types';
+import { ResponsiveContainer, ComposedChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { CarAsset } from '../../types';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 
@@ -139,23 +139,32 @@ export default function FinanceDashboard({
     const dateMap: { [date: string]: { Revenue: number; Expenditure: number } } = {};
     
     allRevenues.forEach(r => {
-      const d = r.date || new Date().toISOString().split('T')[0];
+      const d = r.date || new Date().toISOString().split('T')[0] || '';
       if (!dateMap[d]) dateMap[d] = { Revenue: 0, Expenditure: 0 };
-      dateMap[d].Revenue += r.amount;
+      const entry = dateMap[d];
+      if (entry) {
+        entry.Revenue += r.amount;
+      }
     });
     
     allExpenses.forEach(e => {
-      const d = e.date || new Date().toISOString().split('T')[0];
+      const d = e.date || new Date().toISOString().split('T')[0] || '';
       if (!dateMap[d]) dateMap[d] = { Revenue: 0, Expenditure: 0 };
-      dateMap[d].Expenditure += e.cost;
+      const entry = dateMap[d];
+      if (entry) {
+        entry.Expenditure += e.cost;
+      }
     });
     
     const sortedDates = Object.keys(dateMap).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
     
     let cumulativeNetProfit = 0;
     return sortedDates.map(d => {
-      const rev = dateMap[d].Revenue;
-      const exp = dateMap[d].Expenditure;
+      const entry = dateMap[d];
+      if (!entry) return { date: d, Revenue: 0, Expenditure: 0, NetProfit: 0, CumulativeProfit: cumulativeNetProfit };
+      
+      const rev = entry.Revenue;
+      const exp = entry.Expenditure;
       const net = rev - exp;
       cumulativeNetProfit += net;
       return {
@@ -193,7 +202,10 @@ export default function FinanceDashboard({
         if (logDate.getFullYear() === selectedFiscalYear) {
           const m = logDate.getMonth();
           if (m >= 0 && m < 12) {
-            months[m].revenue += r.amount;
+            const month = months[m];
+            if (month) {
+              month.revenue += r.amount;
+            }
           }
         }
       });
@@ -204,7 +216,10 @@ export default function FinanceDashboard({
         if (logDate.getFullYear() === selectedFiscalYear) {
           const m = logDate.getMonth();
           if (m >= 0 && m < 12) {
-            months[m].maintenance += e.cost;
+            const month = months[m];
+            if (month) {
+              month.maintenance += e.cost;
+            }
           }
         }
       });
@@ -220,11 +235,7 @@ export default function FinanceDashboard({
   const uniqueVehiclesCountAll = new Set(allRevenueLogs.map(r => r.carPlate)).size;
 
   // Calculate high-level financial parameters (filtered metrics for target elements)
-  const totalCollected = filteredRevenues.reduce((sum, r) => sum + r.amount, 0);
-  const approvedCollected = filteredRevenues.filter(r => r.status === 'Approved').reduce((sum, r) => sum + r.amount, 0);
-  const pendingCollected = filteredRevenues.filter(r => r.status === 'Pending').reduce((sum, r) => sum + r.amount, 0);
   const pendingReviewCount = filteredRevenues.filter(r => r.status === 'Pending').length;
-  const uniqueVehiclesCount = new Set(filteredRevenues.map(r => r.carPlate)).size;
   const totalPendingCount = allRevenueLogs.filter(r => r.status === 'Pending').length;
 
   const handleExportPDF = async () => {
@@ -539,7 +550,7 @@ export default function FinanceDashboard({
                         <XAxis dataKey="formattedDate" stroke="#94a3b8" fontSize={9} />
                         <YAxis stroke="#94a3b8" fontSize={9} />
                         <Tooltip 
-                          formatter={(value: any, name: string) => [`zmk ${Number(value).toLocaleString()}`, name]}
+                          formatter={(value: any, name?: string | number) => [`zmk ${Number(value).toLocaleString()}`, String(name || '')]}
                           contentStyle={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 'bold' }}
                         />
                         <Bar dataKey="Revenue" fill="#6366f1" radius={[4, 4, 0, 0]} name="Daily Revenue" barSize={16} />
@@ -563,7 +574,7 @@ export default function FinanceDashboard({
                         <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} />
                         <YAxis stroke="#94a3b8" fontSize={9} />
                         <Tooltip 
-                          formatter={(value: any, name: string) => [`zmk ${Number(value).toLocaleString()}`, name]}
+                          formatter={(value: any, name?: string | number) => [`zmk ${Number(value).toLocaleString()}`, String(name || '')]}
                           contentStyle={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 'bold' }}
                         />
                         <Bar dataKey="Revenue" fill="#6366f1" radius={[4, 4, 0, 0]} name="Total Revenue" />
