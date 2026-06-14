@@ -177,13 +177,48 @@ export default function FleetDashboard({
               filteredCars.map((car) => {
                 const driverAssigned = drivers.find(d => d.assignedCarId === car.id);
                 
+                // Check for expiring insurance
+                const insuranceLogs = car.insuranceLogs || [];
+                const now = new Date();
+                const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+                
+                const expiringInsurance = insuranceLogs.filter(log => {
+                  const expiryDate = new Date(log.expiryDate);
+                  return expiryDate > now && expiryDate <= thirtyDaysFromNow;
+                });
+                
+                const expiredInsurance = insuranceLogs.filter(log => {
+                  const expiryDate = new Date(log.expiryDate);
+                  return expiryDate <= now;
+                });
+                
                 return (
-                  <div
+                    <div
                     key={car.id}
                     onClick={() => onEditCar(car)}
                     className="group bg-white rounded-2xl border border-gray-200/75 hover:border-indigo-300 hover:shadow-xs transition-all overflow-hidden relative flex flex-col justify-between cursor-pointer"
                     id={`car-card-${car.id}`}
                   >
+                    {/* Insurance Alert Banner */}
+                    {(expiredInsurance.length > 0 || expiringInsurance.length > 0) && (
+                      <div className={`px-3 py-1.5 text-center text-xs font-bold ${
+                        expiredInsurance.length > 0 
+                          ? 'bg-red-50 text-red-700 border-b border-red-100' 
+                          : 'bg-amber-50 text-amber-700 border-b border-amber-100'
+                      }`}>
+                        {expiredInsurance.length > 0 ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            <span>{expiredInsurance.length} Insurance Expired</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-1">
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            <span>{expiringInsurance.length} Insurance Expiring Soon</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {/* Picture Header (Renders uploaded vehicle photo or elegant fallback) */}
                     <div className="h-32 bg-slate-50 relative overflow-hidden shrink-0 border-b border-gray-100" id={`card-pic-${car.id}`}>
                       {car.photos && car.photos.length > 0 ? (

@@ -30,7 +30,7 @@ export default function ManagerHeader({
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-left" id="brand-logo-area">
             <div className="flex items-center gap-3 text-left">
               <div className="w-10 h-10 flex items-center justify-center">
-                <img src="/logo.svg" alt="North Links" className="w-full h-full object-contain" />
+                <img src="/north-links.png" alt="North Links" className="w-full h-full object-contain" />
               </div>
               <div className="text-left">
                 <h1 className="text-lg font-bold text-gray-905 leading-tight tracking-tight uppercase">North links</h1>

@@ -132,7 +132,10 @@ export default function FinanceDashboard({
   // Calculate historical net profit progression chart data
   const timelineChartData = React.useMemo(() => {
     const allRevenues = cars.flatMap(c => c.revenueLogs || []);
-    const allExpenses = cars.flatMap(c => c.serviceLogs || []);
+    const allExpenses = cars.flatMap(c => [...(c.serviceLogs || []), ...(c.insuranceLogs || []).map(ins => ({
+      date: ins.date,
+      cost: ins.amount
+    }))]);
     
     const dateMap: { [date: string]: { Revenue: number; Expenditure: number } } = {};
     
@@ -217,6 +220,20 @@ export default function FinanceDashboard({
             const month = months[m];
             if (month) {
               month.maintenance += e.cost;
+            }
+          }
+        }
+      });
+
+      (car.insuranceLogs || []).forEach(ins => {
+        if (!ins.date) return;
+        const logDate = new Date(ins.date);
+        if (logDate.getFullYear() === selectedFiscalYear) {
+          const m = logDate.getMonth();
+          if (m >= 0 && m < 12) {
+            const month = months[m];
+            if (month) {
+              month.maintenance += ins.amount;
             }
           }
         }
@@ -308,7 +325,7 @@ export default function FinanceDashboard({
     }
   };
 
-  // Gather all expenditures across all cars based on maintenance logs
+  // Gather all expenditures across all cars based on maintenance logs AND insurance logs
   const allServiceLogs = cars.flatMap(car =>
     (car.serviceLogs || []).map(log => ({
       ...log,
@@ -318,12 +335,27 @@ export default function FinanceDashboard({
       carPlate: car.plateNumber,
     }))
   );
-  const totalExpenditure = allServiceLogs.reduce((sum, log) => sum + log.cost, 0);
+
+  const allInsuranceLogs = cars.flatMap(car =>
+    (car.insuranceLogs || []).map(log => ({
+      ...log,
+      carId: car.id,
+      carMake: car.make,
+      carModel: car.model,
+      carPlate: car.plateNumber,
+    }))
+  );
+
+  const totalMaintenanceExpenditure = allServiceLogs.reduce((sum, log) => sum + log.cost, 0);
+  const totalInsuranceExpenditure = allInsuranceLogs.reduce((sum, log) => sum + log.amount, 0);
+  const totalExpenditure = totalMaintenanceExpenditure + totalInsuranceExpenditure;
 
   // Chart data: Fleet Revenue vs Expenditure per Asset
   const fleetBenefitChart = cars.map(car => {
     const carRevenue = (car.revenueLogs || []).reduce((sum, r) => sum + r.amount, 0);
-    const carExpenditure = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
+    const carMaintenance = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
+    const carInsurance = (car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0);
+    const carExpenditure = carMaintenance + carInsurance;
     const netProfit = carRevenue - carExpenditure;
     return {
       name: `${car.make} ${car.model}`,
@@ -452,10 +484,10 @@ export default function FinanceDashboard({
           </div>
 
           <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-xs text-left" id="kpi-total-expenditure">
-            <span className="text-[10px] font-extrabold text-rose-500 uppercase tracking-wider block font-sans">Maintenance Cost</span>
+            <span className="text-[10px] font-extrabold text-rose-500 uppercase tracking-wider block font-sans">Total Expenditure</span>
             <span className="text-xl font-extrabold font-mono text-rose-600 block mt-1">zmk {totalExpenditure.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
             <div className="flex items-center gap-1 mt-1 text-[10px] text-gray-500 font-sans">
-              <span className="font-bold underline">{allServiceLogs.length}</span> service events
+              <span className="font-bold underline">{allServiceLogs.length + allInsuranceLogs.length}</span> expense events
             </div>
           </div>
 

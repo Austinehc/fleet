@@ -75,6 +75,19 @@ CREATE TABLE IF NOT EXISTS public.fuel_logs (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 6. Create INSURANCE LOGS Table
+CREATE TABLE IF NOT EXISTS public.insurance_logs (
+    id TEXT PRIMARY KEY,
+    car_id TEXT REFERENCES public.cars(id) ON DELETE CASCADE,
+    date TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('Road Tax', 'Insurance', 'Fitness', 'Identity')),
+    amount NUMERIC NOT NULL DEFAULT 0,
+    expiry_date TEXT NOT NULL,
+    description TEXT NOT NULL,
+    performed_by TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ==========================================
 -- SECURITY POLICIES AND USER MANAGEMENT
 -- ==========================================
@@ -124,6 +137,7 @@ ALTER TABLE public.drivers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.service_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.revenue_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.fuel_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.insurance_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.driver_auth ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
@@ -270,6 +284,15 @@ CREATE POLICY "Drivers can view/create own fuel logs" ON public.fuel_logs
             WHERE up.auth_user_id = auth.uid() 
             AND up.role = 'driver'
             AND d.assigned_car_id = fuel_logs.car_id
+        )
+    );
+
+-- Insurance logs: Only managers can manage
+CREATE POLICY "Managers can manage insurance logs" ON public.insurance_logs
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.user_profiles 
+            WHERE auth_user_id = auth.uid() AND role = 'manager'
         )
     );
 
@@ -468,6 +491,10 @@ DROP TRIGGER IF EXISTS fuel_logs_audit ON public.fuel_logs;
 CREATE TRIGGER fuel_logs_audit AFTER INSERT OR UPDATE OR DELETE ON public.fuel_logs
     FOR EACH ROW EXECUTE FUNCTION audit_trigger();
 
+DROP TRIGGER IF EXISTS insurance_logs_audit ON public.insurance_logs;
+CREATE TRIGGER insurance_logs_audit AFTER INSERT OR UPDATE OR DELETE ON public.insurance_logs
+    FOR EACH ROW EXECUTE FUNCTION audit_trigger();
+
 -- Allow public anonymous/authenticated read & write access for fleet monitoring simulation
 -- Drop existing policies if they exist, then recreate them
 DROP POLICY IF EXISTS "Allow read access of cars to all" ON public.cars;
@@ -494,3 +521,8 @@ DROP POLICY IF EXISTS "Allow read access of fuel_logs to all" ON public.fuel_log
 DROP POLICY IF EXISTS "Allow write access of fuel_logs to all" ON public.fuel_logs;
 CREATE POLICY "Allow read access of fuel_logs to all" ON public.fuel_logs FOR SELECT USING (true);
 CREATE POLICY "Allow write access of fuel_logs to all" ON public.fuel_logs FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow read access of insurance_logs to all" ON public.insurance_logs;
+DROP POLICY IF EXISTS "Allow write access of insurance_logs to all" ON public.insurance_logs;
+CREATE POLICY "Allow read access of insurance_logs to all" ON public.insurance_logs FOR SELECT USING (true);
+CREATE POLICY "Allow write access of insurance_logs to all" ON public.insurance_logs FOR ALL USING (true);

@@ -185,7 +185,7 @@ export default function DriverAuth({
         {/* Brand/Security Icon */}
         <div className="space-y-3">
           <div className="w-16 h-16 flex items-center justify-center mx-auto">
-            <img src="/logo.svg" alt="North Links" className="w-full h-full object-contain" />
+            <img src="/north-links.png" alt="North Links" className="w-full h-full object-contain" />
           </div>
           <div className="space-y-1">
             <h3 className="font-extrabold text-gray-900 text-base uppercase font-sans tracking-wide">North Links Driver portal</h3>

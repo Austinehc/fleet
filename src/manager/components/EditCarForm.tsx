@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CarAsset, Driver, ServiceLog } from '../../types';
+import { CarAsset, Driver, InsuranceLog } from '../../types';
 import { 
   Wrench, 
   User, 
@@ -47,18 +47,13 @@ export default function EditCarForm({
   const currentAssignedDriver = drivers.find(d => d.assignedCarId === car.id);
   const [editAssignedDriverId, setEditAssignedDriverId] = useState<string | null>(currentAssignedDriver?.id || null);
 
-  // Mini new maintenance log form inside modal
+  // Mini new insurance log form inside modal
   const [isAddingLog, setIsAddingLog] = useState(false);
-  const [logCategory, setLogCategory] = useState<ServiceLog['category']>('Maintenance');
+  const [logCategory, setLogCategory] = useState<InsuranceLog['type']>('Road Tax');
   const [logDescription, setLogDescription] = useState('');
   const [logCost, setLogCost] = useState<number>(0);
-  const [logMileage, setLogMileage] = useState<number>(car.mileage);
+  const [logExpiryDate, setLogExpiryDate] = useState<string>('');
   const [logPerformedBy, setLogPerformedBy] = useState(currentAssignedDriver?.fullName || 'Manager Admin');
-
-  // Calculate maintenance metrics
-  const logsList = car.serviceLogs || [];
-  const totalMaintCost = logsList.reduce((sum, log) => sum + log.cost, 0);
-  const avgMaintCost = logsList.length > 0 ? totalMaintCost / logsList.length : 0;
 
   // Handle vehicle asset picture file reader
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,36 +86,36 @@ export default function EditCarForm({
     }
   };
 
-  // Log new maintenance event
+  // Log new insurance event
   const handleAddMaintenanceLog = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!logDescription.trim() || logCost <= 0) {
-      alert('Please fill out a valid service description and log cost.');
+    if (!logDescription.trim() || logCost <= 0 || !logExpiryDate) {
+      alert('Please fill out all required fields including expiry date.');
       return;
     }
 
-    const newLog: ServiceLog = {
-      id: `svc-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    const newLog: InsuranceLog = {
+      id: `ins-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       date: new Date().toISOString().split('T')[0] || '',
-      category: logCategory,
+      type: logCategory,
+      amount: Number(logCost),
+      expiryDate: logExpiryDate,
       description: logDescription.trim(),
-      cost: Number(logCost),
-      mileage: Number(logMileage) || car.mileage,
       performedBy: logPerformedBy.trim()
     };
 
-    const updatedLogs = [newLog, ...logsList];
+    const updatedLogs = [newLog, ...(car.insuranceLogs || [])];
 
     // Build the updated car model
     const updatedCar: CarAsset = {
       ...car,
-      serviceLogs: updatedLogs,
-      mileage: Math.max(car.mileage, Number(logMileage) || 0)
+      insuranceLogs: updatedLogs
     };
 
     onSave(updatedCar, editAssignedDriverId);
     setLogDescription('');
     setLogCost(0);
+    setLogExpiryDate('');
     setIsAddingLog(false);
   };
 
@@ -202,7 +197,7 @@ export default function EditCarForm({
                 }`}
               >
                 <Wrench className="w-4 h-4 shrink-0" />
-                <span>Maintenance History</span>
+                <span>Insurance & Compliance</span>
               </button>
               <button
                 type="button"
@@ -232,7 +227,7 @@ export default function EditCarForm({
               <span className="text-[9px] uppercase tracking-wider text-slate-400 font-extrabold">Active View</span>
               <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest mt-0.5">
                 {activeTab === 'specs_driver' && 'Vehicle Specs & Staff Driver'}
-                {activeTab === 'maintenance' && 'Maintenance Records Registry & Expenditure logs'}
+                {activeTab === 'maintenance' && 'Insurance & Compliance Records'}
                 {activeTab === 'edit_props' && 'Edit Asset Registration & Parameters'}
               </h4>
             </div>
@@ -361,32 +356,40 @@ export default function EditCarForm({
               </div>
             )}
 
-            {/* TAB 2: Maintenance Logs (Expenditures) */}
+            {/* TAB 2: Insurance & Compliance Logs */}
             {activeTab === 'maintenance' && (
               <div className="space-y-6 text-left animate-fade-in" id="panel-maintenance">
                 
                 {/* Financial Summary cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="maint-summary-widgets">
                   <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
-                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total maintenance Expenditure</span>
-                    <span className="text-lg font-black font-mono text-rose-600 block mt-1">zmk {totalMaintCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Insurance & Compliance Cost</span>
+                    <span className="text-lg font-black font-mono text-rose-600 block mt-1">zmk {(car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
-                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total logged service Events</span>
-                    <span className="text-lg font-black font-mono text-indigo-600 block mt-1">{logsList.length} Services</span>
+                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Compliance Records</span>
+                    <span className="text-lg font-black font-mono text-indigo-600 block mt-1">{(car.insuranceLogs || []).length} Records</span>
                   </div>
                   <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
-                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Average maintenance Cost</span>
-                    <span className="text-lg font-black font-mono text-slate-800 block mt-1">zmk {avgMaintCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Next Expiry</span>
+                    <span className="text-sm font-black font-mono text-amber-600 block mt-1">
+                      {(() => {
+                        const nextExpiry = (car.insuranceLogs || [])
+                          .map(log => new Date(log.expiryDate))
+                          .filter(date => date > new Date())
+                          .sort((a, b) => a.getTime() - b.getTime())[0];
+                        return nextExpiry ? nextExpiry.toLocaleDateString() : 'No upcoming';
+                      })()}
+                    </span>
                   </div>
                 </div>
 
-                {/* Interactive log new event trigger */}
+                {/* Interactive log new insurance/compliance event */}
                 <div className="border border-indigo-150 bg-indigo-50/20 rounded-2xl p-4.5" id="quick-service-log">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h5 className="text-[10px] uppercase font-black tracking-wider text-indigo-700">Quick-Log Maintenance Event</h5>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Quickly append service receipt details to this asset unit's expense ledger.</p>
+                      <h5 className="text-[10px] uppercase font-black tracking-wider text-indigo-700">Log Insurance & Compliance</h5>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Record insurance payments, road tax, fitness certificates, and compliance documents.</p>
                     </div>
                     <button
                       type="button"
@@ -394,39 +397,37 @@ export default function EditCarForm({
                       className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[9px] transition-colors cursor-pointer uppercase flex items-center gap-1 shadow-sm select-none"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      {isAddingLog ? 'Collapse Form' : 'Log New Service'}
+                      {isAddingLog ? 'Collapse Form' : 'Log Compliance'}
                     </button>
                   </div>
 
                   {isAddingLog && (
                     <form onSubmit={handleAddMaintenanceLog} className="mt-4 pt-4 border-t border-indigo-10/40 grid grid-cols-1 md:grid-cols-2 gap-3.5 text-left animate-fade-in" id="inspect-maint-form">
                       <div>
-                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Service category</label>
+                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Insurance/Compliance Type</label>
                         <select
                           value={logCategory}
                           onChange={(e) => setLogCategory(e.target.value as any)}
                           className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-bold"
                         >
-                          <option value="Maintenance">Scheduled Maintenance</option>
-                          <option value="Repair">Emergency Repair</option>
-                          <option value="Inspection">Safety Inspection</option>
-                          <option value="Tire Service">Tire Service</option>
-                          <option value="Oil Change">Oil Change</option>
-                          <option value="Other">Other Expenses</option>
+                          <option value="Road Tax">Road Tax</option>
+                          <option value="Insurance">Vehicle Insurance</option>
+                          <option value="Fitness">Fitness Certificate</option>
+                          <option value="Identity">Vehicle Identity/Registration</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Odometer (at service) km</label>
+                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Expiry Date</label>
                         <input
-                          type="number"
+                          type="date"
                           required
-                          value={logMileage}
-                          onChange={(e) => setLogMileage(Number(e.target.value))}
+                          value={logExpiryDate}
+                          onChange={(e) => setLogExpiryDate(e.target.value)}
                           className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-705 font-mono font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         />
                       </div>
                       <div>
-                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Total repair/service Cost (zmk)</label>
+                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Payment Amount (zmk)</label>
                         <input
                           type="number"
                           required
@@ -438,7 +439,7 @@ export default function EditCarForm({
                         />
                       </div>
                       <div>
-                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Performed By / Authorized By</label>
+                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Processed By</label>
                         <input
                           type="text"
                           required
@@ -448,11 +449,11 @@ export default function EditCarForm({
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Receipt details / service description</label>
+                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Description / Notes</label>
                         <input
                           type="text"
                           required
-                          placeholder="e.g. Changed spark plugs and replaced front windshield brake rotors"
+                          placeholder="e.g. Annual insurance renewal - comprehensive coverage"
                           value={logDescription}
                           onChange={(e) => setLogDescription(e.target.value)}
                           className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-505"
@@ -463,53 +464,56 @@ export default function EditCarForm({
                           type="submit"
                           className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[9px] transition-colors cursor-pointer uppercase shadow-xs flex items-center gap-1 select-none"
                         >
-                          <Check className="w-3.5 h-3.5" /> Confirm and log cost
+                          <Check className="w-3.5 h-3.5" /> Log Compliance Record
                         </button>
                       </div>
                     </form>
                   )}
                 </div>
 
-                {/* Service Logs ledger list info */}
-                <div className="space-y-3" id="service-logs-registry-box">
-                  <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">Service logs registry ledger ({logsList.length})</h4>
+                {/* Insurance Logs ledger list info */}
+                <div className="space-y-3" id="insurance-logs-registry-box">
+                  <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">Insurance & Compliance Registry ({(car.insuranceLogs || []).length})</h4>
                   
-                  {logsList.length > 0 ? (
-                    <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto border border-slate-150 rounded-xl px-4 bg-white" id="maint-logs-sub-ledger">
-                      {logsList.map((log) => (
-                        <div key={log.id} className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b last:border-b-0 gap-2.5" id={`maint-item-${log.id}`}>
+                  {(car.insuranceLogs || []).length > 0 ? (
+                    <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto border border-slate-150 rounded-xl px-4 bg-white" id="insurance-logs-sub-ledger">
+                      {(car.insuranceLogs || []).map((log) => (
+                        <div key={log.id} className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b last:border-b-0 gap-2.5" id={`insurance-item-${log.id}`}>
                           <div className="text-left font-sans flex-1">
                             <div className="flex items-center gap-2">
                               <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded leading-none ${
-                                log.category === 'Repair' ? 'bg-rose-50 text-rose-700 border border-rose-100' :
-                                log.category === 'Inspection' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
-                                'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                                log.type === 'Insurance' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                                log.type === 'Road Tax' ? 'bg-green-50 text-green-700 border border-green-100' :
+                                log.type === 'Fitness' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                                'bg-purple-50 text-purple-700 border border-purple-100'
                               }`}>
-                                {log.category}
+                                {log.type}
                               </span>
                               <span className="text-[10px] font-mono text-slate-400 font-bold">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                             </div>
                             <p className="text-xs font-bold text-slate-800 mt-1.5 line-clamp-2">{log.description}</p>
                             <div className="text-[9px] text-slate-400 mt-1 flex items-center gap-1 font-sans">
-                              <span>Odo: <b className="font-mono text-slate-600">{log.mileage.toLocaleString()} km</b></span>
+                              <span>Expires: <b className={`font-mono ${new Date(log.expiryDate) < new Date() ? 'text-red-600' : new Date(log.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-amber-600' : 'text-green-600'}`}>
+                                {new Date(log.expiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </b></span>
                               <span>|</span>
-                              <span>Agent: <b className="text-slate-605">{log.performedBy || 'Unknown Agent'}</b></span>
+                              <span>By: <b className="text-slate-605">{log.performedBy || 'Unknown'}</b></span>
                             </div>
                           </div>
 
                           <div className="text-right shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 border-dashed border-gray-100 pt-2 sm:pt-0">
-                            <span className="text-[9px] uppercase font-bold text-slate-400 sm:hidden">Service Cost:</span>
+                            <span className="text-[9px] uppercase font-bold text-slate-400 sm:hidden">Cost:</span>
                             <span className="text-xs font-mono font-black text-rose-505 bg-rose-50 border border-rose-100 px-2 py-1 rounded-lg">
-                              zmk {log.cost.toLocaleString('en-US', { minimumFractionDigits: 1 })}
+                              zmk {log.amount.toLocaleString('en-US', { minimumFractionDigits: 1 })}
                             </span>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="py-12 text-center bg-slate-50 border border-dashed border-gray-150 rounded-xl" id="maint-empty-slate">
+                    <div className="py-12 text-center bg-slate-50 border border-dashed border-gray-150 rounded-xl" id="insurance-empty-slate">
                       <Wrench className="w-10 h-10 text-gray-200 mx-auto" />
-                      <p className="text-xs text-gray-400 italic mt-2">No service event logs have been recorded for this vehicle asset.</p>
+                      <p className="text-xs text-gray-400 italic mt-2">No insurance or compliance records have been logged for this vehicle.</p>
                     </div>
                   )}
 

@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { CarAsset, Driver, ServiceLog, RevenueLog, FuelLog } from '../types';
+import { CarAsset, Driver, ServiceLog, RevenueLog, FuelLog, InsuranceLog } from '../types';
 import { errorHandler } from './errorHandling';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
@@ -28,17 +28,19 @@ export async function getCarsFromDB(): Promise<CarAsset[]> {
       if (carsError) throw carsError;
 
       // Load all sub-records with error handling
-      const [svcResult, revResult, fuelResult] = await Promise.allSettled([
+      const [svcResult, revResult, fuelResult, insuranceResult] = await Promise.allSettled([
         supabase!.from('service_logs').select('*').order('date', { ascending: false }),
         supabase!.from('revenue_logs').select('*').order('date', { ascending: false }),
-        supabase!.from('fuel_logs').select('*').order('date', { ascending: false })
+        supabase!.from('fuel_logs').select('*').order('date', { ascending: false }),
+        supabase!.from('insurance_logs').select('*').order('date', { ascending: false })
       ]);
 
       const dbSvc = svcResult.status === 'fulfilled' ? svcResult.value.data || [] : [];
       const dbRev = revResult.status === 'fulfilled' ? revResult.value.data || [] : [];
       const dbFuel = fuelResult.status === 'fulfilled' ? fuelResult.value.data || [] : [];
+      const dbInsurance = insuranceResult.status === 'fulfilled' ? insuranceResult.value.data || [] : [];
 
-      return { dbCars, dbSvc, dbRev, dbFuel };
+      return { dbCars, dbSvc, dbRev, dbFuel, dbInsurance };
     },
     'Load cars from database'
   );
@@ -48,7 +50,7 @@ export async function getCarsFromDB(): Promise<CarAsset[]> {
     throw error;
   }
 
-  const { dbCars, dbSvc, dbRev, dbFuel } = data!;
+  const { dbCars, dbSvc, dbRev, dbFuel, dbInsurance } = data!;
 
   const serviceLogsMap = (dbSvc || []).reduce((acc: any, log: any) => {
     if (!acc[log.car_id]) acc[log.car_id] = [];
@@ -92,6 +94,20 @@ export async function getCarsFromDB(): Promise<CarAsset[]> {
     return acc;
   }, {});
 
+  const insuranceLogsMap = (dbInsurance || []).reduce((acc: any, log: any) => {
+    if (!acc[log.car_id]) acc[log.car_id] = [];
+    acc[log.car_id].push({
+      id: log.id,
+      date: log.date,
+      type: log.type,
+      amount: Number(log.amount),
+      expiryDate: log.expiry_date,
+      description: log.description,
+      performedBy: log.performed_by
+    });
+    return acc;
+  }, {});
+
   return (dbCars || []).map((car: any) => ({
     id: car.id,
     make: car.make,
@@ -106,6 +122,7 @@ export async function getCarsFromDB(): Promise<CarAsset[]> {
     serviceLogs: serviceLogsMap[car.id] || [],
     revenueLogs: revenueLogsMap[car.id] || [],
     fuelLogs: fuelLogsMap[car.id] || [],
+    insuranceLogs: insuranceLogsMap[car.id] || [],
     createdAt: car.created_at
   }));
 }
@@ -385,6 +402,44 @@ export async function deleteFuelLogFromDB(logId: string): Promise<void> {
 
   if (error) {
     console.error('Error deleting fuel log:', error);
+    throw error;
+  }
+}
+
+// Submit Insurance Log
+export async function saveInsuranceLogToDB(carId: string, log: InsuranceLog): Promise<void> {
+  if (!supabase) return;
+
+  const { error } = await supabase
+    .from('insurance_logs')
+    .upsert({
+      id: log.id,
+      car_id: carId,
+      date: log.date,
+      type: log.type,
+      amount: log.amount,
+      expiry_date: log.expiryDate,
+      description: log.description,
+      performed_by: log.performedBy
+    });
+
+  if (error) {
+    console.error('Error saving insurance log:', error);
+    throw error;
+  }
+}
+
+// Delete Insurance Log from DB
+export async function deleteInsuranceLogFromDB(logId: string): Promise<void> {
+  if (!supabase) return;
+
+  const { error } = await supabase
+    .from('insurance_logs')
+    .delete()
+    .eq('id', logId);
+
+  if (error) {
+    console.error('Error deleting insurance log:', error);
     throw error;
   }
 }

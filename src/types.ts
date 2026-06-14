@@ -13,6 +13,16 @@ export interface ServiceLog {
   performedBy: string;
 }
 
+export interface InsuranceLog {
+  id: string;
+  date: string;
+  type: 'Road Tax' | 'Insurance' | 'Fitness' | 'Identity';
+  amount: number;
+  expiryDate: string;
+  description: string;
+  performedBy: string;
+}
+
 export interface FuelLog {
   id: string;
   date: string;
@@ -47,6 +57,7 @@ export interface CarAsset {
   serviceLogs: ServiceLog[];
   revenueLogs?: RevenueLog[];
   fuelLogs?: FuelLog[];
+  insuranceLogs?: InsuranceLog[];
   createdAt: string;
 }
 

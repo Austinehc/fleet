@@ -103,7 +103,7 @@ export default function DriverApp({
           <div className="flex flex-col sm:flex-row sm:items-center gap-4" id="brand-logo-area">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 flex items-center justify-center">
-                <img src="/logo.svg" alt="North Links" className="w-full h-full object-contain" />
+                <img src="/north-links.png" alt="North Links" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-gray-900 leading-tight">North Links</h1>

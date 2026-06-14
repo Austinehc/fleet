@@ -19,9 +19,11 @@ import {
   saveServiceLogToDB,
   saveRevenueLogToDB,
   saveFuelLogToDB,
+  saveInsuranceLogToDB,
   deleteServiceLogFromDB,
   deleteRevenueLogFromDB,
-  deleteFuelLogFromDB
+  deleteFuelLogFromDB,
+  deleteInsuranceLogFromDB
 } from './lib/supabase';
 import { Shield, Database, LogIn } from 'lucide-react';
 import { useOptimizedPolling } from './lib/performance';
@@ -295,6 +297,9 @@ export default function App() {
           for (const log of nextCar.fuelLogs || []) {
             await saveFuelLogToDB(nextCar.id, log).catch(err => console.error('Fuel logs failed:', err));
           }
+          for (const log of nextCar.insuranceLogs || []) {
+            await saveInsuranceLogToDB(nextCar.id, log).catch(err => console.error('Insurance logs failed:', err));
+          }
         } else {
           // Compare values
           const hasCarChanges =
@@ -361,6 +366,22 @@ export default function App() {
           for (const f of prevFuel) {
             if (!nextFuelIds.has(f.id)) {
               await deleteFuelLogFromDB(f.id).catch(err => console.error('Supabase delete fuel log fail:', err));
+            }
+          }
+
+          // Check insurance logs changes
+          const prevInsurance = prevCar.insuranceLogs || [];
+          const nextInsurance = nextCar.insuranceLogs || [];
+          const prevInsuranceIds = new Set(prevInsurance.map(l => l.id));
+          for (const i of nextInsurance) {
+            if (!prevInsuranceIds.has(i.id)) {
+              await saveInsuranceLogToDB(nextCar.id, i).catch(err => console.error('Supabase insurance log fail:', err));
+            }
+          }
+          const nextInsuranceIds = new Set(nextInsurance.map(l => l.id));
+          for (const i of prevInsurance) {
+            if (!nextInsuranceIds.has(i.id)) {
+              await deleteInsuranceLogFromDB(i.id).catch(err => console.error('Supabase delete insurance log fail:', err));
             }
           }
         }
@@ -448,7 +469,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-805 space-y-4" id="auth-loading-screen">
         <div className="w-16 h-16 flex items-center justify-center animate-pulse">
-          <img src="/logo.svg" alt="North Links" className="w-full h-full object-contain" />
+          <img src="/north-links.png" alt="North Links" className="w-full h-full object-contain" />
         </div>
         <div className="text-center animate-none">
           <p className="font-bold text-sm tracking-wider uppercase font-sans text-slate-800">Fleet Cloud Assets</p>
@@ -469,7 +490,7 @@ export default function App() {
         <div className="max-w-md w-full bg-white border border-gray-200/80 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 z-10 animate-fade-in" id="auth-form-card">
           <div className="text-center space-y-2">
             <div className="w-16 h-16 flex items-center justify-center mx-auto">
-              <img src="/logo.svg" alt="North Links" className="w-full h-full object-contain" />
+              <img src="/north-links.png" alt="North Links" className="w-full h-full object-contain" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900 tracking-tight uppercase font-sans">North links Manager Portal</h2>
@@ -559,7 +580,7 @@ export default function App() {
         <div className="max-w-xl w-full bg-white border border-gray-200 rounded-3xl shadow-xl p-6 sm:p-8 space-y-6" id="setup-card">
           <div className="text-center space-y-2">
             <div className="w-16 h-16 flex items-center justify-center mx-auto">
-              <img src="/logo.svg" alt="North Links" className="w-full h-full object-contain" />
+              <img src="/north-links.png" alt="North Links" className="w-full h-full object-contain" />
             </div>
             <h1 className="text-lg font-bold text-slate-900 font-sans uppercase tracking-wide">Backend Database Needed</h1>
             <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
