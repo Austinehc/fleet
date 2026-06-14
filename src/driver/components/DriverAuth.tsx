@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Key, UserCheck, Shield, ChevronLeft, Clock, AlertTriangle } from 'lucide-react';
+import { Key, UserCheck, Shield, Clock, AlertTriangle } from 'lucide-react';
 import { Driver } from '../../types';
 import { validatePinFormat, pinAttemptTracker } from '../../lib/auth';
 import { errorHandler, FleetError } from '../../lib/errorHandling';
@@ -91,87 +91,87 @@ export default function DriverAuth({
       return;
     }
 
-    try {
-      // Find driver first
-      const trimmedCode = enteredDriverCode.trim().toUpperCase();
-      const matchedDriver = drivers.find(d => d.accessCode?.trim().toUpperCase() === trimmedCode);
-      
-      if (!matchedDriver) {
-        // Record failed attempt
-        pinAttemptTracker.recordAttempt('driver_auth', false);
-        const newAttemptCount = attemptCount + 1;
-        setAttemptCount(newAttemptCount);
-
-        const remainingAttempts = AUTH_CONSTANTS.MAX_LOGIN_ATTEMPTS - newAttemptCount;
-        let errorMsg = 'Invalid access code. Please verify and try again.';
+      try {
+        // Find driver by access code first
+        const trimmedCode = enteredDriverCode.trim().toUpperCase();
+        const matchedDriver = drivers.find(d => d.accessCode?.trim().toUpperCase() === trimmedCode);
         
-        if (remainingAttempts > 0) {
-          errorMsg += ` ${remainingAttempts} attempts remaining.`;
+        if (!matchedDriver) {
+          // Record failed attempt
+          pinAttemptTracker.recordAttempt('driver_auth', false);
+          const newAttemptCount = attemptCount + 1;
+          setAttemptCount(newAttemptCount);
+
+          const remainingAttempts = AUTH_CONSTANTS.MAX_LOGIN_ATTEMPTS - newAttemptCount;
+          let errorMsg = 'Invalid access code. Please verify and try again.';
+          
+          if (remainingAttempts > 0) {
+            errorMsg += ` ${remainingAttempts} attempts remaining.`;
+          } else {
+            errorMsg = 'Account temporarily locked due to multiple failed attempts.';
+            const lockoutMs = pinAttemptTracker.getRemainingLockoutTime('driver_auth');
+            setLockoutTime(lockoutMs);
+          }
+
+          setDriverLoginError(errorMsg);
+          if (triggerErrorToast) triggerErrorToast('Authentication failed');
+          return;
+        }
+
+        // Use secure PIN verification via RPC call
+        const authResult = await authService.authenticateDriver(matchedDriver.id, trimmedCode);
+        
+        if (authResult.success) {
+          // Record successful attempt
+          pinAttemptTracker.recordAttempt('driver_auth', true);
+          
+          // Clear form and proceed
+          setEnteredDriverCode('');
+          setAttemptCount(0);
+          onAuthSuccess(matchedDriver.id, matchedDriver.fullName);
         } else {
-          errorMsg = 'Account temporarily locked due to multiple failed attempts.';
-          const lockoutMs = pinAttemptTracker.getRemainingLockoutTime('driver_auth');
-          setLockoutTime(lockoutMs);
-        }
+          // Record failed attempt
+          pinAttemptTracker.recordAttempt('driver_auth', false);
+          const newAttemptCount = attemptCount + 1;
+          setAttemptCount(newAttemptCount);
 
-        setDriverLoginError(errorMsg);
-        if (triggerErrorToast) triggerErrorToast('Authentication failed');
-        return;
+          const remainingAttempts = AUTH_CONSTANTS.MAX_LOGIN_ATTEMPTS - newAttemptCount;
+          let errorMsg = authResult.error || 'Invalid access code. Please verify and try again.';
+          
+          if (remainingAttempts > 0 && !authResult.error?.includes('locked')) {
+            errorMsg += ` ${remainingAttempts} attempts remaining.`;
+          } else if (authResult.error?.includes('locked')) {
+            const lockoutMs = pinAttemptTracker.getRemainingLockoutTime('driver_auth');
+            setLockoutTime(lockoutMs);
+          }
+
+          setDriverLoginError(errorMsg);
+          if (triggerErrorToast) {
+            triggerErrorToast('Authentication failed');
+          }
+
+          // Log security event
+          errorHandler.logError(
+            new FleetError(
+              'Driver authentication failed via secure RPC',
+              'AUTH_FAILED',
+              'medium',
+              { 
+                attemptCount: newAttemptCount, 
+                driverId: matchedDriver.id,
+                code: trimmedCode.substring(0, 2) + '****' 
+              }
+            ),
+            'Driver Authentication'
+          );
+        }
+      } catch (error) {
+        errorHandler.logError(error as Error, 'Driver Authentication Error');
+        setDriverLoginError(ERROR_MESSAGES.OPERATION_FAILED);
+        if (triggerErrorToast) triggerErrorToast(ERROR_MESSAGES.OPERATION_FAILED);
+      } finally {
+        setIsSubmitting(false);
       }
-
-      // Use secure PIN verification via RPC call
-      const authResult = await authService.authenticateDriver(matchedDriver.id, trimmedCode);
-      
-      if (authResult.success) {
-        // Record successful attempt
-        pinAttemptTracker.recordAttempt('driver_auth', true);
-        
-        // Clear form and proceed
-        setEnteredDriverCode('');
-        setAttemptCount(0);
-        onAuthSuccess(matchedDriver.id, matchedDriver.fullName);
-      } else {
-        // Record failed attempt
-        pinAttemptTracker.recordAttempt('driver_auth', false);
-        const newAttemptCount = attemptCount + 1;
-        setAttemptCount(newAttemptCount);
-
-        const remainingAttempts = AUTH_CONSTANTS.MAX_LOGIN_ATTEMPTS - newAttemptCount;
-        let errorMsg = authResult.error || 'Invalid access code. Please verify and try again.';
-        
-        if (remainingAttempts > 0 && !authResult.error?.includes('locked')) {
-          errorMsg += ` ${remainingAttempts} attempts remaining.`;
-        } else if (authResult.error?.includes('locked')) {
-          const lockoutMs = pinAttemptTracker.getRemainingLockoutTime('driver_auth');
-          setLockoutTime(lockoutMs);
-        }
-
-        setDriverLoginError(errorMsg);
-        if (triggerErrorToast) {
-          triggerErrorToast('Authentication failed');
-        }
-
-        // Log security event
-        errorHandler.logError(
-          new FleetError(
-            'Driver authentication failed via secure RPC',
-            'AUTH_FAILED',
-            'medium',
-            { 
-              attemptCount: newAttemptCount, 
-              driverId: matchedDriver.id,
-              code: trimmedCode.substring(0, 2) + '****' 
-            }
-          ),
-          'Driver Authentication'
-        );
-      }
-    } catch (error) {
-      errorHandler.logError(error as Error, 'Driver Authentication Error');
-      setDriverLoginError(ERROR_MESSAGES.OPERATION_FAILED);
-      if (triggerErrorToast) triggerErrorToast(ERROR_MESSAGES.OPERATION_FAILED);
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   return (
@@ -188,7 +188,7 @@ export default function DriverAuth({
             <Key className="w-6 h-6" id="drv-pin-header-icon" />
           </div>
           <div className="space-y-1">
-            <h3 className="font-extrabold text-gray-900 text-base uppercase font-sans tracking-wide">Driver Security Gate</h3>
+            <h3 className="font-extrabold text-gray-900 text-base uppercase font-sans tracking-wide">North Links Driver portal</h3>
             <p className="text-[11px] text-gray-500 max-w-sm mx-auto leading-relaxed">
               Authenticate access with your 6-digit alphanumeric personal PIN code to synchronize digital duty logs and access your active station.
             </p>
@@ -263,17 +263,8 @@ export default function DriverAuth({
         {/* Back Link and Helper text */}
         <div className="border-t border-gray-150 pt-4 text-center text-xs text-slate-400 font-medium space-y-3" id="drv-auth-footer-helpers">
           <p className="text-gray-505 leading-normal">
-            Don't have an access key? Contact your coordinator in the <strong className="font-semibold text-gray-700">Transit Hub Office</strong> to generate and deliver your code.
+            Don't have an access key? Contact manager to generate and deliver your code.
           </p>
-          <div className="flex justify-center" id="btn-back-to-portal-gate">
-            <a
-              href="?role=manager"
-              className="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-500 font-bold tracking-tight text-[11px] uppercase hover:underline"
-              id="link-go-to-manager"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" /> Back to Manager View
-            </a>
-          </div>
         </div>
 
       </div>

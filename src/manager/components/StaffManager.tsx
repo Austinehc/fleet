@@ -62,11 +62,11 @@ export default function StaffManager({
       {/* Overview stats block / Top row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="staff-performance-metric-grid">
         <div className="bg-white border border-gray-200/80 p-4 rounded-2xl shadow-3xs">
-          <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Total Active Pilots</span>
+          <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Total Active Drivers</span>
           <p className="text-2xl font-extrabold text-slate-900 mt-1">{drivers.filter(d => d.status === 'Active').length}</p>
         </div>
         <div className="bg-white border border-gray-200/80 p-4 rounded-2xl shadow-3xs">
-          <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">On Leave / Idle</span>
+          <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">On Leave</span>
           <p className="text-2xl font-extrabold text-slate-900 mt-1">{drivers.filter(d => d.status === 'On Leave').length}</p>
         </div>
         <div className="bg-white border border-gray-200/80 p-4 rounded-2xl shadow-3xs">
@@ -247,7 +247,7 @@ export default function StaffManager({
                     </div>
 
                     <p className="text-[10px] text-slate-400 font-sans leading-normal">
-                      Instruct pilot to authenticate with code on URL: <strong className="font-semibold text-slate-500">?role=driver</strong>
+                      Instruct driver to authenticate with code on URL: <strong className="font-semibold text-slate-500">?role=driver</strong>
                     </p>
                   </div>
 
@@ -270,7 +270,7 @@ export default function StaffManager({
                     </button>
                     <button
                       onClick={() => {
-                        if (window.confirm(`⚠️ WARNING: Are you sure you want to delete the driver log file and access keys for ${drv.fullName}?\n\nThis action cannot be undone.`)) {
+                        if (window.confirm(`WARNING: Are you sure you want to delete the driver log file and access keys for ${drv.fullName}?\n\nThis action cannot be undone.`)) {
                           onDeleteDriver(drv.id);
                         }
                       }}

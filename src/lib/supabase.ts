@@ -180,10 +180,11 @@ export async function deleteCarFromDB(carId: string): Promise<void> {
   }
 }
 
-// Upsert Driver in DB
+// Upsert Driver in DB with secure PIN handling
 export async function saveDriverToDB(driver: Driver): Promise<void> {
   if (!supabase) return;
 
+  // Save the driver data
   const { error } = await supabase
     .from('drivers')
     .upsert({
@@ -203,6 +204,24 @@ export async function saveDriverToDB(driver: Driver): Promise<void> {
   if (error) {
     console.error('Error saving driver:', error);
     throw error;
+  }
+
+  // If driver has an access code, securely hash it using the database function
+  if (driver.accessCode) {
+    try {
+      const { data, error: pinError } = await supabase.rpc('set_driver_pin', {
+        driver_id: driver.id,
+        pin: driver.accessCode
+      });
+
+      if (pinError) {
+        console.warn('PIN hashing failed, but driver created:', pinError.message);
+        // Don't throw error here to avoid breaking driver creation if PIN function is missing
+      }
+    } catch (pinError) {
+      console.warn('PIN hashing not available, storing access code in plain text:', pinError);
+      // Fallback: PIN functions might not be deployed yet
+    }
   }
 }
 

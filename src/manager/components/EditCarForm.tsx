@@ -4,7 +4,6 @@ import {
   Wrench, 
   User, 
   Settings, 
-  Activity, 
   Mail, 
   Phone, 
   Plus, 
@@ -191,7 +190,6 @@ export default function EditCarForm({
                     : 'text-gray-500 hover:bg-slate-100/80 hover:text-gray-800'
                 }`}
               >
-                <Activity className="w-4 h-4 shrink-0" />
                 <span>Specs & Assigned Driver</span>
               </button>
               <button

@@ -33,7 +33,7 @@ export default function ManagerHeader({
                 <Car className="w-6 h-6" id="logo-icon-car" />
               </div>
               <div className="text-left">
-                <h1 className="text-lg font-bold text-gray-905 leading-tight tracking-tight uppercase">Transit Hub</h1>
+                <h1 className="text-lg font-bold text-gray-905 leading-tight tracking-tight uppercase">North links</h1>
                 <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 font-mono block text-left">
                   Manager Portal
                 </span>

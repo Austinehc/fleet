@@ -179,31 +179,30 @@ class AuthService {
     }
   }
 
-  // Driver PIN authentication
+  // Driver PIN authentication using database function
   async authenticateDriver(driverId: string, pin: string): Promise<{ success: boolean; error?: string; sessionToken?: string }> {
     if (!supabase) {
       return { success: false, error: 'Supabase not configured' };
     }
 
     try {
-      // Call secure PIN verification function
+      // Use the secure RPC function for PIN verification
       const { data, error } = await supabase.rpc('verify_pin', {
         driver_id: driverId,
         pin: pin
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(`PIN verification failed: ${error.message}`);
+      }
 
       if (data === true) {
         // Generate session token for driver
         const sessionToken = this.generateSessionToken(driverId);
-        
-        // Store in secure session storage
         this.storeDriverSession(driverId, sessionToken);
-
         return { success: true, sessionToken };
       } else {
-        return { success: false, error: 'Invalid PIN or account locked' };
+        return { success: false, error: 'Invalid PIN or account locked due to multiple failed attempts' };
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Authentication failed';

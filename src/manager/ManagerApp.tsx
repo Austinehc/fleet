@@ -84,8 +84,8 @@ export default function ManagerApp({
             <Car className="w-3.5 h-3.5 text-indigo-400" />
           </div>
           <div className="text-left animate-none">
-            <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-150">Synchronizing Fleet Ledger</h4>
-            <p className="text-[10px] text-slate-400 leading-tight mt-0.5">Reading latest asset states and log histories...</p>
+            <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-150">Synchronizing Ledger</h4>
+            <p className="text-[10px] text-slate-400 leading-tight mt-0.5">Reading latest asset states and log histories</p>
           </div>
         </div>
       )}

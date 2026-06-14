@@ -3,6 +3,9 @@
 -- Run this in your Supabase SQL Editor.
 -- ==========================================
 
+-- Enable required extensions
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 -- 1. Create CARS Table
 CREATE TABLE IF NOT EXISTS public.cars (
     id TEXT PRIMARY KEY,
@@ -292,24 +295,40 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to verify PIN
+-- Function to verify PIN with improved error handling
 CREATE OR REPLACE FUNCTION verify_pin(driver_id TEXT, pin TEXT)
 RETURNS BOOLEAN AS $$
 DECLARE
     auth_record public.driver_auth%ROWTYPE;
     is_valid BOOLEAN := FALSE;
 BEGIN
+    -- Validate input parameters
+    IF driver_id IS NULL OR pin IS NULL THEN
+        RETURN FALSE;
+    END IF;
+
     -- Get auth record
     SELECT * INTO auth_record 
     FROM public.driver_auth 
     WHERE driver_auth.driver_id = verify_pin.driver_id;
+    
+    -- If no auth record exists, create one with the provided PIN
+    IF NOT FOUND THEN
+        -- Auto-create auth record if driver exists but no PIN is set yet
+        IF EXISTS (SELECT 1 FROM public.drivers WHERE id = verify_pin.driver_id) THEN
+            PERFORM set_driver_pin(verify_pin.driver_id, pin);
+            RETURN TRUE;
+        ELSE
+            RETURN FALSE;
+        END IF;
+    END IF;
     
     -- Check if locked
     IF auth_record.locked_until IS NOT NULL AND auth_record.locked_until > NOW() THEN
         RETURN FALSE;
     END IF;
     
-    -- Verify PIN
+    -- Verify PIN using crypt function
     IF auth_record.pin_hash = crypt(pin || auth_record.salt, auth_record.pin_hash) THEN
         -- Reset attempts on success
         UPDATE public.driver_auth 
@@ -328,16 +347,33 @@ BEGIN
     END IF;
     
     RETURN is_valid;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Log error and return false on any exception
+        RAISE NOTICE 'PIN verification error for driver %: %', driver_id, SQLERRM;
+        RETURN FALSE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to create/update driver PIN
+-- Function to create/update driver PIN with improved validation
 CREATE OR REPLACE FUNCTION set_driver_pin(driver_id TEXT, pin TEXT)
 RETURNS BOOLEAN AS $$
 DECLARE
     new_salt TEXT;
     pin_hash TEXT;
 BEGIN
+    -- Validate input parameters
+    IF driver_id IS NULL OR pin IS NULL OR LENGTH(pin) = 0 THEN
+        RAISE NOTICE 'Invalid input: driver_id or pin is null/empty';
+        RETURN FALSE;
+    END IF;
+
+    -- Check if driver exists
+    IF NOT EXISTS (SELECT 1 FROM public.drivers WHERE id = driver_id) THEN
+        RAISE NOTICE 'Driver with id % does not exist', driver_id;
+        RETURN FALSE;
+    END IF;
+    
     -- Generate salt
     new_salt := gen_random_uuid()::TEXT;
     
@@ -356,6 +392,10 @@ BEGIN
         updated_at = NOW();
         
     RETURN TRUE;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE NOTICE 'Error setting PIN for driver %: %', driver_id, SQLERRM;
+        RETURN FALSE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

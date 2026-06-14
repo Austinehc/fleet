@@ -5,7 +5,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { CarAsset, Driver } from './types';
-import { initialCars, initialDrivers } from './data';
 import ManagerApp from './ManagerApp';
 import DriverApp from './DriverApp';
 import {
@@ -127,17 +126,9 @@ export default function App() {
     async function loadBackendData() {
       const shouldLoadFromDb = isSupabaseConfigured() && !useLocalSandbox && supabase && (authState.user || userRole === 'driver');
       if (!shouldLoadFromDb) {
-        // Only load initial mock data if we're in sandbox mode
-        if (useLocalSandbox) {
-          const savedCars = localStorage.getItem('fleet_cars');
-          const savedDrivers = localStorage.getItem('fleet_drivers');
-          setCars(savedCars ? JSON.parse(savedCars) : initialCars);
-          setDrivers(savedDrivers ? JSON.parse(savedDrivers) : initialDrivers);
-        } else {
-          // If Supabase is configured but user not authenticated, don't load any data yet
-          setCars([]);
-          setDrivers([]);
-        }
+        // Clear data if no database connection or not authenticated
+        setCars([]);
+        setDrivers([]);
         return;
       }
 
@@ -481,8 +472,8 @@ export default function App() {
               <Car className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900 tracking-tight uppercase font-sans">Fleet Manager Portal</h2>
-              <p className="text-xs text-slate-450 mt-1">Sign in with your manager credentials to access the fleet management system.</p>
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight uppercase font-sans">North links Manager Portal</h2>
+              <p className="text-xs text-slate-450 mt-1">Sign in with your manager credentials to access the management portal.</p>
             </div>
           </div>
 
@@ -495,7 +486,7 @@ export default function App() {
                 </div>
                 {authError.includes("Database error saving new user") && (
                   <div className="mt-1 bg-white/90 border border-red-150 p-3 rounded-lg text-[11px] text-slate-700 font-normal space-y-2 leading-relaxed">
-                    <p className="font-bold text-red-800 flex items-center gap-1">💡 Supabase Trigger Conflict Detected</p>
+                    <p className="font-bold text-red-800 flex items-center gap-1">Supabase Trigger Conflict Detected</p>
                     <p>
                       Your Supabase database has a pre-existing <strong>PostgreSQL Trigger</strong> (typically <code>on_auth_user_created</code> on table <code>auth.users</code>) created from an old setup or separate project.
                     </p>
@@ -522,7 +513,7 @@ export default function App() {
             )}
 
             <div className="space-y-1">
-              <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Corporate Email Address</label>
+              <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Email Address</label>
               <input
                 type="email"
                 required
@@ -535,7 +526,7 @@ export default function App() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Manager Password</label>
+              <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Password</label>
               <input
                 type="password"
                 required

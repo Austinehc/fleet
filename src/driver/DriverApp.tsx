@@ -105,9 +105,9 @@ export default function DriverApp({
                 <Car className="w-6 h-6" id="logo-icon-car" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900 leading-tight">FLEET ASSETS</h1>
+                <h1 className="text-lg font-bold text-gray-900 leading-tight">North Links</h1>
                 <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 font-mono block text-left">
-                  Driver Station
+                  Driver Portal
                 </span>
               </div>
             </div>
@@ -130,7 +130,7 @@ export default function DriverApp({
               <div className="flex items-center gap-2.5" id="driver-logged-in-panel">
                 <span className="text-xs text-indigo-600 font-bold hidden sm:inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg">
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
-                  Duty: {activeDriver.fullName}
+                  Online: {activeDriver.fullName}
                 </span>
                 <button
                   onClick={() => {
@@ -261,13 +261,8 @@ export default function DriverApp({
       <footer className="bg-indigo-950 text-indigo-200 py-8 border-t border-indigo-900 text-xs mt-auto font-medium" id="page-footer">
         <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
           <div>
-            <p className="text-white font-bold">Car Asset Driver Portal</p>
-            <p className="text-indigo-400 text-[11px] mt-0.5">Mobile Driver operations console.</p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-4 text-indigo-300 text-[11px]">
-            <span>• Odometer Checked</span>
-            <span>• Activity Logs Verified</span>
-            <span>• Shift Yield Secured</span>
+            <p className="text-white font-bold">North Links Driver Portal</p>
+            <p className="text-indigo-400 text-[11px] mt-0.5">Driver operations console.</p>
           </div>
         </div>
       </footer>
