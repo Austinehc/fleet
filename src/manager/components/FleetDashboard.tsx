@@ -216,7 +216,7 @@ export default function FleetDashboard({
                       </div>
 
                       {/* Hover action indicator */}
-                      <div className="absolute top-2.5 right-2.5 bg-white/90 backdrop-blur-xs hover:bg-white text-indigo-650 p-1.5 rounded-lg shadow-3xs transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <div className="absolute top-2.5 right-2.5 bg-white/90 backdrop-blur-xs hover:bg-white text-indigo-600 p-1.5 rounded-lg shadow-3xs transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
                         <Edit className="w-3.5 h-3.5" />
                       </div>
                     </div>

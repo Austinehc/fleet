@@ -132,6 +132,25 @@ ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 -- ROW LEVEL SECURITY POLICIES
 -- ==========================================
 
+-- Drop existing policies if they exist to avoid conflicts
+DROP POLICY IF EXISTS "Users can view own profile" ON public.user_profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.user_profiles;
+DROP POLICY IF EXISTS "Managers can view all cars" ON public.cars;
+DROP POLICY IF EXISTS "Managers can manage cars" ON public.cars;
+DROP POLICY IF EXISTS "Managers can view all drivers" ON public.drivers;
+DROP POLICY IF EXISTS "Managers can manage drivers" ON public.drivers;
+DROP POLICY IF EXISTS "Drivers can view assigned car" ON public.cars;
+DROP POLICY IF EXISTS "Drivers can view own profile" ON public.drivers;
+DROP POLICY IF EXISTS "Managers can manage service logs" ON public.service_logs;
+DROP POLICY IF EXISTS "Drivers can view own car service logs" ON public.service_logs;
+DROP POLICY IF EXISTS "Managers can manage revenue logs" ON public.revenue_logs;
+DROP POLICY IF EXISTS "Drivers can view/create own revenue logs" ON public.revenue_logs;
+DROP POLICY IF EXISTS "Managers can manage fuel logs" ON public.fuel_logs;
+DROP POLICY IF EXISTS "Drivers can view/create own fuel logs" ON public.fuel_logs;
+DROP POLICY IF EXISTS "Managers can manage driver auth" ON public.driver_auth;
+DROP POLICY IF EXISTS "Drivers can verify own PIN" ON public.driver_auth;
+DROP POLICY IF EXISTS "Managers can view audit logs" ON public.audit_logs;
+
 -- User Profiles: Users can only see their own profile
 CREATE POLICY "Users can view own profile" ON public.user_profiles
     FOR SELECT USING (auth_user_id = auth.uid());
@@ -428,34 +447,50 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create audit triggers for all main tables
+-- Create audit triggers for all main tables (drop existing first)
+DROP TRIGGER IF EXISTS cars_audit ON public.cars;
 CREATE TRIGGER cars_audit AFTER INSERT OR UPDATE OR DELETE ON public.cars
     FOR EACH ROW EXECUTE FUNCTION audit_trigger();
 
+DROP TRIGGER IF EXISTS drivers_audit ON public.drivers;
 CREATE TRIGGER drivers_audit AFTER INSERT OR UPDATE OR DELETE ON public.drivers
     FOR EACH ROW EXECUTE FUNCTION audit_trigger();
 
+DROP TRIGGER IF EXISTS service_logs_audit ON public.service_logs;
 CREATE TRIGGER service_logs_audit AFTER INSERT OR UPDATE OR DELETE ON public.service_logs
     FOR EACH ROW EXECUTE FUNCTION audit_trigger();
 
+DROP TRIGGER IF EXISTS revenue_logs_audit ON public.revenue_logs;
 CREATE TRIGGER revenue_logs_audit AFTER INSERT OR UPDATE OR DELETE ON public.revenue_logs
     FOR EACH ROW EXECUTE FUNCTION audit_trigger();
 
+DROP TRIGGER IF EXISTS fuel_logs_audit ON public.fuel_logs;
 CREATE TRIGGER fuel_logs_audit AFTER INSERT OR UPDATE OR DELETE ON public.fuel_logs
     FOR EACH ROW EXECUTE FUNCTION audit_trigger();
 
 -- Allow public anonymous/authenticated read & write access for fleet monitoring simulation
+-- Drop existing policies if they exist, then recreate them
+DROP POLICY IF EXISTS "Allow read access of cars to all" ON public.cars;
+DROP POLICY IF EXISTS "Allow write access of cars to all" ON public.cars;
 CREATE POLICY "Allow read access of cars to all" ON public.cars FOR SELECT USING (true);
 CREATE POLICY "Allow write access of cars to all" ON public.cars FOR ALL USING (true);
 
+DROP POLICY IF EXISTS "Allow read access of drivers to all" ON public.drivers;
+DROP POLICY IF EXISTS "Allow write access of drivers to all" ON public.drivers;
 CREATE POLICY "Allow read access of drivers to all" ON public.drivers FOR SELECT USING (true);
 CREATE POLICY "Allow write access of drivers to all" ON public.drivers FOR ALL USING (true);
 
+DROP POLICY IF EXISTS "Allow read access of service_logs to all" ON public.service_logs;
+DROP POLICY IF EXISTS "Allow write access of service_logs to all" ON public.service_logs;
 CREATE POLICY "Allow read access of service_logs to all" ON public.service_logs FOR SELECT USING (true);
 CREATE POLICY "Allow write access of service_logs to all" ON public.service_logs FOR ALL USING (true);
 
+DROP POLICY IF EXISTS "Allow read access of revenue_logs to all" ON public.revenue_logs;
+DROP POLICY IF EXISTS "Allow write access of revenue_logs to all" ON public.revenue_logs;
 CREATE POLICY "Allow read access of revenue_logs to all" ON public.revenue_logs FOR SELECT USING (true);
 CREATE POLICY "Allow write access of revenue_logs to all" ON public.revenue_logs FOR ALL USING (true);
 
+DROP POLICY IF EXISTS "Allow read access of fuel_logs to all" ON public.fuel_logs;
+DROP POLICY IF EXISTS "Allow write access of fuel_logs to all" ON public.fuel_logs;
 CREATE POLICY "Allow read access of fuel_logs to all" ON public.fuel_logs FOR SELECT USING (true);
 CREATE POLICY "Allow write access of fuel_logs to all" ON public.fuel_logs FOR ALL USING (true);

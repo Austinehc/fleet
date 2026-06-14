@@ -331,7 +331,7 @@ export default function EditCarForm({
                           <Phone className="w-3.5 h-3.5 text-slate-400" />
                           <span className="text-slate-705 font-mono font-bold">{currentAssignedDriver.phone}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 pt-1 border-t border-gray-100 font-semibold text-[8px] uppercase tracking-wider text-indigo-650">
+                        <div className="flex items-center gap-1.5 pt-1 border-t border-gray-100 font-semibold text-[8px] uppercase tracking-wider text-indigo-600">
                           <Check className="w-3.5 h-3.5 text-emerald-500" />
                           <span>Access Code: {currentAssignedDriver.accessCode || 'N/A'}</span>
                         </div>
@@ -373,10 +373,10 @@ export default function EditCarForm({
                   </div>
                   <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
                     <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total logged service Events</span>
-                    <span className="text-lg font-black font-mono text-indigo-650 block mt-1">{logsList.length} Services</span>
+                    <span className="text-lg font-black font-mono text-indigo-600 block mt-1">{logsList.length} Services</span>
                   </div>
                   <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
-                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Average event Cost</span>
+                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Average maintenance Cost</span>
                     <span className="text-lg font-black font-mono text-slate-800 block mt-1">zmk {avgMaintCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
@@ -461,7 +461,7 @@ export default function EditCarForm({
                       <div className="md:col-span-2 flex justify-end gap-2 pt-2">
                         <button
                           type="submit"
-                          className="px-4 py-1.5 bg-indigo-650 hover:bg-indigo-700 text-white font-bold rounded-lg text-[9px] transition-colors cursor-pointer uppercase shadow-xs flex items-center gap-1 select-none"
+                          className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[9px] transition-colors cursor-pointer uppercase shadow-xs flex items-center gap-1 select-none"
                         >
                           <Check className="w-3.5 h-3.5" /> Confirm and log cost
                         </button>
@@ -657,7 +657,7 @@ export default function EditCarForm({
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-indigo-650 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md hover:shadow-indigo-500/10 transition-all cursor-pointer font-sans select-none"
+                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md hover:shadow-indigo-500/10 transition-all cursor-pointer font-sans select-none"
                     id="btn-edit-car-submit"
                   >
                     Save Vehicle Changes

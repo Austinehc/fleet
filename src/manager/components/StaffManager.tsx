@@ -233,7 +233,7 @@ export default function StaffManager({
                         className={`p-2.5 border rounded-lg transition-all text-center flex items-center justify-center shrink-0 cursor-pointer ${
                           justRegeneratedCode[drv.id]
                             ? 'bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm'
-                            : 'bg-white hover:bg-slate-100 border-slate-205 text-indigo-650 hover:text-indigo-700 hover:shadow-xs'
+                            : 'bg-white hover:bg-slate-100 border-slate-205 text-indigo-600 hover:text-indigo-700 hover:shadow-xs'
                         }`}
                         title="Regenerate New Access PIN Code"
                         id={`btn-regenerate-code-${drv.id}`}
@@ -262,7 +262,7 @@ export default function StaffManager({
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => onEditDriver(drv)}
-                      className="p-2 border border-slate-200 hover:bg-indigo-50/40 text-slate-600 hover:text-indigo-650 rounded-xl transition-all cursor-pointer"
+                      className="p-2 border border-slate-200 hover:bg-indigo-50/40 text-slate-600 hover:text-indigo-600 rounded-xl transition-all cursor-pointer"
                       title="Edit Profile details"
                       id={`btn-edit-drv-${drv.id}`}
                     >

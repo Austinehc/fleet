@@ -22,7 +22,7 @@ export default function DriverHistory({
       <div className="space-y-6" id="drv-historical-subcollections">
         {/* Repairs logged list */}
         <div className="space-y-2 text-left" id="drv-hist-svc-section">
-          <span className="text-[10px] uppercase font-bold text-indigo-655 tracking-wider font-sans">🛠️ Service/Repair Log</span>
+          <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider font-sans">Service/Repair Log</span>
           <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1" id="drv-hist-svc-list">
             {(assignedCar.serviceLogs || []).length > 0 ? (
               (assignedCar.serviceLogs || []).map((log) => {
@@ -44,7 +44,7 @@ export default function DriverHistory({
                         </div>
                         <p className={`text-[10px] text-slate-500 mt-0.5 font-normal leading-relaxed ${isExpanded ? '' : 'line-clamp-1'}`}>{log.description}</p>
                       </div>
-                      <span className="text-indigo-650 font-sans font-bold text-xs shrink-0 ml-2">zmk {log.cost}</span>
+                      <span className="text-indigo-600 font-sans font-bold text-xs shrink-0 ml-2">zmk {log.cost}</span>
                     </div>
 
                     {/* Expanded information drawer */}

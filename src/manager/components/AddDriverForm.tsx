@@ -126,8 +126,8 @@ export default function AddDriverForm({
   };
 
   return (
-    <div className="fixed inset-0 z-55 bg-gray-950/70 backdrop-blur-sm flex items-start justify-center p-4 py-8 overflow-y-auto" id="add-driver-modal">
-      <div className="bg-white rounded-2xl max-w-lg w-full border border-gray-100 overflow-hidden shadow-2xl flex flex-col max-h-screen my-auto overflow-y-auto" id="add-driver-modal-box">
+    <div className="fixed inset-0 z-55 bg-gray-950/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto" id="add-driver-modal">
+      <div className="bg-white rounded-2xl max-w-lg w-full border border-gray-100 overflow-hidden shadow-2xl flex flex-col max-h-[90vh] my-4" id="add-driver-modal-box">
         
         {/* Header banner */}
         <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-slate-50/50 shrink-0" id="add-driver-hdr">
@@ -145,11 +145,11 @@ export default function AddDriverForm({
         </div>
 
         {/* Form list parameters */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-left overflow-y-auto flex-1 min-h-0" id="add-driver-form">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3 text-left overflow-y-auto flex-1 min-h-0" id="add-driver-form">
           
           {/* Profile Photo Upload */}
-          <div className="flex items-center gap-4 p-3.5 bg-slate-50 border border-dashed border-gray-200 rounded-2xl" id="add-drv-photo-block">
-            <div className="w-16 h-16 rounded-full bg-slate-200 border border-gray-100 shrink-0 flex items-center justify-center overflow-hidden">
+          <div className="flex items-center gap-3 p-3 bg-slate-50 border border-dashed border-gray-200 rounded-xl" id="add-drv-photo-block">
+            <div className="w-12 h-12 rounded-full bg-slate-200 border border-gray-100 shrink-0 flex items-center justify-center overflow-hidden">
               {isUploadingDriverPhoto ? (
                 <div className="w-full h-full bg-indigo-50 flex flex-col items-center justify-center animate-pulse">
                   <span className="text-[8px] font-bold text-indigo-600 uppercase tracking-wider">Uploading</span>
@@ -161,7 +161,7 @@ export default function AddDriverForm({
               )}
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 font-sans">Driver Profile Picture</label>
+              <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 font-sans">Driver Profile Picture</label>
               <input
                 type="file"
                 accept="image/*"
@@ -175,7 +175,7 @@ export default function AddDriverForm({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Driver Full Name*</label>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Driver Full Name*</label>
             <input
               type="text"
               required
@@ -187,9 +187,9 @@ export default function AddDriverForm({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4" id="driver-identifiers-grid">
+          <div className="grid grid-cols-2 gap-3" id="driver-identifiers-grid">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">NRC Number*</label>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">NRC Number*</label>
               <input
                 type="text"
                 required
@@ -201,7 +201,7 @@ export default function AddDriverForm({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Driver's Licence Number*</label>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Driver's Licence Number*</label>
               <input
                 type="text"
                 required
@@ -214,9 +214,9 @@ export default function AddDriverForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4" id="driver-contacts-grid">
+          <div className="grid grid-cols-2 gap-3" id="driver-contacts-grid">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Email Address</label>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Email Address</label>
               <input
                 type="email"
                 placeholder="s.jenkins@corp.com"
@@ -227,7 +227,7 @@ export default function AddDriverForm({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Mobile Phone No.</label>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Mobile Phone No.</label>
               <input
                 type="text"
                 placeholder="(512) 555-0199"
@@ -239,9 +239,9 @@ export default function AddDriverForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4" id="driver-status-car-grid">
+          <div className="grid grid-cols-2 gap-3" id="driver-status-car-grid">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Driver Status</label>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Driver Status</label>
               <select
                 value={newDrvStatus}
                 onChange={(e) => setNewDrvStatus(e.target.value as Driver['status'])}
@@ -255,7 +255,7 @@ export default function AddDriverForm({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Assign Car Asset</label>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Assign Car Asset</label>
               <select
                 value={newDrvAssignedCarId}
                 onChange={(e) => setNewDrvAssignedCarId(e.target.value)}
@@ -283,7 +283,7 @@ export default function AddDriverForm({
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3" id="add-drv-actions">
+          <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2" id="add-drv-actions">
             <button
               type="button"
               onClick={onClose}

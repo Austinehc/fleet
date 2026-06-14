@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Car, CheckCircle2, LogOut, Loader2, XCircle } from 'lucide-react';
+import { Car, CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { CarAsset, Driver } from '../types';
 
 import DriverAuth from './components/DriverAuth';
@@ -94,14 +94,15 @@ export default function DriverApp({
 
   return (
     <div className="min-h-screen bg-slate-50/70 text-gray-900 font-sans flex flex-col antialiased" id="driver-app-root">
-      {/* Top Banner Header */}
-      <header className="bg-white border-b border-gray-200/80 sticky top-0 z-20 backdrop-blur-md bg-white/95" id="nav-header">
+      {/* Top Banner Header - Only show when authenticated */}
+      {activeDriver && (
+        <header className="bg-white border-b border-gray-200/80 sticky top-0 z-20 backdrop-blur-md bg-white/95" id="nav-header">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           
           {/* Logo Brand Brand */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4" id="brand-logo-area">
             <div className="flex items-center gap-3">
-              <div className="bg-indigo-650 text-white p-2.5 rounded-xl shadow-lg shadow-indigo-600/10 flex items-center justify-center">
+              <div className="bg-indigo-600 text-white p-2.5 rounded-xl shadow-lg shadow-indigo-600/10 flex items-center justify-center">
                 <Car className="w-6 h-6" id="logo-icon-car" />
               </div>
               <div>
@@ -121,8 +122,6 @@ export default function DriverApp({
                 className="px-3 py-1.5 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-650 hover:text-rose-705 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
                 id="btn-nav-supabase-sign-out"
               >
-                <LogOut className="w-3.5 h-3.5 text-rose-505" />
-                <span>Sign Out</span>
               </button>
             )}
 
@@ -148,6 +147,7 @@ export default function DriverApp({
           </div>
         </div>
       </header>
+      )}
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl mx-auto w-full" id="dashboard-body">

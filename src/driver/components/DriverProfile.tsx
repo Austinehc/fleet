@@ -22,7 +22,7 @@ export default function DriverProfile({
             referrerPolicy="no-referrer"
           />
         ) : (
-          <div className="bg-indigo-650 text-white w-12 h-12 rounded-2xl shadow-md shadow-indigo-600/10 flex items-center justify-center font-bold text-lg shrink-0">
+          <div className="bg-indigo-600 text-white w-12 h-12 rounded-2xl shadow-md shadow-indigo-600/10 flex items-center justify-center font-bold text-lg shrink-0">
             {activeDriver.fullName.split(' ').map(n => n[0]).join('')}
           </div>
         )}

@@ -468,7 +468,7 @@ export default function App() {
 
         <div className="max-w-md w-full bg-white border border-gray-200/80 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 z-10 animate-fade-in" id="auth-form-card">
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 bg-indigo-650 rounded-xl flex items-center justify-center mx-auto shadow-md">
+            <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center mx-auto shadow-md">
               <Car className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -558,7 +558,7 @@ export default function App() {
       <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col items-center justify-center p-4 relative" id="auth-unconfigured-screen">
         <div className="max-w-xl w-full bg-white border border-gray-200 rounded-3xl shadow-xl p-6 sm:p-8 space-y-6" id="setup-card">
           <div className="text-center space-y-2">
-            <Database className="w-12 h-12 text-indigo-650 mx-auto animate-pulse" />
+            <Database className="w-12 h-12 text-indigo-600 mx-auto animate-pulse" />
             <h1 className="text-lg font-bold text-slate-900 font-sans uppercase tracking-wide">Backend Database Needed</h1>
             <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
               Ready to migrate to a real Supabase database and Cloudinary storage? Please define the credentials in your local environment parameters.

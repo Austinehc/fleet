@@ -399,7 +399,7 @@ export default function FinanceDashboard({
             <button
               onClick={handleExportPDF}
               disabled={isExportingPDF}
-              className="px-4 py-2 bg-indigo-650 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5 font-sans disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 hover:bg-indigo-700"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5 font-sans disabled:opacity-50 disabled:cursor-not-allowed"
               id="btn-export-finance-report"
             >
               {isExportingPDF ? (
@@ -460,9 +460,9 @@ export default function FinanceDashboard({
           </div>
 
           <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-xs text-left" id="kpi-assets">
-            <span className="text-[10px] font-extrabold text-indigo-650 uppercase tracking-wider block font-sans">Contributing Assets</span>
-            <span className="text-xl font-extrabold font-mono text-indigo-705 block mt-1">{uniqueVehiclesCountAll} Cars</span>
-            <div className="flex items-center gap-1 mt-1 text-[10px] text-indigo-650 bg-indigo-50 px-2 py-0.5 rounded-full inline-flex font-sans">
+            <span className="text-[10px] font-extrabold text-indigo-600 uppercase tracking-wider block font-sans">Contributing Assets</span>
+            <span className="text-xl font-extrabold font-mono text-indigo-700 block mt-1">{uniqueVehiclesCountAll} Cars</span>
+            <div className="flex items-center gap-1 mt-1 text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full inline-flex font-sans">
               <Car className="w-3 h-3 shrink-0" />
               <span>out of {cars.length} cars</span>
             </div>
@@ -523,7 +523,7 @@ export default function FinanceDashboard({
                     onClick={() => setChartViewMode('timeline')}
                     className={`py-1 px-3 text-[10px] font-black rounded-md transition-all uppercase tracking-wider cursor-pointer ${
                       chartViewMode === 'timeline'
-                        ? 'bg-white text-indigo-650 shadow-xs'
+                        ? 'bg-white text-indigo-600 shadow-xs'
                         : 'text-gray-500 hover:text-gray-900'
                     }`}
                   >
@@ -534,7 +534,7 @@ export default function FinanceDashboard({
                     onClick={() => setChartViewMode('asset')}
                     className={`py-1 px-3 text-[10px] font-black rounded-md transition-all uppercase tracking-wider cursor-pointer ${
                       chartViewMode === 'asset'
-                        ? 'bg-white text-indigo-650 shadow-xs'
+                        ? 'bg-white text-indigo-600 shadow-xs'
                         : 'text-gray-500 hover:text-gray-900'
                     }`}
                   >
@@ -602,7 +602,7 @@ export default function FinanceDashboard({
                   onClick={() => setIsMonthlyTableExpanded(!isMonthlyTableExpanded)}
                 >
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xs font-black text-gray-905 uppercase tracking-wider flex items-center gap-1 hover:text-indigo-650 transition-colors">
+                    <h3 className="text-xs font-black text-gray-905 uppercase tracking-wider flex items-center gap-1 hover:text-indigo-600 transition-colors">
                       {isMonthlyTableExpanded ? (
                         <ChevronUp className="w-4 h-4 text-gray-500 shrink-0" />
                       ) : (

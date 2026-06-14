@@ -144,7 +144,7 @@ export default function DriverLogForms({
             type="button"
             onClick={() => setDriverLogSubTab('maintenance')}
             className={`px-3 py-1 text-[10px] font-bold rounded-lg cursor-pointer transition-all ${
-              driverLogSubTab === 'maintenance' ? 'bg-indigo-650 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+              driverLogSubTab === 'maintenance' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
             }`}
             id="drv-sub-btn-svc"
           >
@@ -209,34 +209,6 @@ export default function DriverLogForms({
                 id="drv-svc-input-miles"
               />
               <div className="flex gap-1 mt-1 flex-wrap" id="mileage-increment-helpers">
-                <button
-                  type="button"
-                  onClick={() => setDrvSvcMiles(prev => Math.max(assignedCar.mileage, (prev || assignedCar.mileage) + 50))}
-                  className="bg-slate-100 hover:bg-slate-200 text-[9px] text-slate-600 font-extrabold px-2 py-0.5 rounded transition-all cursor-pointer"
-                >
-                  +50 km
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDrvSvcMiles(prev => Math.max(assignedCar.mileage, (prev || assignedCar.mileage) + 100))}
-                  className="bg-slate-100 hover:bg-slate-200 text-[9px] text-slate-600 font-extrabold px-2 py-0.5 rounded transition-all cursor-pointer"
-                >
-                  +100 km
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDrvSvcMiles(prev => Math.max(assignedCar.mileage, (prev || assignedCar.mileage) + 500))}
-                  className="bg-slate-100 hover:bg-slate-200 text-[9px] text-slate-600 font-extrabold px-2 py-0.5 rounded transition-all cursor-pointer"
-                >
-                  +500 km
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDrvSvcMiles(assignedCar.mileage)}
-                  className="bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-[9px] text-slate-500 font-extrabold px-2 py-0.5 rounded transition-all cursor-pointer ml-auto"
-                >
-                  Reset
-                </button>
               </div>
             </div>
           </div>

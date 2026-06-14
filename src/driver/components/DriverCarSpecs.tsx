@@ -114,21 +114,6 @@ export default function DriverCarSpecs({
               <span className="font-semibold text-slate-855 text-right">{new Date().getFullYear() - assignedCar.year} years</span>
             </div>
           </div>
-
-          {/* Quick demo unassign trigger */}
-          <button
-            type="button"
-            onClick={() => {
-              if (!window.confirm('Simulate returning/unassigning this vehicle back to the available manager pool?')) return;
-              setDrivers(prev => prev.map(d => d.id === activeDriver.id ? { ...d, assignedCarId: null } : d));
-              setCars(prev => prev.map(car => car.id === assignedCar.id ? { ...car, status: 'Available' } : car));
-              triggerSuccess('🚘 Returned car asset back to pool successfully!');
-            }}
-            className="w-full mt-2 py-1.5 border border-red-200 bg-red-50 hover:bg-red-100/50 text-red-650 rounded-xl text-[10px] font-semibold transition-all cursor-pointer"
-            id="drv-unassign-self-btn"
-          >
-            Simulate Returning Vehicle
-          </button>
         </div>
       </div>
     </div>
