@@ -209,7 +209,7 @@ export async function saveDriverToDB(driver: Driver): Promise<void> {
   // If driver has an access code, securely hash it using the database function
   if (driver.accessCode) {
     try {
-      const { data, error: pinError } = await supabase.rpc('set_driver_pin', {
+      const { error: pinError } = await supabase.rpc('set_driver_pin', {
         driver_id: driver.id,
         pin: driver.accessCode
       });
