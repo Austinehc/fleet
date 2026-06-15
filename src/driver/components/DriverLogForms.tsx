@@ -112,6 +112,10 @@ export default function DriverLogForms({
       alert('Mileage cannot be negative.');
       return;
     }
+    if (mileageNum < assignedCar.mileage) {
+      alert(`Odometer cannot be less than current value (${assignedCar.mileage.toLocaleString()} km).`);
+      return;
+    }
 
     const newRev: RevenueLog = {
       id: `rev-${Date.now()}`,

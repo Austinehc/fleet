@@ -648,7 +648,14 @@ export default function EditCarForm({
                       min="0"
                       placeholder="e.g. 12000"
                       value={editCarMileage || ''}
-                      onChange={(e) => setEditCarMileage(Number(e.target.value))}
+                      onChange={(e) => {
+                        const newMileage = Number(e.target.value);
+                        if (newMileage < car.mileage) {
+                          alert(`Odometer cannot be less than current value (${car.mileage.toLocaleString()} km).`);
+                          return;
+                        }
+                        setEditCarMileage(newMileage);
+                      }}
                       className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 font-medium font-mono"
                       id="edit-input-car-miles"
                     />

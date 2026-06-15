@@ -131,6 +131,12 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
     user_agent TEXT
 );
 
+-- Add document fields to drivers table
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS nrc_front TEXT;
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS nrc_back TEXT;
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS license_front TEXT;
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS license_back TEXT;
+
 -- Enable RLS for Security
 ALTER TABLE public.cars ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.drivers ENABLE ROW LEVEL SECURITY;

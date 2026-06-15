@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Edit, Trash2, Key, RefreshCw, Search, Phone, Mail, Check, Car } from 'lucide-react';
+import { User, Edit, Trash2, Key, RefreshCw, Search, Phone, Mail, Check, Car, FileText } from 'lucide-react';
 import { Driver, CarAsset } from '../../types';
 
 interface StaffManagerProps {
@@ -41,6 +41,186 @@ export default function StaffManager({
     setTimeout(() => {
       setJustRegeneratedCode(prev => ({ ...prev, [driver.id]: false }));
     }, 2000);
+  };
+
+  // Export individual driver PDF
+  const exportDriverPDF = async (driver: Driver) => {
+    const assignedCar = cars.find(c => c.id === driver.assignedCarId);
+    
+    // Create a temporary DOM element for PDF generation
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = `
+      <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
+        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 20px;">
+          <h1 style="color: #6366f1; margin: 0; font-size: 24px;">North Links Fleet Management</h1>
+          <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 18px;">Driver Profile Report</h2>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+          <div>
+            <h3 style="color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">Driver Information</h3>
+            <p><strong>Full Name:</strong> ${driver.fullName}</p>
+            <p><strong>License Number:</strong> ${driver.licenseNumber}</p>
+            <p><strong>NRC Number:</strong> ${driver.nrcNumber}</p>
+            <p><strong>Email:</strong> ${driver.email || 'Not provided'}</p>
+            <p><strong>Phone:</strong> ${driver.phone || 'Not provided'}</p>
+            <p><strong>Status:</strong> <span style="color: ${driver.status === 'Active' ? '#059669' : '#dc2626'};">${driver.status}</span></p>
+            <p><strong>Access Code:</strong> ${driver.accessCode || 'Not set'}</p>
+            <p><strong>Created:</strong> ${new Date(driver.createdAt).toLocaleDateString()}</p>
+          </div>
+          
+          <div>
+            <h3 style="color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">Assigned Vehicle</h3>
+            ${assignedCar ? `
+              <p><strong>Vehicle:</strong> ${assignedCar.make} ${assignedCar.model} (${assignedCar.year})</p>
+              <p><strong>License Plate:</strong> ${assignedCar.plateNumber}</p>
+              <p><strong>Color:</strong> ${assignedCar.color}</p>
+              <p><strong>VIN:</strong> ${assignedCar.vin}</p>
+              <p><strong>Current Mileage:</strong> ${assignedCar.mileage.toLocaleString()} km</p>
+              <p><strong>Vehicle Status:</strong> <span style="color: ${assignedCar.status === 'Available' ? '#059669' : '#6366f1'};">${assignedCar.status}</span></p>
+              <p><strong>Service Records:</strong> ${assignedCar.serviceLogs?.length || 0} entries</p>
+              <p><strong>Revenue Records:</strong> ${assignedCar.revenueLogs?.length || 0} entries</p>
+            ` : '<p style="color: #6b7280; font-style: italic;">No vehicle currently assigned</p>'}
+          </div>
+        </div>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+          <p>Generated on ${new Date().toLocaleString()} by North Links Fleet Management System</p>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(tempDiv);
+    
+    try {
+      const html2pdf = (window as any).html2pdf;
+      if (!html2pdf) {
+        alert('PDF export library not loaded. Please refresh the page and try again.');
+        return;
+      }
+      
+      await html2pdf()
+        .set({
+          margin: [0.5, 0.5, 0.5, 0.5],
+          filename: `Driver_${driver.fullName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        })
+        .from(tempDiv)
+        .save();
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      document.body.removeChild(tempDiv);
+    }
+  };
+
+  // Export all drivers PDF
+  const exportAllDriversPDF = async () => {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = `
+      <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto;">
+        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 30px;">
+          <h1 style="color: #6366f1; margin: 0; font-size: 28px;">North Links Fleet Management</h1>
+          <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 20px;">Complete Driver Registry Report</h2>
+          <p style="color: #6b7280; margin: 10px 0 0 0;">Generated on ${new Date().toLocaleString()}</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <h3 style="color: #374151;">Summary Statistics</h3>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div style="font-size: 24px; font-weight: bold; color: #059669;">${drivers.filter(d => d.status === 'Active').length}</div>
+              <div style="font-size: 12px; color: #6b7280; text-transform: uppercase;">Active Drivers</div>
+            </div>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div style="font-size: 24px; font-weight: bold; color: #6366f1;">${drivers.filter(d => d.assignedCarId).length}</div>
+              <div style="font-size: 12px; color: #6b7280; text-transform: uppercase;">With Vehicles</div>
+            </div>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div style="font-size: 24px; font-weight: bold; color: #f59e0b;">${drivers.filter(d => d.status === 'On Leave').length}</div>
+              <div style="font-size: 12px; color: #6b7280; text-transform: uppercase;">On Leave</div>
+            </div>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div style="font-size: 24px; font-weight: bold; color: #dc2626;">${drivers.filter(d => d.status === 'Suspended').length}</div>
+              <div style="font-size: 12px; color: #6b7280; text-transform: uppercase;">Suspended</div>
+            </div>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+          <thead>
+            <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
+              <th style="padding: 12px 8px; text-align: left; border: 1px solid #e2e8f0;">Driver Name</th>
+              <th style="padding: 12px 8px; text-align: left; border: 1px solid #e2e8f0;">License #</th>
+              <th style="padding: 12px 8px; text-align: left; border: 1px solid #e2e8f0;">Contact</th>
+              <th style="padding: 12px 8px; text-align: left; border: 1px solid #e2e8f0;">Status</th>
+              <th style="padding: 12px 8px; text-align: left; border: 1px solid #e2e8f0;">Assigned Vehicle</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${drivers.map(driver => {
+              const assignedCar = cars.find(c => c.id === driver.assignedCarId);
+              return `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">
+                    <div style="font-weight: bold;">${driver.fullName}</div>
+                    <div style="color: #6b7280; font-size: 10px;">NRC: ${driver.nrcNumber}</div>
+                  </td>
+                  <td style="padding: 10px 8px; border: 1px solid #e2e8f0; font-family: monospace;">${driver.licenseNumber}</td>
+                  <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">
+                    <div style="font-size: 10px;">${driver.email || 'No email'}</div>
+                    <div style="font-size: 10px; font-family: monospace;">${driver.phone || 'No phone'}</div>
+                  </td>
+                  <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">
+                    <span style="color: ${driver.status === 'Active' ? '#059669' : driver.status === 'Suspended' ? '#dc2626' : '#6b7280'}; font-weight: bold;">${driver.status}</span>
+                  </td>
+                  <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">
+                    ${assignedCar ? `
+                      <div style="font-weight: bold;">${assignedCar.make} ${assignedCar.model}</div>
+                      <div style="color: #6b7280; font-size: 10px; font-family: monospace;">${assignedCar.plateNumber}</div>
+                    ` : '<span style="color: #6b7280; font-style: italic;">Unassigned</span>'}
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+          <p>Complete Driver Registry Report - ${drivers.length} total drivers</p>
+          <p>North Links Fleet Management System</p>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(tempDiv);
+    
+    try {
+      const html2pdf = (window as any).html2pdf;
+      if (!html2pdf) {
+        alert('PDF export library not loaded. Please refresh the page and try again.');
+        return;
+      }
+      
+      await html2pdf()
+        .set({
+          margin: [0.5, 0.5, 0.5, 0.5],
+          filename: `Fleet_Driver_Registry_${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        })
+        .from(tempDiv)
+        .save();
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      document.body.removeChild(tempDiv);
+    }
   };
 
   const filteredDrivers = drivers.filter(drv => {
@@ -107,6 +287,19 @@ export default function StaffManager({
               {pill_status}
             </button>
           ))}
+          
+          {/* Export All Drivers Button */}
+          <div className="ml-3 border-l border-gray-200 pl-3">
+            <button
+              onClick={exportAllDriversPDF}
+              className="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer font-sans shadow-3xs flex items-center gap-1.5"
+              title="Export Complete Driver Registry as PDF"
+              id="btn-export-all-drivers"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Export All
+            </button>
+          </div>
         </div>
 
       </div>
@@ -260,6 +453,14 @@ export default function StaffManager({
                   </div>
                   
                   <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => exportDriverPDF(drv)}
+                      className="p-2 border border-slate-200 hover:bg-green-50/40 text-slate-600 hover:text-green-600 rounded-xl transition-all cursor-pointer"
+                      title="Export Driver PDF Report"
+                      id={`btn-export-pdf-${drv.id}`}
+                    >
+                      <FileText className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => onEditDriver(drv)}
                       className="p-2 border border-slate-200 hover:bg-indigo-50/40 text-slate-600 hover:text-indigo-600 rounded-xl transition-all cursor-pointer"

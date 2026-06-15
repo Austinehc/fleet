@@ -152,6 +152,10 @@ export async function getDriversFromDB(): Promise<Driver[]> {
     assignedCarId: drv.assigned_car_id,
     profilePicture: drv.profile_picture,
     accessCode: drv.access_code,
+    nrcFront: drv.nrc_front,
+    nrcBack: drv.nrc_back,
+    licenseFront: drv.license_front,
+    licenseBack: drv.license_back,
     createdAt: drv.created_at
   }));
 }
@@ -215,6 +219,10 @@ export async function saveDriverToDB(driver: Driver): Promise<void> {
       assigned_car_id: driver.assignedCarId,
       profile_picture: driver.profilePicture,
       access_code: driver.accessCode,
+      nrc_front: driver.nrcFront,
+      nrc_back: driver.nrcBack,
+      license_front: driver.licenseFront,
+      license_back: driver.licenseBack,
       created_at: driver.createdAt
     });
 

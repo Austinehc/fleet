@@ -27,12 +27,12 @@ export default function AddDriverForm({
   const [newDrvPhoto, setNewDrvPhoto] = useState<string>('');
   const [isUploadingDriverPhoto, setIsUploadingDriverPhoto] = useState(false);
   
-  // Document uploads (TODO: implement UI)
-  // const [nrcFront, setNrcFront] = useState<string>('');
-  // const [nrcBack, setNrcBack] = useState<string>('');
-  // const [licenseFront, setLicenseFront] = useState<string>('');
-  // const [licenseBack, setLicenseBack] = useState<string>('');
-  // const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  // Document uploads
+  const [nrcFront, setNrcFront] = useState<string>('');
+  const [nrcBack, setNrcBack] = useState<string>('');
+  const [licenseFront, setLicenseFront] = useState<string>('');
+  const [licenseBack, setLicenseBack] = useState<string>('');
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   // Profile picture upload
   const handleDriverPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,50 +66,13 @@ export default function AddDriverForm({
     }
   };
 
-  // Document upload handlers (TODO: implement UI for document uploads)
-  /*
+  // Document upload handlers
   const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>, docType: 'nrcFront' | 'nrcBack' | 'licenseFront' | 'licenseBack') => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         alert('File size exceeds 5MB limit.');
         return;
-      }
-      setIsUploadingDoc(true);
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result as string;
-        try {
-          const { uploadToCloudinary, isCloudinaryConfigured } = await import('../../lib/cloudinary');
-          const finalUrl = isCloudinaryConfigured() ? await uploadToCloudinary(base64) : base64;
-          
-          switch (docType) {
-            case 'nrcFront':
-              setNrcFront(finalUrl);
-              break;
-            case 'nrcBack':
-              setNrcBack(finalUrl);
-              break;
-            case 'licenseFront':
-              setLicenseFront(finalUrl);
-              break;
-            case 'licenseBack':
-              setLicenseBack(finalUrl);
-              break;
-          }
-        } catch (err: any) {
-          console.error(err);
-          alert('Failed to upload document. Keeping local data-URI.');
-          switch (docType) {
-            case 'nrcFront':
-              setNrcFront(base64);
-              break;
-            case 'nrcBack':
-              setNrcBack(base64);
-              break;
-  };
-
-  const generateAccessCode = (): string => {
       }
       setIsUploadingDoc(true);
       const reader = new FileReader();
@@ -157,7 +120,6 @@ export default function AddDriverForm({
       reader.readAsDataURL(file);
     }
   };
-  */
 
   const generateAccessCode = (): string => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -195,11 +157,18 @@ export default function AddDriverForm({
     if (newDrvPhoto) {
       createdDriver.profilePicture = newDrvPhoto;
     }
-    // TODO: Add document uploads when UI is implemented
-    // if (nrcFront) createdDriver.nrcFront = nrcFront;
-    // if (nrcBack) createdDriver.nrcBack = nrcBack;
-    // if (licenseFront) createdDriver.licenseFront = licenseFront;
-    // if (licenseBack) createdDriver.licenseBack = licenseBack;
+    if (nrcFront) {
+      createdDriver.nrcFront = nrcFront;
+    }
+    if (nrcBack) {
+      createdDriver.nrcBack = nrcBack;
+    }
+    if (licenseFront) {
+      createdDriver.licenseFront = licenseFront;
+    }
+    if (licenseBack) {
+      createdDriver.licenseBack = licenseBack;
+    }
 
     // Update state
     setDrivers(prev => [createdDriver, ...prev]);
@@ -385,6 +354,99 @@ export default function AddDriverForm({
             <p className="text-[10px] text-indigo-700 leading-normal font-medium font-sans">
               Assigning an available car immediately schedules the car to <strong>Assigned</strong> state and binds logs specifically to this staff profile. Unassigned drivers can be coupled subsequently.
             </p>
+          </div>
+
+          {/* Document Upload Section */}
+          <div className="space-y-3 p-3 bg-slate-50 border border-dashed border-gray-200 rounded-xl" id="document-upload-section">
+            <div>
+              <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 font-sans">Identity Documents Upload</h4>
+              <p className="text-[9px] text-gray-400 mb-3">Upload driver's NRC and license images (optional but recommended)</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {/* NRC Front */}
+              <div className="space-y-2">
+                <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider font-sans">NRC Front</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingDoc}
+                    onChange={(e) => handleDocumentUpload(e, 'nrcFront')}
+                    className="text-[9px] text-gray-550 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[9px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer disabled:opacity-50 w-full"
+                  />
+                  {nrcFront && (
+                    <div className="mt-1 w-full h-16 border border-gray-200 rounded-lg overflow-hidden">
+                      <img src={nrcFront} alt="NRC Front" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* NRC Back */}
+              <div className="space-y-2">
+                <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider font-sans">NRC Back</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingDoc}
+                    onChange={(e) => handleDocumentUpload(e, 'nrcBack')}
+                    className="text-[9px] text-gray-550 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[9px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer disabled:opacity-50 w-full"
+                  />
+                  {nrcBack && (
+                    <div className="mt-1 w-full h-16 border border-gray-200 rounded-lg overflow-hidden">
+                      <img src={nrcBack} alt="NRC Back" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* License Front */}
+              <div className="space-y-2">
+                <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider font-sans">License Front</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingDoc}
+                    onChange={(e) => handleDocumentUpload(e, 'licenseFront')}
+                    className="text-[9px] text-gray-550 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[9px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer disabled:opacity-50 w-full"
+                  />
+                  {licenseFront && (
+                    <div className="mt-1 w-full h-16 border border-gray-200 rounded-lg overflow-hidden">
+                      <img src={licenseFront} alt="License Front" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* License Back */}
+              <div className="space-y-2">
+                <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider font-sans">License Back</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingDoc}
+                    onChange={(e) => handleDocumentUpload(e, 'licenseBack')}
+                    className="text-[9px] text-gray-550 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[9px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer disabled:opacity-50 w-full"
+                  />
+                  {licenseBack && (
+                    <div className="mt-1 w-full h-16 border border-gray-200 rounded-lg overflow-hidden">
+                      <img src={licenseBack} alt="License Back" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {isUploadingDoc && (
+              <div className="flex items-center justify-center py-2">
+                <div className="w-4 h-4 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+                <span className="ml-2 text-[9px] text-indigo-600 font-bold">Uploading document...</span>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
