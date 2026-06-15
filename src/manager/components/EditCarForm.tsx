@@ -29,6 +29,9 @@ export default function EditCarForm({
 }: EditCarFormProps) {
   // Navigation tabs for the asset detailed modal
   const [activeTab, setActiveTab] = useState<'specs_driver' | 'maintenance' | 'edit_props'>('specs_driver');
+  
+  // Sub-tabs for maintenance section
+  const [maintenanceSubTab, setMaintenanceSubTab] = useState<'maintenance' | 'insurance'>('maintenance');
 
   // Specs attributes editing state
   const [editCarMake, setEditCarMake] = useState(car.make);
@@ -360,218 +363,277 @@ export default function EditCarForm({
             {activeTab === 'maintenance' && (
               <div className="space-y-6 text-left animate-fade-in" id="panel-maintenance">
                 
-                {/* Financial Summary cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4" id="maint-summary-widgets">
-                  <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
-                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Maintenance Cost</span>
-                    <span className="text-lg font-black font-mono text-orange-600 block mt-1">zmk {(car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
-                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Insurance & Compliance Cost</span>
-                    <span className="text-lg font-black font-mono text-rose-600 block mt-1">zmk {(car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
-                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Records</span>
-                    <span className="text-lg font-black font-mono text-indigo-600 block mt-1">{(car.serviceLogs || []).length + (car.insuranceLogs || []).length} Records</span>
-                  </div>
-                  <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
-                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Next Insurance Expiry</span>
-                    <span className="text-sm font-black font-mono text-amber-600 block mt-1">
-                      {(() => {
-                        const nextExpiry = (car.insuranceLogs || [])
-                          .map(log => new Date(log.expiryDate))
-                          .filter(date => date > new Date())
-                          .sort((a, b) => a.getTime() - b.getTime())[0];
-                        return nextExpiry ? nextExpiry.toLocaleDateString() : 'No upcoming';
-                      })()}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Interactive log new insurance/compliance event */}
-                <div className="border border-indigo-150 bg-indigo-50/20 rounded-2xl p-4.5" id="quick-service-log">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h5 className="text-[10px] uppercase font-black tracking-wider text-indigo-700">Log Insurance & Compliance</h5>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Record insurance payments, road tax, fitness certificates, and compliance documents.</p>
-                    </div>
+                {/* Sub-tabs for Maintenance and Insurance */}
+                <div className="border-b border-gray-150">
+                  <div className="flex space-x-8" id="maintenance-sub-tabs">
                     <button
                       type="button"
-                      onClick={() => setIsAddingLog(!isAddingLog)}
-                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[9px] transition-colors cursor-pointer uppercase flex items-center gap-1 shadow-sm select-none"
+                      onClick={() => setMaintenanceSubTab('maintenance')}
+                      className={`py-3 px-1 text-sm font-bold border-b-2 transition-all ${
+                        maintenanceSubTab === 'maintenance'
+                          ? 'text-indigo-600 border-indigo-600'
+                          : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
+                      }`}
                     >
-                      <Plus className="w-3.5 h-3.5" />
-                      {isAddingLog ? 'Collapse Form' : 'Log Compliance'}
+                      <div className="flex items-center gap-2">
+                        <Wrench className="w-4 h-4" />
+                        Maintenance History
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMaintenanceSubTab('insurance')}
+                      className={`py-3 px-1 text-sm font-bold border-b-2 transition-all ${
+                        maintenanceSubTab === 'insurance'
+                          ? 'text-indigo-600 border-indigo-600'
+                          : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4" />
+                        Insurance & Compliance
+                      </div>
                     </button>
                   </div>
+                </div>
 
-                  {isAddingLog && (
-                    <form onSubmit={handleAddMaintenanceLog} className="mt-4 pt-4 border-t border-indigo-10/40 grid grid-cols-1 md:grid-cols-2 gap-3.5 text-left animate-fade-in" id="inspect-maint-form">
-                      <div>
-                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Insurance/Compliance Type</label>
-                        <select
-                          value={logCategory}
-                          onChange={(e) => setLogCategory(e.target.value as any)}
-                          className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-bold"
-                        >
-                          <option value="Road Tax">Road Tax</option>
-                          <option value="Insurance">Vehicle Insurance</option>
-                          <option value="Fitness">Fitness Certificate</option>
-                          <option value="Identity">Vehicle Identity/Registration</option>
-                        </select>
+                {/* Maintenance Sub-tab Content */}
+                {maintenanceSubTab === 'maintenance' && (
+                  <div className="space-y-6" id="maintenance-content">
+                    {/* Maintenance Summary */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="maintenance-summary-widgets">
+                      <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
+                        <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Maintenance Cost</span>
+                        <span className="text-lg font-black font-mono text-orange-600 block mt-1">zmk {(car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
-                      <div>
-                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Expiry Date</label>
-                        <input
-                          type="date"
-                          required
-                          value={logExpiryDate}
-                          onChange={(e) => setLogExpiryDate(e.target.value)}
-                          className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-705 font-mono font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        />
+                      <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
+                        <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Records</span>
+                        <span className="text-lg font-black font-mono text-indigo-600 block mt-1">{(car.serviceLogs || []).length} Records</span>
                       </div>
-                      <div>
-                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Payment Amount (zmk)</label>
-                        <input
-                          type="number"
-                          required
-                          min="0"
-                          placeholder="e.g. 1500"
-                          value={logCost === 0 ? '' : logCost}
-                          onChange={(e) => setLogCost(Number(e.target.value))}
-                          className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-705 font-mono font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        />
+                      <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
+                        <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Last Service</span>
+                        <span className="text-sm font-black font-mono text-slate-600 block mt-1">
+                          {(() => {
+                            const logs = car.serviceLogs || [];
+                            return logs.length > 0 && logs[0] 
+                              ? new Date(logs[0].date).toLocaleDateString()
+                              : 'No services';
+                          })()}
+                        </span>
                       </div>
-                      <div>
-                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Processed By</label>
-                        <input
-                          type="text"
-                          required
-                          value={logPerformedBy}
-                          onChange={(e) => setLogPerformedBy(e.target.value)}
-                          className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        />
+                    </div>
+
+                    {/* Maintenance History */}
+                    <div className="space-y-3" id="maintenance-logs-registry-box">
+                      <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">Maintenance History ({(car.serviceLogs || []).length})</h4>
+                      
+                      {(car.serviceLogs || []).length > 0 ? (
+                        <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto border border-slate-150 rounded-xl px-4 bg-white" id="maintenance-logs-sub-ledger">
+                          {(car.serviceLogs || []).map((log) => (
+                            <div key={log.id} className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b last:border-b-0 gap-2.5" id={`maintenance-item-${log.id}`}>
+                              <div className="text-left font-sans flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded leading-none ${
+                                    log.category === 'Maintenance' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                                    log.category === 'Repair' ? 'bg-red-50 text-red-700 border border-red-100' :
+                                    log.category === 'Inspection' ? 'bg-green-50 text-green-700 border border-green-100' :
+                                    log.category === 'Tire Service' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
+                                    log.category === 'Oil Change' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                                    'bg-gray-50 text-gray-700 border border-gray-100'
+                                  }`}>
+                                    {log.category}
+                                  </span>
+                                  <span className="text-[10px] font-mono text-slate-400 font-bold">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                </div>
+                                <p className="text-xs font-bold text-slate-800 mt-1.5 line-clamp-2">{log.description}</p>
+                                <div className="text-[9px] text-slate-400 mt-1 flex items-center gap-1 font-sans">
+                                  <span>Mileage: <b className="font-mono text-slate-605">{log.mileage.toLocaleString()} km</b></span>
+                                  <span>|</span>
+                                  <span>By: <b className="text-slate-605">{log.performedBy || 'Unknown'}</b></span>
+                                </div>
+                              </div>
+
+                              <div className="text-right shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 border-dashed border-gray-100 pt-2 sm:pt-0">
+                                <span className="text-[9px] uppercase font-bold text-slate-400 sm:hidden">Cost:</span>
+                                <span className="text-xs font-mono font-black text-orange-605 bg-orange-50 border border-orange-100 px-2 py-1 rounded-lg">
+                                  zmk {log.cost.toLocaleString('en-US', { minimumFractionDigits: 1 })}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-12 text-center bg-slate-50 border border-dashed border-gray-150 rounded-xl" id="maintenance-empty-slate">
+                          <Wrench className="w-10 h-10 text-gray-200 mx-auto" />
+                          <p className="text-xs text-gray-400 italic mt-2">No maintenance records have been logged for this vehicle.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Insurance Sub-tab Content */}
+                {maintenanceSubTab === 'insurance' && (
+                  <div className="space-y-6" id="insurance-content">
+                    {/* Insurance Summary */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="insurance-summary-widgets">
+                      <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
+                        <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Insurance & Compliance Cost</span>
+                        <span className="text-lg font-black font-mono text-rose-600 block mt-1">zmk {(car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Description / Notes</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Annual insurance renewal - comprehensive coverage"
-                          value={logDescription}
-                          onChange={(e) => setLogDescription(e.target.value)}
-                          className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-505"
-                        />
+                      <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
+                        <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Records</span>
+                        <span className="text-lg font-black font-mono text-indigo-600 block mt-1">{(car.insuranceLogs || []).length} Records</span>
                       </div>
-                      <div className="md:col-span-2 flex justify-end gap-2 pt-2">
+                      <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
+                        <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Next Expiry</span>
+                        <span className="text-sm font-black font-mono text-amber-600 block mt-1">
+                          {(() => {
+                            const nextExpiry = (car.insuranceLogs || [])
+                              .map(log => new Date(log.expiryDate))
+                              .filter(date => date > new Date())
+                              .sort((a, b) => a.getTime() - b.getTime())[0];
+                            return nextExpiry ? nextExpiry.toLocaleDateString() : 'No upcoming';
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Interactive log new insurance/compliance event */}
+                    <div className="border border-indigo-150 bg-indigo-50/20 rounded-2xl p-4.5" id="quick-service-log">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h5 className="text-[10px] uppercase font-black tracking-wider text-indigo-700">Log Insurance & Compliance</h5>
+                          <p className="text-[10px] text-slate-400 mt-0.5">Record insurance payments, road tax, fitness certificates, and compliance documents.</p>
+                        </div>
                         <button
-                          type="submit"
-                          className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[9px] transition-colors cursor-pointer uppercase shadow-xs flex items-center gap-1 select-none"
+                          type="button"
+                          onClick={() => setIsAddingLog(!isAddingLog)}
+                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[9px] transition-colors cursor-pointer uppercase flex items-center gap-1 shadow-sm select-none"
                         >
-                          <Check className="w-3.5 h-3.5" /> Log Compliance Record
+                          <Plus className="w-3.5 h-3.5" />
+                          {isAddingLog ? 'Collapse Form' : 'Log Compliance'}
                         </button>
                       </div>
-                    </form>
-                  )}
-                </div>
 
-                {/* Maintenance & Insurance Logs Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="maintenance-insurance-sections">
-                  
-                  {/* Left Column: Maintenance History */}
-                  <div className="space-y-3" id="maintenance-logs-registry-box">
-                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">Maintenance History ({(car.serviceLogs || []).length})</h4>
-                    
-                    {(car.serviceLogs || []).length > 0 ? (
-                      <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto border border-slate-150 rounded-xl px-4 bg-white" id="maintenance-logs-sub-ledger">
-                        {(car.serviceLogs || []).map((log) => (
-                          <div key={log.id} className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b last:border-b-0 gap-2.5" id={`maintenance-item-${log.id}`}>
-                            <div className="text-left font-sans flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded leading-none ${
-                                  log.category === 'Maintenance' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                                  log.category === 'Repair' ? 'bg-red-50 text-red-700 border border-red-100' :
-                                  log.category === 'Inspection' ? 'bg-green-50 text-green-700 border border-green-100' :
-                                  log.category === 'Tire Service' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
-                                  log.category === 'Oil Change' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
-                                  'bg-gray-50 text-gray-700 border border-gray-100'
-                                }`}>
-                                  {log.category}
-                                </span>
-                                <span className="text-[10px] font-mono text-slate-400 font-bold">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                              </div>
-                              <p className="text-xs font-bold text-slate-800 mt-1.5 line-clamp-2">{log.description}</p>
-                              <div className="text-[9px] text-slate-400 mt-1 flex items-center gap-1 font-sans">
-                                <span>Mileage: <b className="font-mono text-slate-605">{log.mileage.toLocaleString()} km</b></span>
-                                <span>|</span>
-                                <span>By: <b className="text-slate-605">{log.performedBy || 'Unknown'}</b></span>
-                              </div>
-                            </div>
-
-                            <div className="text-right shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 border-dashed border-gray-100 pt-2 sm:pt-0">
-                              <span className="text-[9px] uppercase font-bold text-slate-400 sm:hidden">Cost:</span>
-                              <span className="text-xs font-mono font-black text-orange-605 bg-orange-50 border border-orange-100 px-2 py-1 rounded-lg">
-                                zmk {log.cost.toLocaleString('en-US', { minimumFractionDigits: 1 })}
-                              </span>
-                            </div>
+                      {isAddingLog && (
+                        <form onSubmit={handleAddMaintenanceLog} className="mt-4 pt-4 border-t border-indigo-10/40 grid grid-cols-1 md:grid-cols-2 gap-3.5 text-left animate-fade-in" id="inspect-maint-form">
+                          <div>
+                            <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Insurance/Compliance Type</label>
+                            <select
+                              value={logCategory}
+                              onChange={(e) => setLogCategory(e.target.value as any)}
+                              className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-bold"
+                            >
+                              <option value="Road Tax">Road Tax</option>
+                              <option value="Insurance">Vehicle Insurance</option>
+                              <option value="Fitness">Fitness Certificate</option>
+                              <option value="Identity">Vehicle Identity/Registration</option>
+                            </select>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="py-12 text-center bg-slate-50 border border-dashed border-gray-150 rounded-xl" id="maintenance-empty-slate">
-                        <Wrench className="w-10 h-10 text-gray-200 mx-auto" />
-                        <p className="text-xs text-gray-400 italic mt-2">No maintenance records have been logged for this vehicle.</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right Column: Insurance & Compliance */}
-                  <div className="space-y-3" id="insurance-logs-registry-box">
-                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">Insurance & Compliance Registry ({(car.insuranceLogs || []).length})</h4>
-                    
-                    {(car.insuranceLogs || []).length > 0 ? (
-                      <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto border border-slate-150 rounded-xl px-4 bg-white" id="insurance-logs-sub-ledger">
-                        {(car.insuranceLogs || []).map((log) => (
-                          <div key={log.id} className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b last:border-b-0 gap-2.5" id={`insurance-item-${log.id}`}>
-                            <div className="text-left font-sans flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded leading-none ${
-                                  log.type === 'Insurance' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                                  log.type === 'Road Tax' ? 'bg-green-50 text-green-700 border border-green-100' :
-                                  log.type === 'Fitness' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
-                                  'bg-purple-50 text-purple-700 border border-purple-100'
-                                }`}>
-                                  {log.type}
-                                </span>
-                                <span className="text-[10px] font-mono text-slate-400 font-bold">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                              </div>
-                              <p className="text-xs font-bold text-slate-800 mt-1.5 line-clamp-2">{log.description}</p>
-                              <div className="text-[9px] text-slate-400 mt-1 flex items-center gap-1 font-sans">
-                                <span>Expires: <b className={`font-mono ${new Date(log.expiryDate) < new Date() ? 'text-red-600' : new Date(log.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-amber-600' : 'text-green-600'}`}>
-                                  {new Date(log.expiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                </b></span>
-                                <span>|</span>
-                                <span>By: <b className="text-slate-605">{log.performedBy || 'Unknown'}</b></span>
-                              </div>
-                            </div>
-
-                            <div className="text-right shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 border-dashed border-gray-100 pt-2 sm:pt-0">
-                              <span className="text-[9px] uppercase font-bold text-slate-400 sm:hidden">Cost:</span>
-                              <span className="text-xs font-mono font-black text-rose-605 bg-rose-50 border border-rose-100 px-2 py-1 rounded-lg">
-                                zmk {log.amount.toLocaleString('en-US', { minimumFractionDigits: 1 })}
-                              </span>
-                            </div>
+                          <div>
+                            <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Expiry Date</label>
+                            <input
+                              type="date"
+                              required
+                              value={logExpiryDate}
+                              onChange={(e) => setLogExpiryDate(e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-705 font-mono font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            />
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="py-12 text-center bg-slate-50 border border-dashed border-gray-150 rounded-xl" id="insurance-empty-slate">
-                        <Wrench className="w-10 h-10 text-gray-200 mx-auto" />
-                        <p className="text-xs text-gray-400 italic mt-2">No insurance or compliance records have been logged for this vehicle.</p>
-                      </div>
-                    )}
+                          <div>
+                            <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Payment Amount (zmk)</label>
+                            <input
+                              type="number"
+                              required
+                              min="0"
+                              placeholder="e.g. 1500"
+                              value={logCost === 0 ? '' : logCost}
+                              onChange={(e) => setLogCost(Number(e.target.value))}
+                              className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-705 font-mono font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Processed By</label>
+                            <input
+                              type="text"
+                              required
+                              value={logPerformedBy}
+                              onChange={(e) => setLogPerformedBy(e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-[9px] font-extrabold text-slate-450 uppercase mb-1">Description / Notes</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="e.g. Annual insurance renewal - comprehensive coverage"
+                              value={logDescription}
+                              onChange={(e) => setLogDescription(e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-505"
+                            />
+                          </div>
+                          <div className="md:col-span-2 flex justify-end gap-2 pt-2">
+                            <button
+                              type="submit"
+                              className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[9px] transition-colors cursor-pointer uppercase shadow-xs flex items-center gap-1 select-none"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Log Compliance Record
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                        </div>
+
+                    {/* Insurance & Compliance Records */}
+                    <div className="space-y-3" id="insurance-logs-registry-box">
+                      <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">Insurance & Compliance Registry ({(car.insuranceLogs || []).length})</h4>
+                      
+                      {(car.insuranceLogs || []).length > 0 ? (
+                        <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto border border-slate-150 rounded-xl px-4 bg-white" id="insurance-logs-sub-ledger">
+                          {(car.insuranceLogs || []).map((log) => (
+                            <div key={log.id} className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b last:border-b-0 gap-2.5" id={`insurance-item-${log.id}`}>
+                              <div className="text-left font-sans flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded leading-none ${
+                                    log.type === 'Insurance' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                                    log.type === 'Road Tax' ? 'bg-green-50 text-green-700 border border-green-100' :
+                                    log.type === 'Fitness' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                                    'bg-purple-50 text-purple-700 border border-purple-100'
+                                  }`}>
+                                    {log.type}
+                                  </span>
+                                  <span className="text-[10px] font-mono text-slate-400 font-bold">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                </div>
+                                <p className="text-xs font-bold text-slate-800 mt-1.5 line-clamp-2">{log.description}</p>
+                                <div className="text-[9px] text-slate-400 mt-1 flex items-center gap-1 font-sans">
+                                  <span>Expires: <b className={`font-mono ${new Date(log.expiryDate) < new Date() ? 'text-red-600' : new Date(log.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-amber-600' : 'text-green-600'}`}>
+                                    {new Date(log.expiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                  </b></span>
+                                  <span>|</span>
+                                  <span>By: <b className="text-slate-605">{log.performedBy || 'Unknown'}</b></span>
+                                </div>
+                              </div>
+
+                              <div className="text-right shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 border-dashed border-gray-100 pt-2 sm:pt-0">
+                                <span className="text-[9px] uppercase font-bold text-slate-400 sm:hidden">Cost:</span>
+                                <span className="text-xs font-mono font-black text-rose-605 bg-rose-50 border border-rose-100 px-2 py-1 rounded-lg">
+                                  zmk {log.amount.toLocaleString('en-US', { minimumFractionDigits: 1 })}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-12 text-center bg-slate-50 border border-dashed border-gray-150 rounded-xl" id="insurance-empty-slate">
+                          <ShieldCheck className="w-10 h-10 text-gray-200 mx-auto" />
+                          <p className="text-xs text-gray-400 italic mt-2">No insurance or compliance records have been logged for this vehicle.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
               </div>
             )}
