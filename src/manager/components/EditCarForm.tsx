@@ -197,7 +197,7 @@ export default function EditCarForm({
                 }`}
               >
                 <Wrench className="w-4 h-4 shrink-0" />
-                <span>Insurance & Compliance</span>
+                <span>Maintenance & Insurance</span>
               </button>
               <button
                 type="button"
@@ -227,7 +227,7 @@ export default function EditCarForm({
               <span className="text-[9px] uppercase tracking-wider text-slate-400 font-extrabold">Active View</span>
               <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest mt-0.5">
                 {activeTab === 'specs_driver' && 'Vehicle Specs & Staff Driver'}
-                {activeTab === 'maintenance' && 'Insurance & Compliance Records'}
+                {activeTab === 'maintenance' && 'Maintenance & Insurance Records'}
                 {activeTab === 'edit_props' && 'Edit Asset Registration & Parameters'}
               </h4>
             </div>
@@ -356,22 +356,26 @@ export default function EditCarForm({
               </div>
             )}
 
-            {/* TAB 2: Insurance & Compliance Logs */}
+            {/* TAB 2: Maintenance & Insurance Logs */}
             {activeTab === 'maintenance' && (
               <div className="space-y-6 text-left animate-fade-in" id="panel-maintenance">
                 
                 {/* Financial Summary cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="maint-summary-widgets">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4" id="maint-summary-widgets">
+                  <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
+                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Maintenance Cost</span>
+                    <span className="text-lg font-black font-mono text-orange-600 block mt-1">zmk {(car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                  </div>
                   <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
                     <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Insurance & Compliance Cost</span>
                     <span className="text-lg font-black font-mono text-rose-600 block mt-1">zmk {(car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
-                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Compliance Records</span>
-                    <span className="text-lg font-black font-mono text-indigo-600 block mt-1">{(car.insuranceLogs || []).length} Records</span>
+                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Records</span>
+                    <span className="text-lg font-black font-mono text-indigo-600 block mt-1">{(car.serviceLogs || []).length + (car.insuranceLogs || []).length} Records</span>
                   </div>
                   <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
-                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Next Expiry</span>
+                    <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Next Insurance Expiry</span>
                     <span className="text-sm font-black font-mono text-amber-600 block mt-1">
                       {(() => {
                         const nextExpiry = (car.insuranceLogs || [])
@@ -471,52 +475,102 @@ export default function EditCarForm({
                   )}
                 </div>
 
-                {/* Insurance Logs ledger list info */}
-                <div className="space-y-3" id="insurance-logs-registry-box">
-                  <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">Insurance & Compliance Registry ({(car.insuranceLogs || []).length})</h4>
+                {/* Maintenance & Insurance Logs Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="maintenance-insurance-sections">
                   
-                  {(car.insuranceLogs || []).length > 0 ? (
-                    <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto border border-slate-150 rounded-xl px-4 bg-white" id="insurance-logs-sub-ledger">
-                      {(car.insuranceLogs || []).map((log) => (
-                        <div key={log.id} className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b last:border-b-0 gap-2.5" id={`insurance-item-${log.id}`}>
-                          <div className="text-left font-sans flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded leading-none ${
-                                log.type === 'Insurance' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                                log.type === 'Road Tax' ? 'bg-green-50 text-green-700 border border-green-100' :
-                                log.type === 'Fitness' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
-                                'bg-purple-50 text-purple-700 border border-purple-100'
-                              }`}>
-                                {log.type}
+                  {/* Left Column: Maintenance History */}
+                  <div className="space-y-3" id="maintenance-logs-registry-box">
+                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">Maintenance History ({(car.serviceLogs || []).length})</h4>
+                    
+                    {(car.serviceLogs || []).length > 0 ? (
+                      <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto border border-slate-150 rounded-xl px-4 bg-white" id="maintenance-logs-sub-ledger">
+                        {(car.serviceLogs || []).map((log) => (
+                          <div key={log.id} className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b last:border-b-0 gap-2.5" id={`maintenance-item-${log.id}`}>
+                            <div className="text-left font-sans flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded leading-none ${
+                                  log.category === 'Maintenance' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                                  log.category === 'Repair' ? 'bg-red-50 text-red-700 border border-red-100' :
+                                  log.category === 'Inspection' ? 'bg-green-50 text-green-700 border border-green-100' :
+                                  log.category === 'Tire Service' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
+                                  log.category === 'Oil Change' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                                  'bg-gray-50 text-gray-700 border border-gray-100'
+                                }`}>
+                                  {log.category}
+                                </span>
+                                <span className="text-[10px] font-mono text-slate-400 font-bold">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                              </div>
+                              <p className="text-xs font-bold text-slate-800 mt-1.5 line-clamp-2">{log.description}</p>
+                              <div className="text-[9px] text-slate-400 mt-1 flex items-center gap-1 font-sans">
+                                <span>Mileage: <b className="font-mono text-slate-605">{log.mileage.toLocaleString()} km</b></span>
+                                <span>|</span>
+                                <span>By: <b className="text-slate-605">{log.performedBy || 'Unknown'}</b></span>
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 border-dashed border-gray-100 pt-2 sm:pt-0">
+                              <span className="text-[9px] uppercase font-bold text-slate-400 sm:hidden">Cost:</span>
+                              <span className="text-xs font-mono font-black text-orange-605 bg-orange-50 border border-orange-100 px-2 py-1 rounded-lg">
+                                zmk {log.cost.toLocaleString('en-US', { minimumFractionDigits: 1 })}
                               </span>
-                              <span className="text-[10px] font-mono text-slate-400 font-bold">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                            </div>
-                            <p className="text-xs font-bold text-slate-800 mt-1.5 line-clamp-2">{log.description}</p>
-                            <div className="text-[9px] text-slate-400 mt-1 flex items-center gap-1 font-sans">
-                              <span>Expires: <b className={`font-mono ${new Date(log.expiryDate) < new Date() ? 'text-red-600' : new Date(log.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-amber-600' : 'text-green-600'}`}>
-                                {new Date(log.expiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                              </b></span>
-                              <span>|</span>
-                              <span>By: <b className="text-slate-605">{log.performedBy || 'Unknown'}</b></span>
                             </div>
                           </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-12 text-center bg-slate-50 border border-dashed border-gray-150 rounded-xl" id="maintenance-empty-slate">
+                        <Wrench className="w-10 h-10 text-gray-200 mx-auto" />
+                        <p className="text-xs text-gray-400 italic mt-2">No maintenance records have been logged for this vehicle.</p>
+                      </div>
+                    )}
+                  </div>
 
-                          <div className="text-right shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 border-dashed border-gray-100 pt-2 sm:pt-0">
-                            <span className="text-[9px] uppercase font-bold text-slate-400 sm:hidden">Cost:</span>
-                            <span className="text-xs font-mono font-black text-rose-505 bg-rose-50 border border-rose-100 px-2 py-1 rounded-lg">
-                              zmk {log.amount.toLocaleString('en-US', { minimumFractionDigits: 1 })}
-                            </span>
+                  {/* Right Column: Insurance & Compliance */}
+                  <div className="space-y-3" id="insurance-logs-registry-box">
+                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">Insurance & Compliance Registry ({(car.insuranceLogs || []).length})</h4>
+                    
+                    {(car.insuranceLogs || []).length > 0 ? (
+                      <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto border border-slate-150 rounded-xl px-4 bg-white" id="insurance-logs-sub-ledger">
+                        {(car.insuranceLogs || []).map((log) => (
+                          <div key={log.id} className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b last:border-b-0 gap-2.5" id={`insurance-item-${log.id}`}>
+                            <div className="text-left font-sans flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded leading-none ${
+                                  log.type === 'Insurance' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                                  log.type === 'Road Tax' ? 'bg-green-50 text-green-700 border border-green-100' :
+                                  log.type === 'Fitness' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                                  'bg-purple-50 text-purple-700 border border-purple-100'
+                                }`}>
+                                  {log.type}
+                                </span>
+                                <span className="text-[10px] font-mono text-slate-400 font-bold">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                              </div>
+                              <p className="text-xs font-bold text-slate-800 mt-1.5 line-clamp-2">{log.description}</p>
+                              <div className="text-[9px] text-slate-400 mt-1 flex items-center gap-1 font-sans">
+                                <span>Expires: <b className={`font-mono ${new Date(log.expiryDate) < new Date() ? 'text-red-600' : new Date(log.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-amber-600' : 'text-green-600'}`}>
+                                  {new Date(log.expiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </b></span>
+                                <span>|</span>
+                                <span>By: <b className="text-slate-605">{log.performedBy || 'Unknown'}</b></span>
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 border-dashed border-gray-100 pt-2 sm:pt-0">
+                              <span className="text-[9px] uppercase font-bold text-slate-400 sm:hidden">Cost:</span>
+                              <span className="text-xs font-mono font-black text-rose-605 bg-rose-50 border border-rose-100 px-2 py-1 rounded-lg">
+                                zmk {log.amount.toLocaleString('en-US', { minimumFractionDigits: 1 })}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="py-12 text-center bg-slate-50 border border-dashed border-gray-150 rounded-xl" id="insurance-empty-slate">
-                      <Wrench className="w-10 h-10 text-gray-200 mx-auto" />
-                      <p className="text-xs text-gray-400 italic mt-2">No insurance or compliance records have been logged for this vehicle.</p>
-                    </div>
-                  )}
-
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-12 text-center bg-slate-50 border border-dashed border-gray-150 rounded-xl" id="insurance-empty-slate">
+                        <Wrench className="w-10 h-10 text-gray-200 mx-auto" />
+                        <p className="text-xs text-gray-400 italic mt-2">No insurance or compliance records have been logged for this vehicle.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
               </div>

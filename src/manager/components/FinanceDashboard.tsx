@@ -774,7 +774,8 @@ export default function FinanceDashboard({
                     <tr className="border-b border-gray-100 text-[9px] uppercase text-gray-400 font-extrabold tracking-wider bg-slate-50/50 select-none">
                       <th className="py-2 px-3">Vehicle Details</th>
                       <th className="py-2 px-2 text-right">Revenue</th>
-                      <th className="py-2 px-2 text-right text-rose-600">Maintenance</th>
+                      <th className="py-2 px-2 text-right text-orange-600">Maintenance</th>
+                      <th className="py-2 px-2 text-right text-rose-600">Insurance</th>
                       <th className="py-2 px-3 text-right">Net Yield</th>
                     </tr>
                   </thead>
@@ -785,7 +786,11 @@ export default function FinanceDashboard({
                         // Calculate total generated revenue
                         const carRevenue = (car.revenueLogs || []).reduce((sum, r) => sum + r.amount, 0);
                         // Calculate total maintenance expenditure
-                        const carExpenditure = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
+                        const carMaintenance = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
+                        // Calculate total insurance expenditure
+                        const carInsurance = (car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0);
+                        // Total expenditure (maintenance + insurance)
+                        const carExpenditure = carMaintenance + carInsurance;
                         const netMargin = carRevenue - carExpenditure;
 
                       return (
@@ -797,8 +802,11 @@ export default function FinanceDashboard({
                           <td className="py-2 px-2 text-right font-mono font-bold text-slate-700">
                             zmk {carRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </td>
+                          <td className="py-2 px-2 text-right font-mono font-bold text-orange-500">
+                            zmk {carMaintenance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </td>
                           <td className="py-2 px-2 text-right font-mono font-bold text-rose-500">
-                            zmk {carExpenditure.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            zmk {carInsurance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </td>
                           <td className={`py-2 px-3 text-right font-mono font-bold ${netMargin >= 0 ? 'text-emerald-600' : 'text-rose-600 font-black'}`}>
                             zmk {netMargin.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -1152,14 +1160,17 @@ export default function FinanceDashboard({
                 <tr className="bg-slate-50 border-b border-gray-255 text-[10px] uppercase text-gray-500 font-extrabold select-none">
                   <th className="py-2 px-3 border-r border-gray-200 text-left font-sans">Vehicle Details</th>
                   <th className="py-2 px-3 text-right border-r border-gray-200 font-sans">Revenue</th>
-                  <th className="py-2 px-3 text-right border-r border-gray-200 text-rose-600 font-sans">Maintenance</th>
+                  <th className="py-2 px-3 text-right border-r border-gray-200 text-orange-600 font-sans">Maintenance</th>
+                  <th className="py-2 px-3 text-right border-r border-gray-200 text-rose-600 font-sans">Insurance</th>
                   <th className="py-2 px-3 text-right font-sans">Net Yield</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {cars.map(car => {
                   const carRevenue = (car.revenueLogs || []).reduce((sum, r) => sum + r.amount, 0);
-                  const carExpenditure = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
+                  const carMaintenance = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
+                  const carInsurance = (car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0);
+                  const carExpenditure = carMaintenance + carInsurance;
                   const netMargin = carRevenue - carExpenditure;
                   return (
                     <tr key={car.id} className="hover:bg-slate-50/50">
@@ -1170,8 +1181,11 @@ export default function FinanceDashboard({
                       <td className="py-2 px-3 text-right font-mono font-bold text-gray-850 border-r border-gray-200">
                         zmk {carRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </td>
+                      <td className="py-2 px-3 text-right font-mono font-bold text-orange-600 border-r border-gray-200">
+                        zmk {carMaintenance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </td>
                       <td className="py-2 px-3 text-right font-mono font-bold text-rose-600 border-r border-gray-200">
-                        zmk {carExpenditure.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        zmk {carInsurance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </td>
                       <td className={`py-2 px-3 text-right font-mono font-bold ${netMargin >= 0 ? 'text-emerald-700' : 'text-rose-700 font-extrabold'}`}>
                         zmk {netMargin.toLocaleString('en-US', { minimumFractionDigits: 2 })}
