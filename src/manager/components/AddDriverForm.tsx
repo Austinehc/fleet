@@ -26,6 +26,13 @@ export default function AddDriverForm({
   const [newDrvAssignedCarId, setNewDrvAssignedCarId] = useState('');
   const [newDrvPhoto, setNewDrvPhoto] = useState<string>('');
   const [isUploadingDriverPhoto, setIsUploadingDriverPhoto] = useState(false);
+  
+  // Document uploads (TODO: implement UI)
+  // const [nrcFront, setNrcFront] = useState<string>('');
+  // const [nrcBack, setNrcBack] = useState<string>('');
+  // const [licenseFront, setLicenseFront] = useState<string>('');
+  // const [licenseBack, setLicenseBack] = useState<string>('');
+  // const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   // Profile picture upload
   const handleDriverPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,6 +66,99 @@ export default function AddDriverForm({
     }
   };
 
+  // Document upload handlers (TODO: implement UI for document uploads)
+  /*
+  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>, docType: 'nrcFront' | 'nrcBack' | 'licenseFront' | 'licenseBack') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size exceeds 5MB limit.');
+        return;
+      }
+      setIsUploadingDoc(true);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        try {
+          const { uploadToCloudinary, isCloudinaryConfigured } = await import('../../lib/cloudinary');
+          const finalUrl = isCloudinaryConfigured() ? await uploadToCloudinary(base64) : base64;
+          
+          switch (docType) {
+            case 'nrcFront':
+              setNrcFront(finalUrl);
+              break;
+            case 'nrcBack':
+              setNrcBack(finalUrl);
+              break;
+            case 'licenseFront':
+              setLicenseFront(finalUrl);
+              break;
+            case 'licenseBack':
+              setLicenseBack(finalUrl);
+              break;
+          }
+        } catch (err: any) {
+          console.error(err);
+          alert('Failed to upload document. Keeping local data-URI.');
+          switch (docType) {
+            case 'nrcFront':
+              setNrcFront(base64);
+              break;
+            case 'nrcBack':
+              setNrcBack(base64);
+              break;
+  };
+
+  const generateAccessCode = (): string => {
+      }
+      setIsUploadingDoc(true);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        try {
+          const { uploadToCloudinary, isCloudinaryConfigured } = await import('../../lib/cloudinary');
+          const finalUrl = isCloudinaryConfigured() ? await uploadToCloudinary(base64) : base64;
+          
+          switch (docType) {
+            case 'nrcFront':
+              setNrcFront(finalUrl);
+              break;
+            case 'nrcBack':
+              setNrcBack(finalUrl);
+              break;
+            case 'licenseFront':
+              setLicenseFront(finalUrl);
+              break;
+            case 'licenseBack':
+              setLicenseBack(finalUrl);
+              break;
+          }
+        } catch (err: any) {
+          console.error(err);
+          alert('Failed to upload document. Keeping local data-URI.');
+          switch (docType) {
+            case 'nrcFront':
+              setNrcFront(base64);
+              break;
+            case 'nrcBack':
+              setNrcBack(base64);
+              break;
+            case 'licenseFront':
+              setLicenseFront(base64);
+              break;
+            case 'licenseBack':
+              setLicenseBack(base64);
+              break;
+          }
+        } finally {
+          setIsUploadingDoc(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  */
+
   const generateAccessCode = (): string => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
@@ -91,10 +191,15 @@ export default function AddDriverForm({
       createdAt: new Date().toISOString()
     };
     
-    // Add profilePicture only if provided
+    // Add optional fields if provided
     if (newDrvPhoto) {
       createdDriver.profilePicture = newDrvPhoto;
     }
+    // TODO: Add document uploads when UI is implemented
+    // if (nrcFront) createdDriver.nrcFront = nrcFront;
+    // if (nrcBack) createdDriver.nrcBack = nrcBack;
+    // if (licenseFront) createdDriver.licenseFront = licenseFront;
+    // if (licenseBack) createdDriver.licenseBack = licenseBack;
 
     // Update state
     setDrivers(prev => [createdDriver, ...prev]);

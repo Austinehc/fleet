@@ -1,25 +1,14 @@
-import React from 'react';
 import { AlertTriangle, Gauge, Wrench } from 'lucide-react';
 import { CarAsset, Driver } from '../../types';
 
 interface DriverCarSpecsProps {
   activeDriver: Driver;
   assignedCar: CarAsset | null;
-  cars: CarAsset[];
-  drivers: Driver[];
-  setCars: React.Dispatch<React.SetStateAction<CarAsset[]>>;
-  setDrivers: React.Dispatch<React.SetStateAction<Driver[]>>;
-  triggerSuccess: (msg: string) => void;
 }
 
 export default function DriverCarSpecs({
   activeDriver,
-  assignedCar,
-  cars,
-  drivers,
-  setCars,
-  setDrivers,
-  triggerSuccess
+  assignedCar
 }: DriverCarSpecsProps) {
   if (!assignedCar) {
     return (
@@ -30,30 +19,9 @@ export default function DriverCarSpecs({
         <div className="space-y-1.5 max-w-md mx-auto">
           <h3 className="font-bold text-slate-855 text-base">No Assigned Vehicle Record</h3>
           <p className="text-xs text-slate-500 leading-relaxed">
-            Hi {activeDriver.fullName.split(' ')[0]}, you do not have any vehicle assigned to you currently in the fleet registry.
+            Hi {activeDriver.fullName.split(' ')[0]}, you do not have any vehicle assigned to you currently in the fleet registry. 
+            Please contact your fleet manager for vehicle assignment.
           </p>
-          <div className="pt-2 text-left bg-slate-50 p-4 rounded-xl border border-slate-200/40" id="demo-assign-control">
-            <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">💡 Demo Mode: Instantly link a fleet asset to this user profile:</p>
-            <select
-              onChange={(e) => {
-                const targetCarId = e.target.value;
-                if (!targetCarId) return;
-                setDrivers(prev => prev.map(d => d.id === activeDriver.id ? { ...d, assignedCarId: targetCarId } : d));
-                setCars(prev => prev.map(car => car.id === targetCarId ? { ...car, status: 'Assigned' } : car));
-                triggerSuccess(`🚘 Co-assigned to vehicle asset successfully!`);
-              }}
-              defaultValue=""
-              className="bg-white border border-slate-205 text-slate-800 text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer focus:outline-none w-full shadow-xs"
-              id="drv-assign-self-selector"
-            >
-              <option value="" disabled>-- Select Car to Assign Instantly --</option>
-              {cars.filter(c => c.status === 'Available' || !drivers.some(d => d.assignedCarId === c.id)).map(car => (
-                <option key={car.id} value={car.id}>
-                  {car.make} {car.model} ({car.plateNumber})
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
     );

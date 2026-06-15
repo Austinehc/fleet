@@ -639,7 +639,6 @@ export default function App() {
       cars,
       setCars: setCarsWithSyncProxy,
       drivers,
-      setDrivers: setDriversWithSyncProxy,
       userRole,
       onSignOut: handleSignOut,
       ...(isLocked ? {} : { setUserRole })

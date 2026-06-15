@@ -72,5 +72,9 @@ export interface Driver {
   assignedCarId: string | null; // ID of the CarAsset
   profilePicture?: string; // Base64 or URL
   accessCode?: string; // 6-digit random alphanumeric code
+  nrcFront?: string; // NRC front image
+  nrcBack?: string; // NRC back image
+  licenseFront?: string; // License front image
+  licenseBack?: string; // License back image
   createdAt: string;
 }

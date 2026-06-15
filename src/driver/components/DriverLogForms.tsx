@@ -14,7 +14,7 @@ export default function DriverLogForms({
   setCars,
   triggerSuccess
 }: DriverLogFormsProps) {
-  const [driverLogSubTab, setDriverLogSubTab] = useState<'maintenance' | 'cashing'>('maintenance');
+  const [driverLogSubTab, setDriverLogSubTab] = useState<'maintenance' | 'cashing'>('cashing');
 
   // Maintenance form state
   const [drvSvcDate, setDrvSvcDate] = useState<string>(new Date().toISOString().split('T')[0] || '');
@@ -37,6 +37,14 @@ export default function DriverLogForms({
   const [drvRevCat, setDrvRevCat] = useState<RevenueLog['category']>('Fare');
   const [drvRevDesc, setDrvRevDesc] = useState('');
   const [drvRevAmount, setDrvRevAmount] = useState<number>(0);
+  const [drvRevMileage, setDrvRevMileage] = useState<number | ''>(assignedCar.mileage);
+
+  // Sync mileage for revenue form as well
+  useEffect(() => {
+    if (assignedCar && assignedCar.id !== lastCarId) {
+      setDrvRevMileage(assignedCar.mileage);
+    }
+  }, [assignedCar, lastCarId]);
 
   const handleDriverAddServiceLog = (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +106,12 @@ export default function DriverLogForms({
       alert('Please describe this receipt/cashing event.');
       return;
     }
+    
+    const mileageNum = Number(drvRevMileage) || assignedCar.mileage;
+    if (mileageNum < 0) {
+      alert('Mileage cannot be negative.');
+      return;
+    }
 
     const newRev: RevenueLog = {
       id: `rev-${Date.now()}`,
@@ -115,6 +129,7 @@ export default function DriverLogForms({
         const currentRevs = car.revenueLogs || [];
         return {
           ...car,
+          mileage: mileageNum, // Update car mileage
           revenueLogs: [newRev, ...currentRevs]
         };
       }
@@ -126,6 +141,7 @@ export default function DriverLogForms({
     setDrvRevDesc('');
     setDrvRevDate(new Date().toISOString().split('T')[0] || '');
     setDrvRevCat('Fare');
+    setDrvRevMileage(mileageNum);
 
     triggerSuccess('Cashing / Revenue receipt submitted successfully! Waiting for manager approval.');
   };
@@ -142,16 +158,6 @@ export default function DriverLogForms({
         <div className="flex bg-slate-100 p-0.5 rounded-xl self-start sm:self-auto" id="drv-sub-tabs-pill">
           <button
             type="button"
-            onClick={() => setDriverLogSubTab('maintenance')}
-            className={`px-3 py-1 text-[10px] font-bold rounded-lg cursor-pointer transition-all ${
-              driverLogSubTab === 'maintenance' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
-            }`}
-            id="drv-sub-btn-svc"
-          >
-            Maintenance
-          </button>
-          <button
-            type="button"
             onClick={() => setDriverLogSubTab('cashing')}
             className={`px-3 py-1 text-[10px] font-bold rounded-lg cursor-pointer transition-all ${
               driverLogSubTab === 'cashing' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
@@ -159,6 +165,16 @@ export default function DriverLogForms({
             id="drv-sub-btn-cashing"
           >
             Cashing
+          </button>
+          <button
+            type="button"
+            onClick={() => setDriverLogSubTab('maintenance')}
+            className={`px-3 py-1 text-[10px] font-bold rounded-lg cursor-pointer transition-all ${
+              driverLogSubTab === 'maintenance' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+            }`}
+            id="drv-sub-btn-svc"
+          >
+            Maintenance
           </button>
         </div>
       </div>
@@ -252,7 +268,7 @@ export default function DriverLogForms({
 
       {driverLogSubTab === 'cashing' && (
         <form onSubmit={handleDriverAddRevenueLog} className="space-y-4 animate-fade-in text-left" id="form-drv-rev">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Cashing Shift Date*</label>
               <input
@@ -290,6 +306,19 @@ export default function DriverLogForms({
                 onChange={(e) => setDrvRevAmount(Number(e.target.value))}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 font-mono focus:outline-none"
                 id="drv-rev-input-amount"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Current Odometer (km)*</label>
+              <input
+                type="number"
+                required
+                min="0"
+                placeholder="e.g. 12500"
+                value={drvRevMileage || ''}
+                onChange={(e) => setDrvRevMileage(Number(e.target.value))}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 font-mono focus:outline-none"
+                id="drv-rev-input-mileage"
               />
             </div>
           </div>

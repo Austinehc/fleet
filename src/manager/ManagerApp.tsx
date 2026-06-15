@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CarAsset, Driver } from '../types';
+import { initializeSessionManager, clearSessionTimer } from '../lib/sessionManager';
 import ManagerHeader from './components/ManagerHeader';
 import FleetDashboard from './components/FleetDashboard';
 import StaffManager from './components/StaffManager';
@@ -36,6 +37,26 @@ export default function ManagerApp({
   const [isAddingDriver, setIsAddingDriver] = useState(false);
   const [editingCar, setEditingCar] = useState<CarAsset | null>(null);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
+  // const [sessionExpired, setSessionExpired] = useState(false);
+
+  // Session management for auto-logout
+  useEffect(() => {
+    const cleanup = initializeSessionManager(() => {
+      // setSessionExpired(true);
+      if (onSignOut) {
+        onSignOut();
+      }
+    });
+    
+    return cleanup;
+  }, [onSignOut]);
+
+  // Cleanup session on unmount
+  useEffect(() => {
+    return () => {
+      clearSessionTimer();
+    };
+  }, []);
 
   // Camera settings
   const [showCamera, setShowCamera] = useState(false);

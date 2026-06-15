@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Car, CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { CarAsset, Driver } from '../types';
+import { initializeSessionManager, clearSessionTimer } from '../lib/sessionManager';
 
 import DriverAuth from './components/DriverAuth';
 import DriverProfile from './components/DriverProfile';
@@ -12,7 +13,6 @@ interface DriverAppProps {
   cars: CarAsset[];
   setCars: React.Dispatch<React.SetStateAction<CarAsset[]>>;
   drivers: Driver[];
-  setDrivers: React.Dispatch<React.SetStateAction<Driver[]>>;
   onSignOut?: () => void;
 }
 
@@ -20,7 +20,6 @@ export default function DriverApp({
   cars,
   setCars,
   drivers,
-  setDrivers,
   onSignOut
 }: DriverAppProps) {
   // --- Driver Portal State ---
@@ -31,6 +30,7 @@ export default function DriverApp({
     type: 'success' | 'loading' | 'error';
   } | null>(null);
   const [driverLoginError, setDriverLoginError] = useState<string | null>(null);
+  // const [sessionExpired, setSessionExpired] = useState(false);
 
   // Keep driver authenticated across refreshes
   useEffect(() => {
@@ -44,6 +44,32 @@ export default function DriverApp({
       }
     }
   }, [drivers]);
+
+  // Session management for auto-logout
+  useEffect(() => {
+    if (activeDriverId && drivers.length > 0) {
+      const cleanup = initializeSessionManager(() => {
+        // setSessionExpired(true);
+        setActiveDriverId('');
+        localStorage.removeItem('fleet_active_driver_id');
+        setDriverPortalTab('log_work');
+        triggerDriverToast('Session expired due to inactivity', 'error');
+      });
+      
+      return cleanup;
+    }
+    
+    return () => {
+      // No cleanup needed if no active session
+    };
+  }, [activeDriverId, drivers.length]);
+
+  // Cleanup session on unmount
+  useEffect(() => {
+    return () => {
+      clearSessionTimer();
+    };
+  }, []);
 
   const hasSavedId = !!localStorage.getItem('fleet_active_driver_id');
   const isDriverLoading = hasSavedId && drivers.length === 0;
@@ -226,11 +252,6 @@ export default function DriverApp({
                 <DriverCarSpecs
                   activeDriver={activeDriver}
                   assignedCar={assignedCar}
-                  cars={cars}
-                  drivers={drivers}
-                  setCars={setCars}
-                  setDrivers={setDrivers}
-                  triggerSuccess={triggerDriverSuccess}
                 />
 
                 {/* Right Column Component: Form / History */}

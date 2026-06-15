@@ -11,7 +11,6 @@ interface DriverAppProps {
   cars: CarAsset[];
   setCars: React.Dispatch<React.SetStateAction<CarAsset[]>>;
   drivers: Driver[];
-  setDrivers: React.Dispatch<React.SetStateAction<Driver[]>>;
   userRole?: 'manager' | 'driver';
   setUserRole?: (role: 'manager' | 'driver') => void;
   onSignOut?: () => void;
