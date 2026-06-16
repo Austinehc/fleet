@@ -256,200 +256,138 @@ export default function FinanceDashboard({
   // Export Monthly Performance as PDF
   const exportMonthlyPerformancePDF = async () => {
     setIsExportingPDF(true);
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = `
-      <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto;">
-        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 20px;">
-          <h1 style="color: #6366f1; margin: 0; font-size: 24px;">North Links Fleet Management</h1>
-          <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 18px;">Monthly Performance Report - FY ${selectedFiscalYear}</h2>
-        </div>
-        
-        <div style="margin-bottom: 20px;">
-          <h3 style="color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">Performance Summary</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-            <div style="background: #f0f9ff; padding: 10px; border-radius: 6px; border: 1px solid #bae6fd;">
-              <div style="font-size: 18px; font-weight: bold; color: #0284c7;">ZMK ${monthlyPerformanceData.reduce((sum, month) => sum + month.revenue, 0).toLocaleString()}</div>
-              <div style="font-size: 12px; color: #6b7280;">Total Annual Revenue</div>
-            </div>
-            <div style="background: #fff1f2; padding: 10px; border-radius: 6px; border: 1px solid #fecaca;">
-              <div style="font-size: 18px; font-weight: bold; color: #dc2626;">ZMK ${monthlyPerformanceData.reduce((sum, month) => sum + month.maintenance, 0).toLocaleString()}</div>
-              <div style="font-size: 12px; color: #6b7280;">Total Annual Expenses</div>
-            </div>
-            <div style="background: #f0fdf4; padding: 10px; border-radius: 6px; border: 1px solid #bbf7d0;">
-              <div style="font-size: 18px; font-weight: bold; color: #16a34a;">ZMK ${monthlyPerformanceData.reduce((sum, month) => sum + (month.revenue - month.maintenance), 0).toLocaleString()}</div>
-              <div style="font-size: 12px; color: #6b7280;">Net Profit</div>
-            </div>
-          </div>
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-          <thead>
-            <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
-              <th style="padding: 12px 8px; text-align: left; border: 1px solid #e2e8f0;">Month</th>
-              <th style="padding: 12px 8px; text-align: right; border: 1px solid #e2e8f0;">Revenue (ZMK)</th>
-              <th style="padding: 12px 8px; text-align: right; border: 1px solid #e2e8f0;">Expenses (ZMK)</th>
-              <th style="padding: 12px 8px; text-align: right; border: 1px solid #e2e8f0;">Net Profit (ZMK)</th>
-              <th style="padding: 12px 8px; text-align: right; border: 1px solid #e2e8f0;">Margin %</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${monthlyPerformanceData.map(month => `
-              <tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">${month.name}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${month.revenue.toLocaleString()}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${month.maintenance.toLocaleString()}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: ${month.revenue - month.maintenance >= 0 ? '#16a34a' : '#dc2626'}; font-weight: bold;">${(month.revenue - month.maintenance).toLocaleString()}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${month.revenue > 0 ? (((month.revenue - month.maintenance) / month.revenue) * 100).toFixed(1) + '%' : '0%'}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
-          <p>Monthly Performance Report - Generated on ${new Date().toLocaleString()}</p>
-          <p>North Links Fleet Management System</p>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(tempDiv);
-    
     try {
       const html2pdf = (window as any).html2pdf;
       if (!html2pdf) {
         alert('PDF export library not loaded. Please refresh the page and try again.');
+        setIsExportingPDF(false);
         return;
       }
-      
+
+      // Calculate totals for summary
+      const totalRevenue = monthlyPerformanceData.reduce((sum, m) => sum + m.revenue, 0);
+      const totalExpenses = monthlyPerformanceData.reduce((sum, m) => sum + m.maintenance, 0);
+      const totalProfit = totalRevenue - totalExpenses;
+
+      // Create a container for the PDF content
+      const element = document.createElement('div');
+      element.style.backgroundColor = 'white';
+      element.style.padding = '20px';
+      element.style.fontFamily = 'Arial, sans-serif';
+
+      // Header
+      const header = document.createElement('div');
+      header.style.textAlign = 'center';
+      header.style.borderBottom = '2px solid #6366f1';
+      header.style.paddingBottom = '15px';
+      header.style.marginBottom = '20px';
+      header.innerHTML = `
+        <h1 style="color: #6366f1; margin: 0; font-size: 24px; font-weight: bold;">North Links Fleet Management</h1>
+        <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 16px;">Monthly Performance Report - FY ${selectedFiscalYear}</h2>
+      `;
+      element.appendChild(header);
+
+      // Summary boxes
+      const summary = document.createElement('div');
+      summary.style.display = 'grid';
+      summary.style.gridTemplateColumns = '1fr 1fr 1fr';
+      summary.style.gap = '12px';
+      summary.style.marginBottom = '20px';
+      summary.innerHTML = `
+        <div style="background: #f0f9ff; padding: 10px; border-radius: 6px; border: 1px solid #bae6fd;">
+          <div style="font-size: 14px; font-weight: bold; color: #0284c7;">ZMK ${totalRevenue.toLocaleString()}</div>
+          <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Total Annual Revenue</div>
+        </div>
+        <div style="background: #fff1f2; padding: 10px; border-radius: 6px; border: 1px solid #fecaca;">
+          <div style="font-size: 14px; font-weight: bold; color: #dc2626;">ZMK ${totalExpenses.toLocaleString()}</div>
+          <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Total Annual Expenses</div>
+        </div>
+        <div style="background: #f0fdf4; padding: 10px; border-radius: 6px; border: 1px solid #bbf7d0;">
+          <div style="font-size: 14px; font-weight: bold; color: #16a34a;">ZMK ${totalProfit.toLocaleString()}</div>
+          <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Net Annual Profit</div>
+        </div>
+      `;
+      element.appendChild(summary);
+
+      // Table
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.fontSize = '12px';
+
+      // Table header
+      const thead = document.createElement('thead');
+      thead.innerHTML = `
+        <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
+          <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0; font-weight: bold;">Month</th>
+          <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0; font-weight: bold;">Revenue (ZMK)</th>
+          <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0; font-weight: bold;">Expenses (ZMK)</th>
+          <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0; font-weight: bold;">Net Profit (ZMK)</th>
+          <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0; font-weight: bold;">Margin %</th>
+        </tr>
+      `;
+      table.appendChild(thead);
+
+      // Table body - populate with months
+      const tbody = document.createElement('tbody');
+      monthlyPerformanceData.forEach((month) => {
+        const row = document.createElement('tr');
+        row.style.borderBottom = '1px solid #e5e7eb';
+        const netProfit = month.revenue - month.maintenance;
+        const margin = month.revenue > 0 ? ((netProfit / month.revenue) * 100).toFixed(1) : '0';
+        row.innerHTML = `
+          <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">${month.name}</td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${month.revenue.toLocaleString()}</td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${month.maintenance.toLocaleString()}</td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: ${netProfit >= 0 ? '#16a34a' : '#dc2626'}; font-weight: bold;">${netProfit.toLocaleString()}</td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${margin}%</td>
+        `;
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+      element.appendChild(table);
+
+      // Footer
+      const footer = document.createElement('div');
+      footer.style.marginTop = '30px';
+      footer.style.paddingTop = '15px';
+      footer.style.borderTop = '1px solid #e5e7eb';
+      footer.style.textAlign = 'center';
+      footer.style.color = '#6b7280';
+      footer.style.fontSize = '11px';
+      footer.innerHTML = `
+        <p style="margin: 5px 0;">Monthly Performance Report - Generated on ${new Date().toLocaleString()}</p>
+        <p style="margin: 5px 0;">North Links Fleet Management System</p>
+      `;
+      element.appendChild(footer);
+
+      // Append to body temporarily
+      document.body.appendChild(element);
+      element.style.display = 'block';
+
+      // Generate PDF
       await html2pdf()
         .set({
-          margin: [0.3, 0.3, 0.3, 0.3],
+          margin: [10, 10, 10, 10],
           filename: `Monthly_Performance_FY${selectedFiscalYear}_${new Date().toISOString().split('T')[0]}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+          html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         })
-        .from(tempDiv)
+        .from(element)
         .save();
+
+      // Cleanup
+      document.body.removeChild(element);
     } catch (error) {
       console.error('PDF generation error:', error);
       alert('Failed to generate PDF. Please try again.');
     } finally {
       setIsExportingPDF(false);
-      document.body.removeChild(tempDiv);
     }
   };
 
-  // Export Submission Ledger as PDF
-  const exportSubmissionLedgerPDF = async () => {
-    setIsExportingPDF(true);
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = `
-      <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto;">
-        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 20px;">
-          <h1 style="color: #6366f1; margin: 0; font-size: 24px;">North Links Fleet Management</h1>
-          <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 18px;">Submissions Ledger Registry</h2>
-        </div>
-        
-        <div style="margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px;">
-          <h3 style="color: #374151; margin: 0 0 10px 0;">Ledger Summary</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
-            <div>
-              <p><strong>Total Entries:</strong> ${filteredRevenues.length}</p>
-              <p><strong>Total Amount:</strong> ZMK ${filteredRevenues.reduce((sum, r) => sum + r.amount, 0).toLocaleString()}</p>
-            </div>
-            <div>
-              <p><strong>Approved:</strong> ${filteredRevenues.filter(r => r.status === 'Approved').length}</p>
-              <p><strong>Pending:</strong> ${filteredRevenues.filter(r => r.status === 'Pending').length}</p>
-            </div>
-            <div>
-              <p><strong>Active Vehicles:</strong> ${new Set(filteredRevenues.map(r => r.carPlate)).size}</p>
-              <p><strong>Active Drivers:</strong> ${new Set(filteredRevenues.map(r => r.driverName)).size}</p>
-            </div>
-            <div>
-              <p><strong>Report Date:</strong> ${new Date().toLocaleDateString()}</p>
-              <p><strong>Filters Applied:</strong> ${financeSearch || financeAsset !== 'all' || financeCategory !== 'all' || financeStatus !== 'all' || financeTimeframe !== 'all' ? 'Yes' : 'None'}</p>
-            </div>
-          </div>
-        </div>
 
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-          <thead>
-            <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
-              <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0;">Date</th>
-              <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0;">Driver</th>
-              <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0;">Vehicle</th>
-              <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0;">Category</th>
-              <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0;">Description</th>
-              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Amount (ZMK)</th>
-              <th style="padding: 10px 8px; text-align: center; border: 1px solid #e2e8f0;">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredRevenues.map(rev => `
-              <tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 8px; border: 1px solid #e5e7eb; font-family: monospace; font-size: 10px;">${new Date(rev.date).toLocaleDateString()}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; font-size: 10px;">${rev.driverName || 'Unknown'}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; font-family: monospace; font-size: 10px;">${rev.carMake} ${rev.carModel}<br>(${rev.carPlate})</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb;">
-                  <span style="background: ${
-                    rev.category === 'Fare' ? '#dbeafe' :
-                    rev.category === 'Rental' ? '#dcfce7' :
-                    rev.category === 'Delivery' ? '#fef3c7' :
-                    rev.category === 'Contract' ? '#f3e8ff' :
-                    '#f1f5f9'
-                  }; color: ${
-                    rev.category === 'Fare' ? '#1d4ed8' :
-                    rev.category === 'Rental' ? '#16a34a' :
-                    rev.category === 'Delivery' ? '#d97706' :
-                    rev.category === 'Contract' ? '#9333ea' :
-                    '#64748b'
-                  }; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold;">${rev.category}</span>
-                </td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; font-size: 10px; max-width: 200px; word-wrap: break-word;">${rev.description.length > 50 ? rev.description.substring(0, 50) + '...' : rev.description}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; font-weight: bold; font-size: 11px;">ZMK ${rev.amount.toLocaleString()}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">
-                  <span style="color: ${rev.status === 'Approved' ? '#16a34a' : '#f59e0b'}; font-weight: bold; font-size: 10px;">${rev.status}</span>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
-          <p>Submissions Ledger Registry - Generated on ${new Date().toLocaleString()}</p>
-          <p>North Links Fleet Management System</p>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(tempDiv);
-    
-    try {
-      const html2pdf = (window as any).html2pdf;
-      if (!html2pdf) {
-        alert('PDF export library not loaded. Please refresh the page and try again.');
-        return;
-      }
-      
-      await html2pdf()
-        .set({
-          margin: [0.4, 0.4, 0.4, 0.4],
-          filename: `Submission_Ledger_${new Date().toISOString().split('T')[0]}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'in', format: 'legal', orientation: 'landscape' }
-        })
-        .from(tempDiv)
-        .save();
-    } catch (error) {
-      console.error('PDF generation error:', error);
-      alert('Failed to generate PDF. Please try again.');
-    } finally {
-      setIsExportingPDF(false);
-      document.body.removeChild(tempDiv);
-    }
-  };
 
   // Export Asset Profit & Loss as PDF  
   const exportAssetProfitLossPDF = async () => {
@@ -1094,16 +1032,7 @@ export default function FinanceDashboard({
                   <p className="text-[10px] text-gray-400 mt-0.5">Showing {filteredRevenues.length} revenue logging entries matching filters</p>
                 </div>
                 
-                {/* Export Submission Ledger Button */}
-                <button
-                  onClick={exportSubmissionLedgerPDF}
-                  disabled={isExportingPDF}
-                  className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg text-[9px] font-bold transition-all cursor-pointer font-sans shadow-sm flex items-center gap-1 self-start sm:self-auto"
-                  title="Export Submission Ledger as PDF"
-                >
-                  <FileText className="w-3 h-3" />
-                  {isExportingPDF ? 'Exporting...' : 'Export PDF'}
-                </button>
+
               </div>
 
               {/* Status Filter Toggle Group */}
