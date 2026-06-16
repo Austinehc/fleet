@@ -399,25 +399,25 @@ export default function FinanceDashboard({
           </div>
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
           <thead>
             <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
-              <th style="padding: 8px 6px; text-align: left; border: 1px solid #e2e8f0;">Date</th>
-              <th style="padding: 8px 6px; text-align: left; border: 1px solid #e2e8f0;">Driver</th>
-              <th style="padding: 8px 6px; text-align: left; border: 1px solid #e2e8f0;">Vehicle</th>
-              <th style="padding: 8px 6px; text-align: left; border: 1px solid #e2e8f0;">Category</th>
-              <th style="padding: 8px 6px; text-align: left; border: 1px solid #e2e8f0;">Description</th>
-              <th style="padding: 8px 6px; text-align: right; border: 1px solid #e2e8f0;">Amount (ZMK)</th>
-              <th style="padding: 8px 6px; text-align: center; border: 1px solid #e2e8f0;">Status</th>
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0;">Date</th>
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0;">Driver</th>
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0;">Vehicle</th>
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0;">Category</th>
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0;">Description</th>
+              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Amount (ZMK)</th>
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #e2e8f0;">Status</th>
             </tr>
           </thead>
           <tbody>
             ${filteredRevenues.map(rev => `
               <tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 6px; border: 1px solid #e5e7eb; font-family: monospace; font-size: 9px;">${new Date(rev.date).toLocaleDateString()}</td>
-                <td style="padding: 6px; border: 1px solid #e5e7eb;">${rev.driverName || 'Unknown'}</td>
-                <td style="padding: 6px; border: 1px solid #e5e7eb; font-family: monospace;">${rev.carMake} ${rev.carModel} (${rev.carPlate})</td>
-                <td style="padding: 6px; border: 1px solid #e5e7eb;">
+                <td style="padding: 8px; border: 1px solid #e5e7eb; font-family: monospace; font-size: 10px;">${new Date(rev.date).toLocaleDateString()}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; font-size: 10px;">${rev.driverName || 'Unknown'}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; font-family: monospace; font-size: 10px;">${rev.carMake} ${rev.carModel}<br>(${rev.carPlate})</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb;">
                   <span style="background: ${
                     rev.category === 'Fare' ? '#dbeafe' :
                     rev.category === 'Rental' ? '#dcfce7' :
@@ -430,12 +430,12 @@ export default function FinanceDashboard({
                     rev.category === 'Delivery' ? '#d97706' :
                     rev.category === 'Contract' ? '#9333ea' :
                     '#64748b'
-                  }; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold;">${rev.category}</span>
+                  }; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold;">${rev.category}</span>
                 </td>
-                <td style="padding: 6px; border: 1px solid #e5e7eb; font-size: 9px;">${rev.description}</td>
-                <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; font-weight: bold;">${rev.amount.toLocaleString()}</td>
-                <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">
-                  <span style="color: ${rev.status === 'Approved' ? '#16a34a' : '#f59e0b'}; font-weight: bold; font-size: 9px;">${rev.status}</span>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; font-size: 10px; max-width: 200px; word-wrap: break-word;">${rev.description.length > 50 ? rev.description.substring(0, 50) + '...' : rev.description}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; font-weight: bold; font-size: 11px;">ZMK ${rev.amount.toLocaleString()}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">
+                  <span style="color: ${rev.status === 'Approved' ? '#16a34a' : '#f59e0b'}; font-weight: bold; font-size: 10px;">${rev.status}</span>
                 </td>
               </tr>
             `).join('')}
@@ -480,6 +480,25 @@ export default function FinanceDashboard({
   // Export Asset Profit & Loss as PDF  
   const exportAssetProfitLossPDF = async () => {
     setIsExportingPDF(true);
+    
+    // Calculate vehicles data for PDF (use all cars, not filtered)
+    const vehiclesForPDF = cars.map(car => {
+      const carRevenue = (car.revenueLogs || []).reduce((sum, log) => sum + log.amount, 0);
+      const carMaintenance = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
+      const carInsurance = (car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0);
+      const carExpenditure = carMaintenance + carInsurance;
+      
+      return {
+        make: car.make,
+        model: car.model,
+        plateNumber: car.plateNumber,
+        totalRevenue: carRevenue,
+        maintenanceCost: carMaintenance,
+        insuranceCost: carInsurance,
+        totalExpenses: carExpenditure,
+      };
+    });
+    
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = `
       <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto;">
@@ -492,16 +511,16 @@ export default function FinanceDashboard({
           <h3 style="color: #374151; margin: 0 0 10px 0;">Fleet Performance Overview</h3>
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
             <div>
-              <p><strong>Total Fleet Revenue:</strong> ZMK ${filteredVehicles.reduce((sum, vehicle) => sum + vehicle.totalRevenue, 0).toLocaleString()}</p>
-              <p><strong>Total Fleet Expenses:</strong> ZMK ${filteredVehicles.reduce((sum, vehicle) => sum + vehicle.totalExpenses, 0).toLocaleString()}</p>
+              <p><strong>Total Fleet Revenue:</strong> ZMK ${vehiclesForPDF.reduce((sum, vehicle) => sum + vehicle.totalRevenue, 0).toLocaleString()}</p>
+              <p><strong>Total Fleet Expenses:</strong> ZMK ${vehiclesForPDF.reduce((sum, vehicle) => sum + vehicle.totalExpenses, 0).toLocaleString()}</p>
             </div>
             <div>
-              <p><strong>Net Fleet Profit:</strong> ZMK ${filteredVehicles.reduce((sum, vehicle) => sum + (vehicle.totalRevenue - vehicle.totalExpenses), 0).toLocaleString()}</p>
-              <p><strong>Active Vehicles:</strong> ${filteredVehicles.length}</p>
+              <p><strong>Net Fleet Profit:</strong> ZMK ${vehiclesForPDF.reduce((sum, vehicle) => sum + (vehicle.totalRevenue - vehicle.totalExpenses), 0).toLocaleString()}</p>
+              <p><strong>Active Vehicles:</strong> ${vehiclesForPDF.length}</p>
             </div>
             <div>
-              <p><strong>Profitable Vehicles:</strong> ${filteredVehicles.filter(v => v.totalRevenue > v.totalExpenses).length}</p>
-              <p><strong>Loss-Making Vehicles:</strong> ${filteredVehicles.filter(v => v.totalRevenue < v.totalExpenses).length}</p>
+              <p><strong>Profitable Vehicles:</strong> ${vehiclesForPDF.filter(v => v.totalRevenue > v.totalExpenses).length}</p>
+              <p><strong>Loss-Making Vehicles:</strong> ${vehiclesForPDF.filter(v => v.totalRevenue < v.totalExpenses).length}</p>
             </div>
           </div>
         </div>
@@ -519,7 +538,7 @@ export default function FinanceDashboard({
             </tr>
           </thead>
           <tbody>
-            ${filteredVehicles.map(vehicle => `
+            ${vehiclesForPDF.map(vehicle => `
               <tr style="border-bottom: 1px solid #e5e7eb;">
                 <td style="padding: 8px; border: 1px solid #e5e7eb;">
                   <div style="font-weight: bold;">${vehicle.make} ${vehicle.model}</div>
