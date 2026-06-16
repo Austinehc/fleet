@@ -253,32 +253,6 @@ export default function FinanceDashboard({
   const pendingReviewCount = filteredRevenues.filter(r => r.status === 'Pending').length;
   const totalPendingCount = allRevenueLogs.filter(r => r.status === 'Pending').length;
 
-  // Calculate filtered vehicles for Asset Profit & Loss
-  const filteredVehicles = React.useMemo(() => {
-    return cars
-      .filter(car => plAssetFilter === 'all' || car.id === plAssetFilter)
-      .map(car => {
-        // Calculate total generated revenue
-        const carRevenue = (car.revenueLogs || []).reduce((sum, log) => sum + log.amount, 0);
-        // Calculate maintenance expenditure
-        const carMaintenance = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
-        // Calculate insurance expenditure  
-        const carInsurance = (car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0);
-        const carExpenditure = carMaintenance + carInsurance;
-        
-        return {
-          id: car.id,
-          make: car.make,
-          model: car.model,
-          plateNumber: car.plateNumber,
-          totalRevenue: carRevenue,
-          maintenanceCost: carMaintenance,
-          insuranceCost: carInsurance,
-          totalExpenses: carExpenditure,
-        };
-      });
-  }, [cars, plAssetFilter]);
-
   // Export Monthly Performance as PDF
   const exportMonthlyPerformancePDF = async () => {
     setIsExportingPDF(true);

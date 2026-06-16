@@ -290,7 +290,7 @@ export default function DriverLogForms({
                 Processing...
               </>
             ) : (
-              'Commit Maintenance / Service Event log'
+              'Maintenance log'
             )}
           </button>
         </form>
@@ -378,7 +378,7 @@ export default function DriverLogForms({
                 Processing...
               </>
             ) : (
-              'Commit Payment Yield / Cashing'
+              'Cashing'
             )}
           </button>
         </form>
