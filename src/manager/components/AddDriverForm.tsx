@@ -98,7 +98,7 @@ export default function AddDriverForm({
           }
         } catch (err: any) {
           console.error(err);
-          alert('Failed to upload document. Keeping local data-URI.');
+          alert('Failed to upload document. Keeping local data.');
           switch (docType) {
             case 'nrcFront':
               setNrcFront(base64);
