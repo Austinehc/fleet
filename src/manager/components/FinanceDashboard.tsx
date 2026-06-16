@@ -323,11 +323,11 @@ export default function FinanceDashboard({
       
       await html2pdf()
         .set({
-          margin: [0.5, 0.5, 0.5, 0.5],
+          margin: [0.3, 0.3, 0.3, 0.3],
           filename: `Monthly_Performance_FY${selectedFiscalYear}_${new Date().toISOString().split('T')[0]}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
         })
         .from(tempDiv)
         .save();
@@ -1020,53 +1020,60 @@ export default function FinanceDashboard({
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-[11px] border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-[9px] uppercase text-gray-400 font-extrabold tracking-wider bg-slate-50/50 select-none">
-                      <th className="py-2 px-3">Vehicle Details</th>
-                      <th className="py-2 px-2 text-right">Revenue</th>
-                      <th className="py-2 px-2 text-right text-orange-600">Maintenance</th>
-                      <th className="py-2 px-2 text-right text-rose-600">Insurance</th>
-                      <th className="py-2 px-3 text-right">Net Yield</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50 border-b border-gray-100">
-                    {cars
-                      .filter(car => plAssetFilter === 'all' || car.id === plAssetFilter)
-                      .map(car => {
-                        // Calculate total generated revenue
-                        const carRevenue = (car.revenueLogs || []).reduce((sum, r) => sum + r.amount, 0);
-                        // Calculate total maintenance expenditure
-                        const carMaintenance = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
-                        // Calculate total insurance expenditure
-                        const carInsurance = (car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0);
-                        // Total expenditure (maintenance + insurance)
-                        const carExpenditure = carMaintenance + carInsurance;
-                        const netMargin = carRevenue - carExpenditure;
+                {cars.filter(car => plAssetFilter === 'all' || car.id === plAssetFilter).length > 0 ? (
+                  <table className="w-full text-left text-[11px] border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-[9px] uppercase text-gray-400 font-extrabold tracking-wider bg-slate-50/50 select-none">
+                        <th className="py-2 px-3">Vehicle Details</th>
+                        <th className="py-2 px-2 text-right">Revenue</th>
+                        <th className="py-2 px-2 text-right text-orange-600">Maintenance</th>
+                        <th className="py-2 px-2 text-right text-rose-600">Insurance</th>
+                        <th className="py-2 px-3 text-right">Net Yield</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 border-b border-gray-100">
+                      {cars
+                        .filter(car => plAssetFilter === 'all' || car.id === plAssetFilter)
+                        .map(car => {
+                          // Calculate total generated revenue
+                          const carRevenue = (car.revenueLogs || []).reduce((sum, r) => sum + r.amount, 0);
+                          // Calculate total maintenance expenditure
+                          const carMaintenance = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
+                          // Calculate total insurance expenditure
+                          const carInsurance = (car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0);
+                          // Total expenditure (maintenance + insurance)
+                          const carExpenditure = carMaintenance + carInsurance;
+                          const netMargin = carRevenue - carExpenditure;
 
-                      return (
-                        <tr key={car.id} className="hover:bg-slate-50/30 transition-colors">
-                          <td className="py-2 px-3">
-                            <span className="font-extrabold text-gray-800 block truncate max-w-[130px] uppercase font-sans">{car.make} {car.model}</span>
-                            <span className="font-mono text-[9px] text-gray-400 block mt-0.5">{car.plateNumber}</span>
-                          </td>
-                          <td className="py-2 px-2 text-right font-mono font-bold text-slate-700">
-                            zmk {carRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-2 px-2 text-right font-mono font-bold text-orange-500">
-                            zmk {carMaintenance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-2 px-2 text-right font-mono font-bold text-rose-500">
-                            zmk {carInsurance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className={`py-2 px-3 text-right font-mono font-bold ${netMargin >= 0 ? 'text-emerald-600' : 'text-rose-600 font-black'}`}>
-                            zmk {netMargin.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                        return (
+                          <tr key={car.id} className="hover:bg-slate-50/30 transition-colors">
+                            <td className="py-2 px-3">
+                              <span className="font-extrabold text-gray-800 block truncate max-w-[130px] uppercase font-sans">{car.make} {car.model}</span>
+                              <span className="font-mono text-[9px] text-gray-400 block mt-0.5">{car.plateNumber}</span>
+                            </td>
+                            <td className="py-2 px-2 text-right font-mono font-bold text-slate-700">
+                              zmk {carRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2 px-2 text-right font-mono font-bold text-orange-500">
+                              zmk {carMaintenance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2 px-2 text-right font-mono font-bold text-rose-500">
+                              zmk {carInsurance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className={`py-2 px-3 text-right font-mono font-bold ${netMargin >= 0 ? 'text-emerald-600' : 'text-rose-600 font-black'}`}>
+                              zmk {netMargin.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="py-12 text-center border border-dashed border-gray-150 rounded-xl bg-gray-50/50" id="empty-pnl-slate">
+                    <Car className="w-10 h-10 text-gray-300 mx-auto" />
+                    <p className="text-xs text-gray-400 italic mt-3 font-sans font-normal">No vehicle records found for the selected filter. Add vehicles or adjust your filter settings.</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1261,7 +1268,7 @@ export default function FinanceDashboard({
 
             {/* Ledger timeline overflow list */}
             <div className="space-y-3.5 max-h-[460px] overflow-y-auto pr-1" id="ledger-timeline-list">
-              {filteredRevenues.length > 0 ? (
+              {filteredRevenues && filteredRevenues.length > 0 ? (
                 filteredRevenues.map((rev) => {
                   const isExpanded = expandedLogId === rev.id;
                   
