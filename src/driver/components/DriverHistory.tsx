@@ -108,7 +108,7 @@ export default function DriverHistory({
             className="flex items-center justify-between cursor-pointer hover:bg-slate-50/50 rounded p-1 -m-1"
             onClick={() => setIsCashingSectionCollapsed(!isCashingSectionCollapsed)}
           >
-            <span className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider font-sans">Cashing Receipts Ledger</span>
+            <span className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider font-sans">Cashing Ledger</span>
             {isCashingSectionCollapsed ? (
               <ChevronDown className="w-3 h-3 text-emerald-600" />
             ) : (
@@ -151,7 +151,7 @@ export default function DriverHistory({
                     {isExpanded && (
                       <div className="p-3 bg-white border border-emerald-100 rounded-lg space-y-2 text-[10px]" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between border-b border-emerald-50 pb-1.5 font-bold text-emerald-950">
-                          <span className="flex items-center gap-1">📁 Cashing Submission Details</span>
+                          <span className="flex items-center gap-1"> Cashing Details</span>
                           <span className="font-mono text-[8px] text-emerald-555 uppercase">TRX-{rev.id.toUpperCase()}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-slate-555 font-normal">

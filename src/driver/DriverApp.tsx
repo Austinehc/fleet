@@ -20,7 +20,6 @@ export default function DriverApp({
   cars,
   setCars,
   drivers,
-  onSignOut
 }: DriverAppProps) {
   // --- Driver Portal State ---
   const [activeDriverId, setActiveDriverId] = useState<string>('');
@@ -142,16 +141,7 @@ export default function DriverApp({
 
           {/* Top Banner Controls */}
           <div className="flex items-center gap-3 self-stretch md:self-center justify-end" id="btn-top-controls">
-            {onSignOut && (
-              <button
-                onClick={onSignOut}
-                className="px-3 py-1.5 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-650 hover:text-rose-705 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
-                id="btn-nav-supabase-sign-out"
-              >
-              </button>
-            )}
-
-            {activeDriver && (
+                     {activeDriver && (
               <div className="flex items-center gap-2.5" id="driver-logged-in-panel">
                 <span className="text-xs text-indigo-600 font-bold hidden sm:inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg">
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
