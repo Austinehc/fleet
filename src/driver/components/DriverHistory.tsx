@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { CarAsset, Driver } from '../../types';
 
 interface DriverHistoryProps {
@@ -11,6 +12,8 @@ export default function DriverHistory({
   activeDriver
 }: DriverHistoryProps) {
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+  const [isServiceSectionCollapsed, setIsServiceSectionCollapsed] = useState<boolean>(false);
+  const [isCashingSectionCollapsed, setIsCashingSectionCollapsed] = useState<boolean>(false);
 
   return (
     <div className="bg-white border border-gray-150 rounded-2xl p-5 shadow-sm space-y-5" id="driver-logs-history-card">
@@ -22,8 +25,19 @@ export default function DriverHistory({
       <div className="space-y-6" id="drv-historical-subcollections">
         {/* Repairs logged list */}
         <div className="space-y-2 text-left" id="drv-hist-svc-section">
-          <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider font-sans">Service/Repair Log</span>
-          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1" id="drv-hist-svc-list">
+          <div 
+            className="flex items-center justify-between cursor-pointer hover:bg-slate-50/50 rounded p-1 -m-1"
+            onClick={() => setIsServiceSectionCollapsed(!isServiceSectionCollapsed)}
+          >
+            <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider font-sans">Service/Repair Log</span>
+            {isServiceSectionCollapsed ? (
+              <ChevronDown className="w-3 h-3 text-indigo-600" />
+            ) : (
+              <ChevronUp className="w-3 h-3 text-indigo-600" />
+            )}
+          </div>
+          {!isServiceSectionCollapsed && (
+            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1" id="drv-hist-svc-list">
             {(assignedCar.serviceLogs || []).length > 0 ? (
               (assignedCar.serviceLogs || []).map((log) => {
                 const isExpanded = expandedLogId === log.id;
@@ -84,13 +98,25 @@ export default function DriverHistory({
             ) : (
               <p className="text-[10px] text-slate-400 italic font-normal">No maintenance work logged on this unit.</p>
             )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Cashings tracked list */}
         <div className="space-y-2 text-left" id="drv-hist-rev-section">
-          <span className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider font-sans">Cashing Receipts Ledger</span>
-          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1" id="drv-hist-rev-list">
+          <div 
+            className="flex items-center justify-between cursor-pointer hover:bg-slate-50/50 rounded p-1 -m-1"
+            onClick={() => setIsCashingSectionCollapsed(!isCashingSectionCollapsed)}
+          >
+            <span className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider font-sans">Cashing Receipts Ledger</span>
+            {isCashingSectionCollapsed ? (
+              <ChevronDown className="w-3 h-3 text-emerald-600" />
+            ) : (
+              <ChevronUp className="w-3 h-3 text-emerald-600" />
+            )}
+          </div>
+          {!isCashingSectionCollapsed && (
+            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1" id="drv-hist-rev-list">
             {(() => {
               const matchedLogs = (assignedCar.revenueLogs || []).filter(r => r.driverId === activeDriver.id);
               return matchedLogs.length > 0 ? (
@@ -165,7 +191,8 @@ export default function DriverHistory({
               <p className="text-[10px] text-slate-400 italic font-normal">No income cashings logged on this unit.</p>
             );
             })()}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

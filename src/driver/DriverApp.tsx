@@ -277,16 +277,6 @@ export default function DriverApp({
           )}
         </div>
       </main>
-
-      {/* FOOTER */}
-      <footer className="bg-indigo-950 text-indigo-200 py-8 border-t border-indigo-900 text-xs mt-auto font-medium" id="page-footer">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
-          <div>
-            <p className="text-white font-bold">North Links Driver Portal</p>
-            <p className="text-indigo-400 text-[11px] mt-0.5">Driver operations console.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

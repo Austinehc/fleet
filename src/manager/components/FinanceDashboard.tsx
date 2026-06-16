@@ -253,75 +253,321 @@ export default function FinanceDashboard({
   const pendingReviewCount = filteredRevenues.filter(r => r.status === 'Pending').length;
   const totalPendingCount = allRevenueLogs.filter(r => r.status === 'Pending').length;
 
-  const handleExportPDF = async () => {
-    setIsExportingPDF(true);
-    const element = document.getElementById('finance-report-pdf-content');
-    if (!element) {
-      alert('Error: Printable template not found in DOM.');
-      setIsExportingPDF(false);
-      return;
-    }
-
-    // Capture original getComputedStyle to bypass html2canvas oklch parsing exception
-    const originalGetComputedStyle = window.getComputedStyle;
-    
-    // Override with a robust Proxy wrapper that cleans oklch on-the-fly when requested by html2canvas
-    window.getComputedStyle = function (elt, pseudoElt) {
-      const style = originalGetComputedStyle(elt, pseudoElt);
-      return new Proxy(style, {
-        get(target, prop, receiver) {
-          if (prop === 'getPropertyValue') {
-            return function (propertyName: string) {
-              const val = target.getPropertyValue(propertyName);
-              if (typeof val === 'string' && val.includes('oklch')) {
-                return val.replace(/oklch\([^)]*\)/g, 'rgb(79, 70, 229)'); // Safe, elegant indigo as fallback
-              }
-              return val;
-            };
-          }
-          const value = Reflect.get(target, prop, receiver);
-          if (typeof value === 'string' && value.includes('oklch')) {
-            return value.replace(/oklch\([^)]*\)/g, 'rgb(79, 70, 229)');
-          }
-          return value;
-        }
+  // Calculate filtered vehicles for Asset Profit & Loss
+  const filteredVehicles = React.useMemo(() => {
+    return cars
+      .filter(car => plAssetFilter === 'all' || car.id === plAssetFilter)
+      .map(car => {
+        // Calculate total generated revenue
+        const carRevenue = (car.revenueLogs || []).reduce((sum, log) => sum + log.amount, 0);
+        // Calculate maintenance expenditure
+        const carMaintenance = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
+        // Calculate insurance expenditure  
+        const carInsurance = (car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0);
+        const carExpenditure = carMaintenance + carInsurance;
+        
+        return {
+          id: car.id,
+          make: car.make,
+          model: car.model,
+          plateNumber: car.plateNumber,
+          totalRevenue: carRevenue,
+          maintenanceCost: carMaintenance,
+          insuranceCost: carInsurance,
+          totalExpenses: carExpenditure,
+        };
       });
-    };
+  }, [cars, plAssetFilter]);
 
-    const opt = {
-      margin:       [0.4, 0.4, 0.4, 0.4] as [number, number, number, number],
-      filename:     `Fleet_Financial_Report_${new Date().toISOString().split('T')[0]}.pdf`,
-      image:        { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, logging: false },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' as const }
-    };
+  // Export Monthly Performance as PDF
+  const exportMonthlyPerformancePDF = async () => {
+    setIsExportingPDF(true);
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = `
+      <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto;">
+        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 20px;">
+          <h1 style="color: #6366f1; margin: 0; font-size: 24px;">North Links Fleet Management</h1>
+          <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 18px;">Monthly Performance Report - FY ${selectedFiscalYear}</h2>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <h3 style="color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">Performance Summary</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div style="background: #f0f9ff; padding: 10px; border-radius: 6px; border: 1px solid #bae6fd;">
+              <div style="font-size: 18px; font-weight: bold; color: #0284c7;">ZMK ${monthlyPerformanceData.reduce((sum, month) => sum + month.revenue, 0).toLocaleString()}</div>
+              <div style="font-size: 12px; color: #6b7280;">Total Annual Revenue</div>
+            </div>
+            <div style="background: #fff1f2; padding: 10px; border-radius: 6px; border: 1px solid #fecaca;">
+              <div style="font-size: 18px; font-weight: bold; color: #dc2626;">ZMK ${monthlyPerformanceData.reduce((sum, month) => sum + month.maintenance, 0).toLocaleString()}</div>
+              <div style="font-size: 12px; color: #6b7280;">Total Annual Expenses</div>
+            </div>
+            <div style="background: #f0fdf4; padding: 10px; border-radius: 6px; border: 1px solid #bbf7d0;">
+              <div style="font-size: 18px; font-weight: bold; color: #16a34a;">ZMK ${monthlyPerformanceData.reduce((sum, month) => sum + (month.revenue - month.maintenance), 0).toLocaleString()}</div>
+              <div style="font-size: 12px; color: #6b7280;">Net Profit</div>
+            </div>
+          </div>
+        </div>
 
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+          <thead>
+            <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
+              <th style="padding: 12px 8px; text-align: left; border: 1px solid #e2e8f0;">Month</th>
+              <th style="padding: 12px 8px; text-align: right; border: 1px solid #e2e8f0;">Revenue (ZMK)</th>
+              <th style="padding: 12px 8px; text-align: right; border: 1px solid #e2e8f0;">Expenses (ZMK)</th>
+              <th style="padding: 12px 8px; text-align: right; border: 1px solid #e2e8f0;">Net Profit (ZMK)</th>
+              <th style="padding: 12px 8px; text-align: right; border: 1px solid #e2e8f0;">Margin %</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${monthlyPerformanceData.map(month => `
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">${month.name}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${month.revenue.toLocaleString()}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${month.maintenance.toLocaleString()}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: ${month.revenue - month.maintenance >= 0 ? '#16a34a' : '#dc2626'}; font-weight: bold;">${(month.revenue - month.maintenance).toLocaleString()}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${month.revenue > 0 ? (((month.revenue - month.maintenance) / month.revenue) * 100).toFixed(1) + '%' : '0%'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+          <p>Monthly Performance Report - Generated on ${new Date().toLocaleString()}</p>
+          <p>North Links Fleet Management System</p>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(tempDiv);
+    
     try {
-      // Access html2pdf from global window object (loaded via CDN)
       const html2pdf = (window as any).html2pdf;
       if (!html2pdf) {
         alert('PDF export library not loaded. Please refresh the page and try again.');
         return;
       }
       
-      html2pdf()
-        .set(opt)
-        .from(element)
-        .save()
-        .then(() => {
-          setIsExportingPDF(false);
-          window.getComputedStyle = originalGetComputedStyle;
+      await html2pdf()
+        .set({
+          margin: [0.5, 0.5, 0.5, 0.5],
+          filename: `Monthly_Performance_FY${selectedFiscalYear}_${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
         })
-        .catch((err: any) => {
-          console.error('PDF Generation Error:', err);
-          setIsExportingPDF(false);
-          window.getComputedStyle = originalGetComputedStyle;
-          alert('Failed to generate PDF. Returning styles to original state.');
-        });
-    } catch (e) {
-      console.error('PDF init error:', e);
+        .from(tempDiv)
+        .save();
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
       setIsExportingPDF(false);
-      window.getComputedStyle = originalGetComputedStyle;
+      document.body.removeChild(tempDiv);
+    }
+  };
+
+  // Export Submission Ledger as PDF
+  const exportSubmissionLedgerPDF = async () => {
+    setIsExportingPDF(true);
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = `
+      <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto;">
+        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 20px;">
+          <h1 style="color: #6366f1; margin: 0; font-size: 24px;">North Links Fleet Management</h1>
+          <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 18px;">Submissions Ledger Registry</h2>
+        </div>
+        
+        <div style="margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px;">
+          <h3 style="color: #374151; margin: 0 0 10px 0;">Ledger Summary</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+            <div>
+              <p><strong>Total Entries:</strong> ${filteredRevenues.length}</p>
+              <p><strong>Total Amount:</strong> ZMK ${filteredRevenues.reduce((sum, r) => sum + r.amount, 0).toLocaleString()}</p>
+            </div>
+            <div>
+              <p><strong>Approved:</strong> ${filteredRevenues.filter(r => r.status === 'Approved').length}</p>
+              <p><strong>Pending:</strong> ${filteredRevenues.filter(r => r.status === 'Pending').length}</p>
+            </div>
+            <div>
+              <p><strong>Active Vehicles:</strong> ${new Set(filteredRevenues.map(r => r.carPlate)).size}</p>
+              <p><strong>Active Drivers:</strong> ${new Set(filteredRevenues.map(r => r.driverName)).size}</p>
+            </div>
+            <div>
+              <p><strong>Report Date:</strong> ${new Date().toLocaleDateString()}</p>
+              <p><strong>Filters Applied:</strong> ${financeSearch || financeAsset !== 'all' || financeCategory !== 'all' || financeStatus !== 'all' || financeTimeframe !== 'all' ? 'Yes' : 'None'}</p>
+            </div>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+          <thead>
+            <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
+              <th style="padding: 8px 6px; text-align: left; border: 1px solid #e2e8f0;">Date</th>
+              <th style="padding: 8px 6px; text-align: left; border: 1px solid #e2e8f0;">Driver</th>
+              <th style="padding: 8px 6px; text-align: left; border: 1px solid #e2e8f0;">Vehicle</th>
+              <th style="padding: 8px 6px; text-align: left; border: 1px solid #e2e8f0;">Category</th>
+              <th style="padding: 8px 6px; text-align: left; border: 1px solid #e2e8f0;">Description</th>
+              <th style="padding: 8px 6px; text-align: right; border: 1px solid #e2e8f0;">Amount (ZMK)</th>
+              <th style="padding: 8px 6px; text-align: center; border: 1px solid #e2e8f0;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredRevenues.map(rev => `
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 6px; border: 1px solid #e5e7eb; font-family: monospace; font-size: 9px;">${new Date(rev.date).toLocaleDateString()}</td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb;">${rev.driverName || 'Unknown'}</td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb; font-family: monospace;">${rev.carMake} ${rev.carModel} (${rev.carPlate})</td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb;">
+                  <span style="background: ${
+                    rev.category === 'Fare' ? '#dbeafe' :
+                    rev.category === 'Rental' ? '#dcfce7' :
+                    rev.category === 'Delivery' ? '#fef3c7' :
+                    rev.category === 'Contract' ? '#f3e8ff' :
+                    '#f1f5f9'
+                  }; color: ${
+                    rev.category === 'Fare' ? '#1d4ed8' :
+                    rev.category === 'Rental' ? '#16a34a' :
+                    rev.category === 'Delivery' ? '#d97706' :
+                    rev.category === 'Contract' ? '#9333ea' :
+                    '#64748b'
+                  }; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold;">${rev.category}</span>
+                </td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb; font-size: 9px;">${rev.description}</td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; font-weight: bold;">${rev.amount.toLocaleString()}</td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">
+                  <span style="color: ${rev.status === 'Approved' ? '#16a34a' : '#f59e0b'}; font-weight: bold; font-size: 9px;">${rev.status}</span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+          <p>Submissions Ledger Registry - Generated on ${new Date().toLocaleString()}</p>
+          <p>North Links Fleet Management System</p>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(tempDiv);
+    
+    try {
+      const html2pdf = (window as any).html2pdf;
+      if (!html2pdf) {
+        alert('PDF export library not loaded. Please refresh the page and try again.');
+        return;
+      }
+      
+      await html2pdf()
+        .set({
+          margin: [0.4, 0.4, 0.4, 0.4],
+          filename: `Submission_Ledger_${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'in', format: 'legal', orientation: 'landscape' }
+        })
+        .from(tempDiv)
+        .save();
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsExportingPDF(false);
+      document.body.removeChild(tempDiv);
+    }
+  };
+
+  // Export Asset Profit & Loss as PDF  
+  const exportAssetProfitLossPDF = async () => {
+    setIsExportingPDF(true);
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = `
+      <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto;">
+        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 20px;">
+          <h1 style="color: #6366f1; margin: 0; font-size: 24px;">North Links Fleet Management</h1>
+          <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 18px;">Asset Profit & Loss Breakdown</h2>
+        </div>
+        
+        <div style="margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px;">
+          <h3 style="color: #374151; margin: 0 0 10px 0;">Fleet Performance Overview</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+            <div>
+              <p><strong>Total Fleet Revenue:</strong> ZMK ${filteredVehicles.reduce((sum, vehicle) => sum + vehicle.totalRevenue, 0).toLocaleString()}</p>
+              <p><strong>Total Fleet Expenses:</strong> ZMK ${filteredVehicles.reduce((sum, vehicle) => sum + vehicle.totalExpenses, 0).toLocaleString()}</p>
+            </div>
+            <div>
+              <p><strong>Net Fleet Profit:</strong> ZMK ${filteredVehicles.reduce((sum, vehicle) => sum + (vehicle.totalRevenue - vehicle.totalExpenses), 0).toLocaleString()}</p>
+              <p><strong>Active Vehicles:</strong> ${filteredVehicles.length}</p>
+            </div>
+            <div>
+              <p><strong>Profitable Vehicles:</strong> ${filteredVehicles.filter(v => v.totalRevenue > v.totalExpenses).length}</p>
+              <p><strong>Loss-Making Vehicles:</strong> ${filteredVehicles.filter(v => v.totalRevenue < v.totalExpenses).length}</p>
+            </div>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+          <thead>
+            <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0;">Vehicle</th>
+              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Revenue (ZMK)</th>
+              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Maintenance (ZMK)</th>
+              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Insurance (ZMK)</th>
+              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Total Expenses (ZMK)</th>
+              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Net Profit (ZMK)</th>
+              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Margin %</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredVehicles.map(vehicle => `
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 8px; border: 1px solid #e5e7eb;">
+                  <div style="font-weight: bold;">${vehicle.make} ${vehicle.model}</div>
+                  <div style="font-size: 9px; color: #6b7280; font-family: monospace;">${vehicle.plateNumber}</div>
+                </td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: #059669; font-weight: bold;">${vehicle.totalRevenue.toLocaleString()}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: #ea580c;">${vehicle.maintenanceCost.toLocaleString()}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: #dc2626;">${vehicle.insuranceCost.toLocaleString()}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: #dc2626; font-weight: bold;">${vehicle.totalExpenses.toLocaleString()}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: ${vehicle.totalRevenue - vehicle.totalExpenses >= 0 ? '#059669' : '#dc2626'}; font-weight: bold;">${(vehicle.totalRevenue - vehicle.totalExpenses).toLocaleString()}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${vehicle.totalRevenue > 0 ? (((vehicle.totalRevenue - vehicle.totalExpenses) / vehicle.totalRevenue) * 100).toFixed(1) + '%' : '0%'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+          <p>Asset Profit & Loss Breakdown - Generated on ${new Date().toLocaleString()}</p>
+          <p>North Links Fleet Management System</p>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(tempDiv);
+    
+    try {
+      const html2pdf = (window as any).html2pdf;
+      if (!html2pdf) {
+        alert('PDF export library not loaded. Please refresh the page and try again.');
+        return;
+      }
+      
+      await html2pdf()
+        .set({
+          margin: [0.4, 0.4, 0.4, 0.4],
+          filename: `Asset_Profit_Loss_${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'in', format: 'legal', orientation: 'landscape' }
+        })
+        .from(tempDiv)
+        .save();
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsExportingPDF(false);
+      document.body.removeChild(tempDiv);
     }
   };
 
@@ -419,7 +665,7 @@ export default function FinanceDashboard({
       <div className="max-w-7xl mx-auto px-4 md:px-6 space-y-6">
         
         {/* Dashboard Head */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4" id="finance-dashboard-hero text-left">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-left" id="finance-dashboard-hero">
           <div className="text-left">
             <h2 className="text-xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
               <Coins className="text-indigo-600 w-6 h-6 animate-spin" style={{ animationDuration: '6s' }} />
@@ -428,19 +674,6 @@ export default function FinanceDashboard({
             <p className="text-xs text-gray-400 font-medium">Monitor active cashing logs, revenue streams, and verify driver submissions across the enterprise.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2" id="finance-header-actions">
-            <button
-              onClick={handleExportPDF}
-              disabled={isExportingPDF}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5 font-sans disabled:opacity-50 disabled:cursor-not-allowed"
-              id="btn-export-finance-report"
-            >
-              {isExportingPDF ? (
-                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
-              ) : (
-                <FileText className="w-4 h-4 shrink-0" />
-              )}
-              {isExportingPDF ? 'Generating PDF...' : 'Export Report'}
-            </button>
             {pendingReviewCount > 0 && (
               <button
                 onClick={approveAllPending}
@@ -650,6 +883,20 @@ export default function FinanceDashboard({
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
+                  {/* Export Monthly Performance Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      exportMonthlyPerformancePDF();
+                    }}
+                    disabled={isExportingPDF}
+                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg text-[9px] font-bold transition-all cursor-pointer font-sans shadow-sm flex items-center gap-1"
+                    title="Export Monthly Performance as PDF"
+                  >
+                    <FileText className="w-3 h-3" />
+                    {isExportingPDF ? 'Exporting...' : 'Export PDF'}
+                  </button>
+
                   {/* Fiscal Year Switcher Dropdown */}
                   <div className="flex items-center gap-1">
                     <span className="text-[9px] font-black uppercase text-gray-400 tracking-wider font-sans">Fiscal Year:</span>
@@ -753,6 +1000,17 @@ export default function FinanceDashboard({
                   <p className="text-[10px] text-gray-400 mt-0.5">Performance tracking model comparing generated collections vs. overhead costs per fleet vehicle.</p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0" id="pnl-asset-filter-wrapper">
+                  {/* Export Asset P&L Button */}
+                  <button
+                    onClick={exportAssetProfitLossPDF}
+                    disabled={isExportingPDF}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-[9px] font-bold transition-all cursor-pointer font-sans shadow-sm flex items-center gap-1"
+                    title="Export Asset P&L as PDF"
+                  >
+                    <FileText className="w-3 h-3" />
+                    {isExportingPDF ? 'Exporting...' : 'Export PDF'}
+                  </button>
+
                   <span className="text-[9px] font-black uppercase text-gray-400 tracking-wider font-sans">Filter Asset:</span>
                   <select
                     value={plAssetFilter}
@@ -835,19 +1093,31 @@ export default function FinanceDashboard({
                 <p className="text-[10px] text-gray-400 mt-0.5">Showing {filteredRevenues.length} revenue logging entries matching filters</p>
               </div>
 
-              {/* Status Filter Toggle Group */}
-              <div className="flex rounded-xl bg-slate-100 p-0.5 border border-slate-200 shrink-0 select-none" id="ledger-status-toggle">
+              <div className="flex items-center gap-2">
+                {/* Export Submission Ledger Button */}
                 <button
-                  type="button"
-                  onClick={() => setFinanceStatus('all')}
-                  className={`px-3 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
-                    financeStatus === 'all'
-                      ? 'bg-white text-slate-800 shadow-3xs border border-slate-200/45 font-black'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
+                  onClick={exportSubmissionLedgerPDF}
+                  disabled={isExportingPDF}
+                  className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg text-[9px] font-bold transition-all cursor-pointer font-sans shadow-sm flex items-center gap-1"
+                  title="Export Submission Ledger as PDF"
                 >
-                  All
+                  <FileText className="w-3 h-3" />
+                  {isExportingPDF ? 'Exporting...' : 'Export PDF'}
                 </button>
+
+                {/* Status Filter Toggle Group */}
+                <div className="flex rounded-xl bg-slate-100 p-0.5 border border-slate-200 shrink-0 select-none" id="ledger-status-toggle">
+                  <button
+                    type="button"
+                    onClick={() => setFinanceStatus('all')}
+                    className={`px-3 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                      financeStatus === 'all'
+                        ? 'bg-white text-slate-800 shadow-3xs border border-slate-200/45 font-black'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    All
+                  </button>
                 <button
                   type="button"
                   onClick={() => setFinanceStatus('Pending')}
@@ -1109,6 +1379,7 @@ export default function FinanceDashboard({
 
         </div>
 
+      </div>
       </div>
 
       {/* Hidden printable financial report template for html2pdf */}

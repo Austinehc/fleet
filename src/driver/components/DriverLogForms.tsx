@@ -16,6 +16,10 @@ export default function DriverLogForms({
 }: DriverLogFormsProps) {
   const [driverLogSubTab, setDriverLogSubTab] = useState<'maintenance' | 'cashing'>('cashing');
 
+  // Loading states
+  const [isSubmittingMaintenance, setIsSubmittingMaintenance] = useState(false);
+  const [isSubmittingCashing, setIsSubmittingCashing] = useState(false);
+
   // Maintenance form state
   const [drvSvcDate, setDrvSvcDate] = useState<string>(new Date().toISOString().split('T')[0] || '');
   const [drvSvcCat, setDrvSvcCat] = useState<ServiceLog['category']>('Maintenance');
@@ -46,8 +50,10 @@ export default function DriverLogForms({
     }
   }, [assignedCar, lastCarId]);
 
-  const handleDriverAddServiceLog = (e: React.FormEvent) => {
+  const handleDriverAddServiceLog = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingMaintenance) return;
+    
     if (!drvSvcDesc.trim()) {
       alert('Please enter a description for the service performed.');
       return;
@@ -62,42 +68,51 @@ export default function DriverLogForms({
       alert(`The entered mileage (${mileageNum} km) is less than the current mileage of the car (${assignedCar.mileage} km). Please enter a higher value.`);
       return;
     }
-    const nextMileage = mileageNum;
+    
+    setIsSubmittingMaintenance(true);
+    
+    try {
+      const nextMileage = mileageNum;
 
-    const newSvc: ServiceLog = {
-      id: `svc-${Date.now()}`,
-      date: drvSvcDate,
-      category: drvSvcCat,
-      description: drvSvcDesc.trim(),
-      cost: Number(drvSvcCost),
-      mileage: nextMileage,
-      performedBy: activeDriver.fullName
-    };
+      const newSvc: ServiceLog = {
+        id: `svc-${Date.now()}`,
+        date: drvSvcDate,
+        category: drvSvcCat,
+        description: drvSvcDesc.trim(),
+        cost: Number(drvSvcCost),
+        mileage: nextMileage,
+        performedBy: activeDriver.fullName
+      };
 
-    setCars(prev => prev.map(car => {
-      if (car.id === assignedCar.id) {
-        const currentSvc = car.serviceLogs || [];
-        return {
-          ...car,
-          mileage: nextMileage,
-          serviceLogs: [newSvc, ...currentSvc]
-        };
-      }
-      return car;
-    }));
+      setCars(prev => prev.map(car => {
+        if (car.id === assignedCar.id) {
+          const currentSvc = car.serviceLogs || [];
+          return {
+            ...car,
+            mileage: nextMileage,
+            serviceLogs: [newSvc, ...currentSvc]
+          };
+        }
+        return car;
+      }));
 
-    // Reset Form Fields
-    setDrvSvcDesc('');
-    setDrvSvcCost(0);
-    setDrvSvcMiles(nextMileage);
-    setDrvSvcDate(new Date().toISOString().split('T')[0] || '');
-    setDrvSvcCat('Maintenance');
+      // Reset Form Fields
+      setDrvSvcDesc('');
+      setDrvSvcCost(0);
+      setDrvSvcMiles(nextMileage);
+      setDrvSvcDate(new Date().toISOString().split('T')[0] || '');
+      setDrvSvcCat('Maintenance');
 
-    triggerSuccess('Maintenance / Service Event logged successfully, and auto-synced with Manager Hub!');
+      triggerSuccess('Maintenance / Service Event logged successfully, and auto-synced with Manager Hub!');
+    } finally {
+      setIsSubmittingMaintenance(false);
+    }
   };
 
-  const handleDriverAddRevenueLog = (e: React.FormEvent) => {
+  const handleDriverAddRevenueLog = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingCashing) return;
+    
     if (drvRevAmount <= 0) {
       alert('Please enter a valid receipt amount greater than 0.');
       return;
@@ -117,44 +132,50 @@ export default function DriverLogForms({
       return;
     }
 
-    const newRev: RevenueLog = {
-      id: `rev-${Date.now()}`,
-      date: drvRevDate,
-      amount: Number(drvRevAmount),
-      category: drvRevCat,
-      description: drvRevDesc.trim(),
-      driverId: activeDriver.id,
-      driverName: activeDriver.fullName,
-      status: 'Pending'
-    };
+    setIsSubmittingCashing(true);
+    
+    try {
+      const newRev: RevenueLog = {
+        id: `rev-${Date.now()}`,
+        date: drvRevDate,
+        amount: Number(drvRevAmount),
+        category: drvRevCat,
+        description: drvRevDesc.trim(),
+        driverId: activeDriver.id,
+        driverName: activeDriver.fullName,
+        status: 'Pending'
+      };
 
-    setCars(prev => prev.map(car => {
-      if (car.id === assignedCar.id) {
-        const currentRevs = car.revenueLogs || [];
-        return {
-          ...car,
-          mileage: mileageNum, // Update car mileage
-          revenueLogs: [newRev, ...currentRevs]
-        };
-      }
-      return car;
-    }));
+      setCars(prev => prev.map(car => {
+        if (car.id === assignedCar.id) {
+          const currentRevs = car.revenueLogs || [];
+          return {
+            ...car,
+            mileage: mileageNum, // Update car mileage
+            revenueLogs: [newRev, ...currentRevs]
+          };
+        }
+        return car;
+      }));
 
-    // Reset Form
-    setDrvRevAmount(0);
-    setDrvRevDesc('');
-    setDrvRevDate(new Date().toISOString().split('T')[0] || '');
-    setDrvRevCat('Fare');
-    setDrvRevMileage(mileageNum);
+      // Reset Form
+      setDrvRevAmount(0);
+      setDrvRevDesc('');
+      setDrvRevDate(new Date().toISOString().split('T')[0] || '');
+      setDrvRevCat('Fare');
+      setDrvRevMileage(mileageNum);
 
-    triggerSuccess('Cashing / Revenue receipt submitted successfully! Waiting for manager approval.');
+      triggerSuccess('Cashing / Revenue receipt submitted successfully! Waiting for manager approval.');
+    } finally {
+      setIsSubmittingCashing(false);
+    }
   };
 
   return (
     <div className="bg-white border border-gray-150 rounded-2xl p-5 shadow-sm space-y-5" id="driver-log-actions-card">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3" id="drv-log-options-hdr">
         <div>
-          <h3 className="font-bold text-slate-855 text-sm">Record Mobile Operations Logs</h3>
+          <h3 className="font-bold text-slate-855 text-sm">Operations Logs</h3>
           <p className="text-[10px] text-slate-400 mt-0.5 font-medium">All inputs immediately update vehicle timelines & manager metrics live.</p>
         </div>
 
@@ -186,7 +207,7 @@ export default function DriverLogForms({
       {/* Active Form Display */}
       {driverLogSubTab === 'maintenance' && (
         <form onSubmit={handleDriverAddServiceLog} className="space-y-4 animate-fade-in text-left" id="form-drv-svc">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Date Performed*</label>
               <input
@@ -199,7 +220,7 @@ export default function DriverLogForms({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Service category*</label>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Service Category*</label>
               <select
                 value={drvSvcCat}
                 onChange={(e) => setDrvSvcCat(e.target.value as any)}
@@ -215,6 +236,19 @@ export default function DriverLogForms({
               </select>
             </div>
             <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 font-sans">Expense Cost (zmk)*</label>
+              <input
+                type="number"
+                required
+                min="0"
+                placeholder="e.g. 150.00"
+                value={drvSvcCost || ''}
+                onChange={(e) => setDrvSvcCost(Number(e.target.value))}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 font-mono focus:outline-none"
+                id="drv-svc-input-cost"
+              />
+            </div>
+            <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 font-sans">Update Mileage (km)*</label>
               <input
                 type="number"
@@ -228,23 +262,7 @@ export default function DriverLogForms({
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 font-mono focus:outline-none"
                 id="drv-svc-input-miles"
               />
-              <div className="flex gap-1 mt-1 flex-wrap" id="mileage-increment-helpers">
-              </div>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 font-sans">Expense Cost (zmk)*</label>
-            <input
-              type="number"
-              required
-              min="0"
-              placeholder="e.g. 150.00"
-              value={drvSvcCost || ''}
-              onChange={(e) => setDrvSvcCost(Number(e.target.value))}
-              className="w-full bg-slate-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 font-mono focus:outline-none"
-              id="drv-svc-input-cost"
-            />
           </div>
 
           <div>
@@ -262,10 +280,18 @@ export default function DriverLogForms({
 
           <button
             type="submit"
-            className="w-full py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer text-center font-sans"
+            disabled={isSubmittingMaintenance}
+            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer text-center font-sans flex items-center justify-center gap-2"
             id="drv-svc-submit"
           >
-            Commit Maintenance / Service Event log
+            {isSubmittingMaintenance ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Processing...
+              </>
+            ) : (
+              'Commit Maintenance / Service Event log'
+            )}
           </button>
         </form>
       )}
@@ -274,7 +300,7 @@ export default function DriverLogForms({
         <form onSubmit={handleDriverAddRevenueLog} className="space-y-4 animate-fade-in text-left" id="form-drv-rev">
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Cashing Shift Date*</label>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Cashing Date*</label>
               <input
                 type="date"
                 required
@@ -285,12 +311,12 @@ export default function DriverLogForms({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Cashing Contract Category*</label>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Cashing Category*</label>
               <select
                 value={drvRevCat}
                 onChange={(e) => setDrvRevCat(e.target.value as any)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none"
-                id="drv-rev-input-cat relative"
+                id="drv-rev-input-cat"
               >
                 <option value="Fare">Fare</option>
                 <option value="Rental">Rental Yield</option>
@@ -299,7 +325,7 @@ export default function DriverLogForms({
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 font-sans">Gross Yield Amount (zmk)*</label>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 font-sans">Amount (zmk)*</label>
               <input
                 type="number"
                 required
@@ -313,7 +339,7 @@ export default function DriverLogForms({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Current Odometer (km)*</label>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Current Mileage (km)*</label>
               <input
                 type="number"
                 required
@@ -328,11 +354,11 @@ export default function DriverLogForms({
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Memo description of logs / trips performed*</label>
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Description*</label>
             <textarea
               required
               rows={3}
-              placeholder="trip logs details: e.g. completed city shuttle transfers, afternoon shifts log..."
+              placeholder="Trip logs details: e.g. completed city shuttle transfers, afternoon shifts log..."
               value={drvRevDesc}
               onChange={(e) => setDrvRevDesc(e.target.value)}
               className="w-full bg-slate-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none font-normal"
@@ -342,10 +368,18 @@ export default function DriverLogForms({
 
           <button
             type="submit"
-            className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer text-center font-sans"
+            disabled={isSubmittingCashing}
+            className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer text-center font-sans flex items-center justify-center gap-2"
             id="drv-rev-submit"
           >
-            Commit Payment Yield / Cashing
+            {isSubmittingCashing ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Processing...
+              </>
+            ) : (
+              'Commit Payment Yield / Cashing'
+            )}
           </button>
         </form>
       )}

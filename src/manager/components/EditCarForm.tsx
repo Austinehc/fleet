@@ -11,7 +11,8 @@ import {
   Gauge, 
   Check, 
   Upload,
-  Camera
+  Camera,
+  FileText
 } from 'lucide-react';
 
 interface EditCarFormProps {
@@ -45,6 +46,9 @@ export default function EditCarForm({
   // Picture state
   const [editCarPhoto, setEditCarPhoto] = useState<string>(car.photos?.[0] || '');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  
+  // Export loading state
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   // Assigned driver
   const currentAssignedDriver = drivers.find(d => d.assignedCarId === car.id);
@@ -143,6 +147,136 @@ export default function EditCarForm({
     };
 
     onSave(updatedCar, editAssignedDriverId);
+  };
+
+  // Export maintenance logs as PDF
+  const exportMaintenanceLogsPDF = async (car: CarAsset) => {
+    setIsExportingPDF(true);
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = `
+      <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
+        <div style="text-align: center; border-bottom: 2px solid #ea580c; padding-bottom: 20px; margin-bottom: 20px;">
+          <h1 style="color: #ea580c; margin: 0; font-size: 24px;">North Links Fleet Management</h1>
+          <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 18px;">Vehicle Maintenance History</h2>
+        </div>
+        
+        <div style="margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px;">
+          <h3 style="color: #374151; margin: 0 0 10px 0;">Vehicle Information</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+              <p><strong>Vehicle:</strong> ${car.make} ${car.model} (${car.year})</p>
+              <p><strong>License Plate:</strong> ${car.plateNumber}</p>
+              <p><strong>Color:</strong> ${car.color}</p>
+            </div>
+            <div>
+              <p><strong>Current Mileage:</strong> ${car.mileage.toLocaleString()} km</p>
+              <p><strong>Status:</strong> ${car.status}</p>
+              <p><strong>Total Maintenance Records:</strong> ${(car.serviceLogs || []).length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <h3 style="color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">Maintenance Summary</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div style="background: #fff7ed; padding: 10px; border-radius: 6px; border: 1px solid #fed7aa;">
+              <div style="font-size: 18px; font-weight: bold; color: #ea580c;">ZMK ${(car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0).toLocaleString()}</div>
+              <div style="font-size: 12px; color: #6b7280;">Total Maintenance Cost</div>
+            </div>
+            <div style="background: #f0f9ff; padding: 10px; border-radius: 6px; border: 1px solid #bae6fd;">
+              <div style="font-size: 18px; font-weight: bold; color: #0284c7;">${(car.serviceLogs || []).length}</div>
+              <div style="font-size: 12px; color: #6b7280;">Total Services</div>
+            </div>
+            <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+              <div style="font-size: 14px; font-weight: bold; color: #374151;">
+                ${(() => {
+                  const logs = car.serviceLogs || [];
+                  return logs.length > 0 && logs[0] 
+                    ? new Date(logs[0].date).toLocaleDateString()
+                    : 'No services';
+                })()}
+              </div>
+              <div style="font-size: 12px; color: #6b7280;">Last Service Date</div>
+            </div>
+          </div>
+        </div>
+
+        ${(car.serviceLogs || []).length > 0 ? `
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 20px;">
+          <thead>
+            <tr style="background: #f97316; color: white;">
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #ea580c;">Date</th>
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #ea580c;">Category</th>
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #ea580c;">Description</th>
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #ea580c;">Mileage</th>
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #ea580c;">Performed By</th>
+              <th style="padding: 10px 8px; text-align: right; border: 1px solid #ea580c;">Cost (ZMK)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(car.serviceLogs || []).map(log => `
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 8px; border: 1px solid #e5e7eb; font-family: monospace;">${new Date(log.date).toLocaleDateString()}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb;">
+                  <span style="background: ${
+                    log.category === 'Maintenance' ? '#dbeafe' :
+                    log.category === 'Repair' ? '#fee2e2' :
+                    log.category === 'Inspection' ? '#dcfce7' :
+                    log.category === 'Tire Service' ? '#f3e8ff' :
+                    log.category === 'Oil Change' ? '#fef3c7' :
+                    '#f1f5f9'
+                  }; color: ${
+                    log.category === 'Maintenance' ? '#1d4ed8' :
+                    log.category === 'Repair' ? '#dc2626' :
+                    log.category === 'Inspection' ? '#16a34a' :
+                    log.category === 'Tire Service' ? '#9333ea' :
+                    log.category === 'Oil Change' ? '#d97706' :
+                    '#64748b'
+                  }; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">${log.category}</span>
+                </td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb;">${log.description}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; font-family: monospace;">${log.mileage.toLocaleString()} km</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb;">${log.performedBy}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; font-weight: bold;">${log.cost.toLocaleString()}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        ` : '<p style="text-align: center; color: #6b7280; font-style: italic;">No maintenance records available</p>'}
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+          <p>Maintenance History Report - Generated on ${new Date().toLocaleString()}</p>
+          <p>North Links Fleet Management System</p>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(tempDiv);
+    
+    try {
+      const html2pdf = (window as any).html2pdf;
+      if (!html2pdf) {
+        alert('PDF export library not loaded. Please refresh the page and try again.');
+        return;
+      }
+      
+      await html2pdf()
+        .set({
+          margin: [0.5, 0.5, 0.5, 0.5],
+          filename: `${car.plateNumber}_Maintenance_History_${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        })
+        .from(tempDiv)
+        .save();
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsExportingPDF(false);
+      document.body.removeChild(tempDiv);
+    }
   };
 
   return (
@@ -425,7 +559,29 @@ export default function EditCarForm({
 
                     {/* Maintenance History */}
                     <div className="space-y-3" id="maintenance-logs-registry-box">
-                      <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">Maintenance History ({(car.serviceLogs || []).length})</h4>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">Maintenance History ({(car.serviceLogs || []).length})</h4>
+                        {(car.serviceLogs || []).length > 0 && (
+                          <button
+                            onClick={() => exportMaintenanceLogsPDF(car)}
+                            disabled={isExportingPDF}
+                            className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg text-[9px] font-bold transition-all cursor-pointer uppercase flex items-center gap-1 shadow-sm select-none"
+                            title="Export Maintenance Logs as PDF"
+                          >
+                            {isExportingPDF ? (
+                              <>
+                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Exporting...
+                              </>
+                            ) : (
+                              <>
+                                <FileText className="w-3 h-3" />
+                                Export Logs
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
                       
                       {(car.serviceLogs || []).length > 0 ? (
                         <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto border border-slate-150 rounded-xl px-4 bg-white" id="maintenance-logs-sub-ledger">
@@ -478,11 +634,11 @@ export default function EditCarForm({
                     {/* Insurance Summary */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="insurance-summary-widgets">
                       <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
-                        <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Insurance & Compliance Cost</span>
+                        <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Insurance </span>
                         <span className="text-lg font-black font-mono text-rose-600 block mt-1">zmk {(car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
-                        <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Total Records</span>
+                        <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider">Insurance Records</span>
                         <span className="text-lg font-black font-mono text-indigo-600 block mt-1">{(car.insuranceLogs || []).length} Records</span>
                       </div>
                       <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
@@ -503,7 +659,7 @@ export default function EditCarForm({
                     <div className="border border-indigo-150 bg-indigo-50/20 rounded-2xl p-4.5" id="quick-service-log">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h5 className="text-[10px] uppercase font-black tracking-wider text-indigo-700">Log Insurance & Compliance</h5>
+                          <h5 className="text-[10px] uppercase font-black tracking-wider text-indigo-700">Add Insurance</h5>
                           <p className="text-[10px] text-slate-400 mt-0.5">Record insurance payments, road tax, fitness certificates, and compliance documents.</p>
                         </div>
                         <button
