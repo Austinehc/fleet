@@ -1084,29 +1084,31 @@ export default function FinanceDashboard({
           {/* RIGHT: Central Ledger / Approval Queue Column span 5 */}
           <div className={`lg:col-span-5 bg-white rounded-2xl border border-gray-200/80 p-5 shadow-xs flex flex-col gap-4 text-left animate-fade-in ${mobileSubTab === 'ledger' ? 'block' : 'hidden lg:flex'}`} id="finance-ledger-col">
             
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-3 gap-2.5" id="ledger-headline">
-              <div>
-                <h3 className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
-                  <FileText className="w-4 h-4 text-indigo-505 shrink-0 animate-pulse" />
-                  Submissions Ledger Registry
-                </h3>
-                <p className="text-[10px] text-gray-400 mt-0.5">Showing {filteredRevenues.length} revenue logging entries matching filters</p>
-              </div>
-
-              <div className="flex items-center gap-2">
+            <div className="border-b border-gray-100 pb-3 space-y-3" id="ledger-headline">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-indigo-505 shrink-0 animate-pulse" />
+                    Submissions Ledger Registry
+                  </h3>
+                  <p className="text-[10px] text-gray-400 mt-0.5">Showing {filteredRevenues.length} revenue logging entries matching filters</p>
+                </div>
+                
                 {/* Export Submission Ledger Button */}
                 <button
                   onClick={exportSubmissionLedgerPDF}
                   disabled={isExportingPDF}
-                  className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg text-[9px] font-bold transition-all cursor-pointer font-sans shadow-sm flex items-center gap-1"
+                  className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg text-[9px] font-bold transition-all cursor-pointer font-sans shadow-sm flex items-center gap-1 self-start sm:self-auto"
                   title="Export Submission Ledger as PDF"
                 >
                   <FileText className="w-3 h-3" />
                   {isExportingPDF ? 'Exporting...' : 'Export PDF'}
                 </button>
+              </div>
 
-                {/* Status Filter Toggle Group */}
-                <div className="flex rounded-xl bg-slate-100 p-0.5 border border-slate-200 shrink-0 select-none" id="ledger-status-toggle">
+              {/* Status Filter Toggle Group */}
+              <div className="flex justify-center sm:justify-start">
+                <div className="flex rounded-xl bg-slate-100 p-0.5 border border-slate-200 select-none" id="ledger-status-toggle">
                   <button
                     type="button"
                     onClick={() => setFinanceStatus('all')}
@@ -1147,6 +1149,7 @@ export default function FinanceDashboard({
                 >
                   Approved
                 </button>
+                </div>
               </div>
             </div>
 
@@ -1379,7 +1382,6 @@ export default function FinanceDashboard({
 
         </div>
 
-      </div>
       </div>
 
       {/* Hidden printable financial report template for html2pdf */}
