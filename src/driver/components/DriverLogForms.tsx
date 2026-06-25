@@ -428,7 +428,7 @@ export default function DriverLogForms({
       )}
 
       {showReceiptCapture && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" id="receipt-capture-overlay">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2" id="receipt-capture-overlay">
           <CameraCapture
             onPhotoCaptured={(capturedDataUrl) => {
               setReceiptImageUrl(capturedDataUrl);

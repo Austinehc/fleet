@@ -133,9 +133,9 @@ export default function CameraCapture({ onPhotoCaptured, onClose }: CameraCaptur
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-xl max-w-lg w-full mx-auto" id="camera-capture-container">
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-xl max-w-md w-full mx-auto" id="camera-capture-container">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50" id="camera-hdr">
+      <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50" id="camera-hdr">
         <div>
           <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-base">
             <Camera className="w-5 h-5 text-indigo-600" id="camera-icon-hdr" />
@@ -153,7 +153,7 @@ export default function CameraCapture({ onPhotoCaptured, onClose }: CameraCaptur
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-100 p-1 bg-gray-50 text-xs font-medium" id="camera-mode-tabs">
+      <div className="flex border-b border-gray-100 p-1 bg-gray-50 text-[11px] font-medium" id="camera-mode-tabs">
         <button
           onClick={() => {
             setUploadOption('preset');
@@ -199,7 +199,7 @@ export default function CameraCapture({ onPhotoCaptured, onClose }: CameraCaptur
       </div>
 
       {/* Content Area */}
-      <div className="p-6" id="camera-content-panel">
+      <div className="p-4" id="camera-content-panel">
         
         {/* Presets Screen */}
         {uploadOption === 'preset' && (
@@ -277,7 +277,7 @@ export default function CameraCapture({ onPhotoCaptured, onClose }: CameraCaptur
                   <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2" id="capture-trigger-overlay">
                     <button
                       onClick={capturePhoto}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-full font-semibold text-xs shadow-lg hover:shadow-indigo-500/20 flex items-center gap-2 transition-all hover:scale-105"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full font-semibold text-xs shadow-lg hover:shadow-indigo-500/20 flex items-center gap-2 transition-all hover:scale-105"
                       id="btn-snap-pic"
                       type="button"
                     >
@@ -349,7 +349,7 @@ export default function CameraCapture({ onPhotoCaptured, onClose }: CameraCaptur
         )}
 
         {/* Action Controls */}
-        <div className="mt-6 pt-5 border-t border-gray-100 flex items-center justify-between" id="camera-ctrl-foot">
+        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between" id="camera-ctrl-foot">
           <div className="text-xs text-gray-400" id="photo-preview-desc">
             {capturedImage ? 'Ready to attach to car asset' : 'Please select/take a photo first'}
           </div>
