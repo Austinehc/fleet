@@ -61,7 +61,8 @@ export async function getCarsFromDB(): Promise<CarAsset[]> {
       description: log.description,
       cost: Number(log.cost),
       mileage: Number(log.mileage),
-      performedBy: log.performed_by
+      performedBy: log.performed_by,
+      receiptUrl: log.receipt_url || undefined
     });
     return acc;
   }, {});
@@ -279,7 +280,8 @@ export async function saveServiceLogToDB(carId: string, log: ServiceLog): Promis
       description: log.description,
       cost: log.cost,
       mileage: log.mileage,
-      performed_by: log.performedBy
+      performed_by: log.performedBy,
+      receipt_url: log.receiptUrl || null
     });
 
   if (error) {

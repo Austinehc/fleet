@@ -628,7 +628,12 @@ export default function EditCarForm({
                                       return (
                                         <button
                                           type="button"
-                                          onClick={() => receiptUrl && setReceiptModalUrl(receiptUrl)}
+                                          onClick={() => {
+                                            if (receiptUrl) {
+                                              setReceiptModalUrl(receiptUrl);
+                                              setIsReceiptModalOpen(true);
+                                            }
+                                          }}
                                           className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[9px] font-semibold uppercase tracking-wider hover:bg-emerald-100 transition-colors"
                                         >
                                           Receipt attached
