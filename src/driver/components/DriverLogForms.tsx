@@ -109,9 +109,15 @@ export default function DriverLogForms({
     }
   };
 
+  const hasPendingCashing = React.useMemo(() => {
+    return (assignedCar.revenueLogs || []).some(
+      (rev) => rev.status === 'Pending' && rev.driverId === activeDriver.id
+    );
+  }, [assignedCar.revenueLogs, activeDriver.id]);
+
   const handleDriverAddRevenueLog = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmittingCashing) return;
+    if (isSubmittingCashing || hasPendingCashing) return;
     
     if (drvRevAmount <= 0) {
       alert('Please enter a valid receipt amount greater than 0.');
@@ -368,19 +374,26 @@ export default function DriverLogForms({
 
           <button
             type="submit"
-            disabled={isSubmittingCashing}
-            className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer text-center font-sans flex items-center justify-center gap-2"
+            disabled={isSubmittingCashing || hasPendingCashing}
+            className={`w-full py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer text-center font-sans flex items-center justify-center gap-2 ${hasPendingCashing ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
             id="drv-rev-submit"
+            title={hasPendingCashing ? 'Waiting for manager approval before submitting another cashing entry' : 'Submit cashing for approval'}
           >
             {isSubmittingCashing ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 Processing...
               </>
+            ) : hasPendingCashing ? (
+              'Pending Approval'
             ) : (
               'Cashing'
             )}
           </button>
+
+          {hasPendingCashing && (
+            <p className="text-[10px] text-amber-600 mt-2 font-medium">You already have a pending cashing submission. Please wait for manager approval before submitting another.</p>
+          )}
         </form>
       )}
     </div>
