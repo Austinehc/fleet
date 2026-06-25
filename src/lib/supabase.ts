@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { CarAsset, Driver, ServiceLog, RevenueLog, FuelLog, InsuranceLog } from '../types';
+import { CarAsset, Driver, ServiceLog, RevenueLog, InsuranceLog } from '../types';
 import { errorHandler } from './errorHandling';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
@@ -28,19 +28,17 @@ export async function getCarsFromDB(): Promise<CarAsset[]> {
       if (carsError) throw carsError;
 
       // Load all sub-records with error handling
-      const [svcResult, revResult, fuelResult, insuranceResult] = await Promise.allSettled([
+      const [svcResult, revResult, insuranceResult] = await Promise.allSettled([
         supabase!.from('service_logs').select('*').order('date', { ascending: false }),
         supabase!.from('revenue_logs').select('*').order('date', { ascending: false }),
-        supabase!.from('fuel_logs').select('*').order('date', { ascending: false }),
         supabase!.from('insurance_logs').select('*').order('date', { ascending: false })
       ]);
 
       const dbSvc = svcResult.status === 'fulfilled' ? svcResult.value.data || [] : [];
       const dbRev = revResult.status === 'fulfilled' ? revResult.value.data || [] : [];
-      const dbFuel = fuelResult.status === 'fulfilled' ? fuelResult.value.data || [] : [];
       const dbInsurance = insuranceResult.status === 'fulfilled' ? insuranceResult.value.data || [] : [];
 
-      return { dbCars, dbSvc, dbRev, dbFuel, dbInsurance };
+      return { dbCars, dbSvc, dbRev, dbInsurance };
     },
     'Load cars from database'
   );
@@ -82,18 +80,7 @@ export async function getCarsFromDB(): Promise<CarAsset[]> {
     return acc;
   }, {});
 
-  const fuelLogsMap = (dbFuel || []).reduce((acc: any, log: any) => {
-    if (!acc[log.car_id]) acc[log.car_id] = [];
-    acc[log.car_id].push({
-      id: log.id,
-      date: log.date,
-      liters: Number(log.liters),
-      cost: Number(log.cost),
-      mileage: Number(log.mileage),
-      performedBy: log.performed_by
-    });
-    return acc;
-  }, {});
+
 
   const insuranceLogsMap = (dbInsurance || []).reduce((acc: any, log: any) => {
     if (!acc[log.car_id]) acc[log.car_id] = [];
@@ -122,7 +109,7 @@ export async function getCarsFromDB(): Promise<CarAsset[]> {
     photos: car.photos || [],
     serviceLogs: serviceLogsMap[car.id] || [],
     revenueLogs: revenueLogsMap[car.id] || [],
-    fuelLogs: fuelLogsMap[car.id] || [],
+
     insuranceLogs: insuranceLogsMap[car.id] || [],
     createdAt: car.created_at
   }));
@@ -339,38 +326,6 @@ export async function updateRevenueLogStatusInDB(logId: string, status: 'No Deta
   }
 }
 
-// Submit Fuel / Refueling Log
-export async function saveFuelLogToDB(carId: string, log: FuelLog): Promise<void> {
-  if (!supabase) return;
-
-  const { error } = await supabase
-    .from('fuel_logs')
-    .upsert({
-      id: log.id,
-      car_id: carId,
-      date: log.date,
-      liters: log.liters,
-      cost: log.cost,
-      mileage: log.mileage,
-      performed_by: log.performedBy
-    });
-
-  if (error) {
-    console.error('Error saving fuel log:', error);
-    throw error;
-  }
-
-  // Also update car's odometer to match refueling odometer limit
-  const { error: carError } = await supabase
-    .from('cars')
-    .update({ mileage: log.mileage })
-    .eq('id', carId);
-
-  if (carError) {
-    console.warn('Odometer update from fuel log failed:', carError);
-  }
-}
-
 // Delete Service Log from DB
 export async function deleteServiceLogFromDB(logId: string): Promise<void> {
   if (!supabase) return;
@@ -397,21 +352,6 @@ export async function deleteRevenueLogFromDB(logId: string): Promise<void> {
 
   if (error) {
     console.error('Error deleting revenue log:', error);
-    throw error;
-  }
-}
-
-// Delete Fuel Log from DB
-export async function deleteFuelLogFromDB(logId: string): Promise<void> {
-  if (!supabase) return;
-
-  const { error } = await supabase
-    .from('fuel_logs')
-    .delete()
-    .eq('id', logId);
-
-  if (error) {
-    console.error('Error deleting fuel log:', error);
     throw error;
   }
 }

@@ -24,15 +24,6 @@ export interface InsuranceLog {
   performedBy: string;
 }
 
-export interface FuelLog {
-  id: string;
-  date: string;
-  liters: number;
-  cost: number;
-  mileage: number;
-  performedBy?: string; // Driver name
-}
-
 export interface RevenueLog {
   id: string;
   date: string;
@@ -57,7 +48,6 @@ export interface CarAsset {
   photos: string[]; // base64 or object URLs
   serviceLogs: ServiceLog[];
   revenueLogs?: RevenueLog[];
-  fuelLogs?: FuelLog[];
   insuranceLogs?: InsuranceLog[];
   createdAt: string;
 }

@@ -107,7 +107,6 @@ export default function AddCarForm({
       photos: newCarPhoto ? [newCarPhoto] : [],
       serviceLogs: initialServices,
       revenueLogs: [],
-      fuelLogs: [],
       createdAt: new Date().toISOString()
     };
 

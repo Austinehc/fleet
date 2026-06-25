@@ -18,11 +18,9 @@ import {
   deleteDriverFromDB,
   saveServiceLogToDB,
   saveRevenueLogToDB,
-  saveFuelLogToDB,
   saveInsuranceLogToDB,
   deleteServiceLogFromDB,
   deleteRevenueLogFromDB,
-  deleteFuelLogFromDB,
   deleteInsuranceLogFromDB
 } from './lib/supabase';
 import { Shield, Database, LogIn } from 'lucide-react';
@@ -294,9 +292,6 @@ export default function App() {
           for (const log of nextCar.revenueLogs || []) {
             await saveRevenueLogToDB(nextCar.id, log).catch(err => console.error('Revenue logs failed:', err));
           }
-          for (const log of nextCar.fuelLogs || []) {
-            await saveFuelLogToDB(nextCar.id, log).catch(err => console.error('Fuel logs failed:', err));
-          }
           for (const log of nextCar.insuranceLogs || []) {
             await saveInsuranceLogToDB(nextCar.id, log).catch(err => console.error('Insurance logs failed:', err));
           }
@@ -350,22 +345,6 @@ export default function App() {
           for (const r of prevRev) {
             if (!nextRevIds.has(r.id)) {
               await deleteRevenueLogFromDB(r.id).catch(err => console.error('Supabase delete revenue log fail:', err));
-            }
-          }
-
-          // Check fuel logs changes
-          const prevFuel = prevCar.fuelLogs || [];
-          const nextFuel = nextCar.fuelLogs || [];
-          const prevFuelIds = new Set(prevFuel.map(l => l.id));
-          for (const f of nextFuel) {
-            if (!prevFuelIds.has(f.id)) {
-              await saveFuelLogToDB(nextCar.id, f).catch(err => console.error('Supabase fuel log fail:', err));
-            }
-          }
-          const nextFuelIds = new Set(nextFuel.map(l => l.id));
-          for (const f of prevFuel) {
-            if (!nextFuelIds.has(f.id)) {
-              await deleteFuelLogFromDB(f.id).catch(err => console.error('Supabase delete fuel log fail:', err));
             }
           }
 

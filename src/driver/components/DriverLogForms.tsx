@@ -29,6 +29,7 @@ export default function DriverLogForms({
   const [drvSvcMiles, setDrvSvcMiles] = useState<number | ''>(assignedCar.mileage);
   const [receiptImageUrl, setReceiptImageUrl] = useState<string>('');
   const [showReceiptCapture, setShowReceiptCapture] = useState<boolean>(false);
+  const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
   const [lastCarId, setLastCarId] = useState<string>('');
 
   // Sync mileage state ONLY when the car ID changes so background polling doesn't overwrite input
@@ -119,6 +120,8 @@ export default function DriverLogForms({
       setIsSubmittingMaintenance(false);
     }
   };
+
+  // Camera-capture-only flow is handled in the CameraCapture callback below.
 
   const hasPendingCashing = React.useMemo(() => {
     return (assignedCar.revenueLogs || []).some(
@@ -302,9 +305,11 @@ export default function DriverLogForms({
                 onClick={() => setShowReceiptCapture(true)}
                 className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-all"
                 id="drv-svc-receipt-capture"
+                disabled={isUploadingReceipt}
               >
                 {receiptImageUrl ? 'Change Receipt Photo' : 'Attach Receipt Photo'}
               </button>
+              {/* Camera-only receipt capture — file upload removed per flow requirements */}
             </div>
             {receiptImageUrl && (
               <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
@@ -435,11 +440,28 @@ export default function DriverLogForms({
           <CameraCapture
             defaultOption="camera"
             availableOptions={['camera']}
-            requireCloudinaryUpload
-            onPhotoCaptured={(capturedDataUrl) => {
-              console.log('📸 Receipt captured, URL received:', capturedDataUrl);
-              setReceiptImageUrl(capturedDataUrl);
-              setShowReceiptCapture(false);
+            onPhotoCaptured={async (capturedDataUrl) => {
+              console.log('📸 Receipt captured from camera');
+              setIsUploadingReceipt(true);
+              try {
+                const { uploadToCloudinary, isCloudinaryConfigured } = await import('../../lib/cloudinary');
+                if (isCloudinaryConfigured()) {
+                  console.log('🚀 Uploading receipt to Cloudinary...');
+                  const url = await uploadToCloudinary(capturedDataUrl);
+                  console.log('✅ Receipt uploaded to Cloudinary:', url);
+                  setReceiptImageUrl(url);
+                } else {
+                  console.log('⚠️ Cloudinary not configured, using camera capture as base64');
+                  setReceiptImageUrl(capturedDataUrl);
+                }
+              } catch (err: any) {
+                console.error('❌ Receipt upload failed:', err);
+                alert('Failed to upload receipt to Cloudinary. Using camera capture as backup.');
+                setReceiptImageUrl(capturedDataUrl);
+              } finally {
+                setIsUploadingReceipt(false);
+                setShowReceiptCapture(false);
+              }
             }}
             onClose={() => setShowReceiptCapture(false)}
           />
