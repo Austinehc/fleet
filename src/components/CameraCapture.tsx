@@ -9,6 +9,8 @@ import { Camera, Image, RotateCw, AlertCircle, Check, RefreshCw } from 'lucide-r
 interface CameraCaptureProps {
   onPhotoCaptured: (dataUrl: string) => void;
   onClose: () => void;
+  defaultOption?: 'camera' | 'upload' | 'preset';
+  availableOptions?: Array<'camera' | 'upload' | 'preset'>;
 }
 
 const STOCK_CAR_PRESETS = [
@@ -19,13 +21,13 @@ const STOCK_CAR_PRESETS = [
   { name: 'Red Sport Coupé', url: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&auto=format&fit=crop&q=80' }
 ];
 
-export default function CameraCapture({ onPhotoCaptured, onClose }: CameraCaptureProps) {
+export default function CameraCapture({ onPhotoCaptured, onClose, defaultOption = 'preset', availableOptions }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraActive, setCameraActive] = useState<boolean>(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [uploadOption, setUploadOption] = useState<'camera' | 'upload' | 'preset'>('preset');
+  const [uploadOption, setUploadOption] = useState<'camera' | 'upload' | 'preset'>(defaultOption);
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
   // Stop camera stream when component unmounts
@@ -58,12 +60,14 @@ export default function CameraCapture({ onPhotoCaptured, onClose }: CameraCaptur
       console.error('Error starting camera:', err);
       let errMsg = 'Could not access camera. Please check permissions or try file upload.';
       if (err.name === 'NotAllowedError') {
-        errMsg = 'Camera permission denied. Please allow camera access or use preset/upload option.';
+        errMsg = 'Camera permission denied. Please allow camera access and retry.';
       } else if (err.name === 'NotFoundError') {
         errMsg = 'No camera device found on this system.';
       }
       setCameraError(errMsg);
-      setUploadOption('preset'); // Auto redirect to stock presets
+      if (availableOptions?.includes('preset')) {
+        setUploadOption('preset'); // Auto redirect to stock presets when presets are allowed
+      }
     }
   };
 
@@ -132,6 +136,17 @@ export default function CameraCapture({ onPhotoCaptured, onClose }: CameraCaptur
     }
   };
 
+  useEffect(() => {
+    if (uploadOption === 'camera') {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uploadOption]);
+
+  const modeButtons = availableOptions ?? ['preset', 'camera', 'upload'];
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-xl max-w-md w-full mx-auto" id="camera-capture-container">
       {/* Header */}
@@ -153,49 +168,46 @@ export default function CameraCapture({ onPhotoCaptured, onClose }: CameraCaptur
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-100 p-1 bg-gray-50 text-[11px] font-medium" id="camera-mode-tabs">
-        <button
-          onClick={() => {
-            setUploadOption('preset');
-            stopCamera();
-          }}
-          className={`flex-1 py-2.5 rounded-lg text-center transition-all ${
-            uploadOption === 'preset'
-              ? 'bg-white text-indigo-600 shadow-sm font-semibold'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-          id="btn-tab-preset"
-        >
-          Stock Presets (Recommended)
-        </button>
-        <button
-          onClick={() => {
-            setUploadOption('camera');
-            startCamera();
-          }}
-          className={`flex-1 py-2.5 rounded-lg text-center transition-all ${
-            uploadOption === 'camera'
-              ? 'bg-white text-indigo-600 shadow-sm font-semibold'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-          id="btn-tab-camera"
-        >
-          Live Camera Capture
-        </button>
-        <button
-          onClick={() => {
-            setUploadOption('upload');
-            stopCamera();
-          }}
-          className={`flex-1 py-2.5 rounded-lg text-center transition-all ${
-            uploadOption === 'upload'
-              ? 'bg-white text-indigo-600 shadow-sm font-semibold'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-          id="btn-tab-upload"
-        >
-          Upload Local File
-        </button>
+      <div className={`flex border-b border-gray-100 p-1 bg-gray-50 text-[11px] font-medium ${modeButtons.length <= 1 ? 'hidden' : ''}`} id="camera-mode-tabs">
+        {modeButtons.includes('preset') && (
+          <button
+            onClick={() => setUploadOption('preset')}
+            className={`flex-1 py-2.5 rounded-lg text-center transition-all ${
+              uploadOption === 'preset'
+                ? 'bg-white text-indigo-600 shadow-sm font-semibold'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+            id="btn-tab-preset"
+          >
+            Stock Presets
+          </button>
+        )}
+        {modeButtons.includes('camera') && (
+          <button
+            onClick={() => setUploadOption('camera')}
+            className={`flex-1 py-2.5 rounded-lg text-center transition-all ${
+              uploadOption === 'camera'
+                ? 'bg-white text-indigo-600 shadow-sm font-semibold'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+            id="btn-tab-camera"
+          >
+            Live Camera
+          </button>
+        )}
+        {modeButtons.includes('upload') && (
+          <button
+            onClick={() => setUploadOption('upload')}
+            className={`flex-1 py-2.5 rounded-lg text-center transition-all ${
+              uploadOption === 'upload'
+                ? 'bg-white text-indigo-600 shadow-sm font-semibold'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+            id="btn-tab-upload"
+          >
+            Upload File
+          </button>
+        )}
       </div>
 
       {/* Content Area */}

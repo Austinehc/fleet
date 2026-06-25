@@ -588,17 +588,24 @@ export default function EditCarForm({
                           {(car.serviceLogs || []).map((log) => (
                             <div key={log.id} className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b last:border-b-0 gap-2.5" id={`maintenance-item-${log.id}`}>
                               <div className="text-left font-sans flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded leading-none ${
-                                    log.category === 'Maintenance' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                                    log.category === 'Repair' ? 'bg-red-50 text-red-700 border border-red-100' :
-                                    log.category === 'Inspection' ? 'bg-green-50 text-green-700 border border-green-100' :
-                                    log.category === 'Tire Service' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
-                                    log.category === 'Oil Change' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
-                                    'bg-gray-50 text-gray-700 border border-gray-100'
-                                  }`}>
-                                    {log.category}
-                                  </span>
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded leading-none ${
+                                      log.category === 'Maintenance' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                                      log.category === 'Repair' ? 'bg-red-50 text-red-700 border border-red-100' :
+                                      log.category === 'Inspection' ? 'bg-green-50 text-green-700 border border-green-100' :
+                                      log.category === 'Tire Service' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
+                                      log.category === 'Oil Change' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                                      'bg-gray-50 text-gray-700 border border-gray-100'
+                                    }`}>
+                                      {log.category}
+                                    </span>
+                                    {log.receiptUrl && (
+                                      <span className="text-[8px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                        Receipt attached
+                                      </span>
+                                    )}
+                                  </div>
                                   <span className="text-[10px] font-mono text-slate-400 font-bold">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                                 </div>
                                 <p className="text-xs font-bold text-slate-800 mt-1.5 line-clamp-2">{log.description}</p>
