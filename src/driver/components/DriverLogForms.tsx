@@ -429,6 +429,7 @@ export default function DriverLogForms({
           <CameraCapture
             defaultOption="camera"
             availableOptions={['camera']}
+            requireCloudinaryUpload
             onPhotoCaptured={(capturedDataUrl) => {
               setReceiptImageUrl(capturedDataUrl);
               setShowReceiptCapture(false);

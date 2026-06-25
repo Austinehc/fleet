@@ -11,6 +11,7 @@ interface CameraCaptureProps {
   onClose: () => void;
   defaultOption?: 'camera' | 'upload' | 'preset';
   availableOptions?: Array<'camera' | 'upload' | 'preset'>;
+  requireCloudinaryUpload?: boolean;
 }
 
 const STOCK_CAR_PRESETS = [
@@ -122,9 +123,18 @@ export default function CameraCapture({ onPhotoCaptured, onClose, defaultOption 
       try {
         const { uploadToCloudinary, isCloudinaryConfigured } = await import('../lib/cloudinary');
         let uploadUrl = capturedImage;
-        if (isCloudinaryConfigured() && capturedImage.startsWith('data:image/')) {
-          uploadUrl = await uploadToCloudinary(capturedImage);
+
+        if (capturedImage.startsWith('data:image/')) {
+          if (requireCloudinaryUpload && !isCloudinaryConfigured()) {
+            alert('Cloudinary must be configured to save receipt images. Please contact your administrator.');
+            return;
+          }
+
+          if (isCloudinaryConfigured()) {
+            uploadUrl = await uploadToCloudinary(capturedImage);
+          }
         }
+
         onPhotoCaptured(uploadUrl);
         onClose();
       } catch (err: any) {
