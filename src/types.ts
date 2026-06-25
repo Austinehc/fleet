@@ -11,6 +11,7 @@ export interface ServiceLog {
   cost: number;
   mileage: number;
   performedBy: string;
+  receiptUrl?: string;
 }
 
 export interface InsuranceLog {
