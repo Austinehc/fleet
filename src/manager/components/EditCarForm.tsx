@@ -619,6 +619,18 @@ export default function EditCarForm({
                                   <span>|</span>
                                   <span>By: <b className="text-slate-605">{log.performedBy || 'Unknown'}</b></span>
                                 </div>
+                                {log.receiptUrl?.length > 0 && (
+                                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setReceiptModalUrl(log.receiptUrl || '')}
+                                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[9px] font-semibold uppercase tracking-wider hover:bg-emerald-100 transition-colors"
+                                    >
+                                      Receipt attached
+                                    </button>
+                                    <span className="text-[9px] text-slate-500">Click to view receipt</span>
+                                  </div>
+                                )}
                                 {log.receiptUrl && (
                                   <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
                                     <a href={log.receiptUrl} target="_blank" rel="noreferrer" className="block">
