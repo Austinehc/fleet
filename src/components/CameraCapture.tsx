@@ -131,14 +131,19 @@ export default function CameraCapture({ onPhotoCaptured, onClose, defaultOption 
           }
 
           if (isCloudinaryConfigured()) {
+            console.log('🚀 Starting Cloudinary upload...');
             uploadUrl = await uploadToCloudinary(capturedImage);
+            console.log('✅ Cloudinary upload successful. URL:', uploadUrl);
+          } else {
+            console.warn('⚠️ Cloudinary not configured, using data URL instead');
           }
         }
 
+        console.log('📷 Calling onPhotoCaptured with URL:', uploadUrl);
         onPhotoCaptured(uploadUrl);
         onClose();
       } catch (err: any) {
-        console.error(err);
+        console.error('❌ Upload error:', err);
         alert('Failed to upload image to Cloudinary. Please try again.');
       } finally {
         setIsUploading(false);

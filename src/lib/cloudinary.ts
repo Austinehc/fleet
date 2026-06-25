@@ -19,6 +19,7 @@ export async function uploadToCloudinary(base64OrBlob: string): Promise<string> 
     formData.append('file', base64OrBlob);
     formData.append('upload_preset', uploadPreset);
 
+    console.log('📤 Sending to Cloudinary:', { cloudName, uploadPreset: uploadPreset?.substring(0, 5) + '***' });
     const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
       method: 'POST',
       body: formData,
@@ -30,9 +31,11 @@ export async function uploadToCloudinary(base64OrBlob: string): Promise<string> 
     }
 
     const data = await response.json();
-    return data.secure_url || data.url;
+    const returnUrl = data.secure_url || data.url;
+    console.log('✅ Cloudinary returned URL:', returnUrl);
+    return returnUrl;
   } catch (error) {
-    console.error('Error uploading file to Cloudinary:', error);
+    console.error('❌ Error uploading file to Cloudinary:', error);
     throw error;
   }
 }

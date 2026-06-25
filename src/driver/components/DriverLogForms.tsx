@@ -88,6 +88,12 @@ export default function DriverLogForms({
         ...(receiptImageUrl ? { receiptUrl: receiptImageUrl } : {})
       };
 
+      console.log(' Submitting maintenance log:', {
+        hasReceipt: !!receiptImageUrl,
+        receiptUrl: receiptImageUrl,
+        fullLog: newSvc
+      });
+
       setCars(prev => prev.map(car => {
         if (car.id === assignedCar.id) {
           const currentSvc = car.serviceLogs || [];
@@ -431,6 +437,7 @@ export default function DriverLogForms({
             availableOptions={['camera']}
             requireCloudinaryUpload
             onPhotoCaptured={(capturedDataUrl) => {
+              console.log('📸 Receipt captured, URL received:', capturedDataUrl);
               setReceiptImageUrl(capturedDataUrl);
               setShowReceiptCapture(false);
             }}
