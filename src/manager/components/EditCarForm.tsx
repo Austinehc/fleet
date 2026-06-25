@@ -47,6 +47,7 @@ export default function EditCarForm({
   const [editCarPhoto, setEditCarPhoto] = useState<string>(car.photos?.[0] || '');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [receiptModalUrl, setReceiptModalUrl] = useState<string>('');
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   
   // Export loading state
   const [isExportingPDF, setIsExportingPDF] = useState(false);
@@ -601,15 +602,16 @@ export default function EditCarForm({
                                     }`}>
                                       {log.category}
                                     </span>
-                                    {log.receiptUrl && (
-                                      <button
-                                        type="button"
-                                        onClick={() => setReceiptModalUrl(log.receiptUrl || '')}
-                                        className="text-[8px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100 transition-colors"
-                                      >
-                                        Receipt attached
-                                      </button>
-                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setReceiptModalUrl(log.receiptUrl || '');
+                                        setIsReceiptModalOpen(true);
+                                      }}
+                                      className="text-[8px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100 transition-colors"
+                                    >
+                                      View receipt
+                                    </button>
                                   </div>
                                   <span className="text-[10px] font-mono text-slate-400 font-bold">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                                 </div>
@@ -992,7 +994,7 @@ export default function EditCarForm({
 
       </div>
 
-      {receiptModalUrl && (
+      {isReceiptModalOpen && (
         <div className="fixed inset-0 z-60 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" id="receipt-viewer-overlay">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-150 bg-slate-50">
@@ -1002,20 +1004,33 @@ export default function EditCarForm({
               </div>
               <button
                 type="button"
-                onClick={() => setReceiptModalUrl('')}
+                onClick={() => {
+                  setReceiptModalUrl('');
+                  setIsReceiptModalOpen(false);
+                }}
                 className="text-slate-500 hover:text-slate-900 rounded-full border border-slate-200 px-2 py-1 text-sm transition-colors"
                 aria-label="Close receipt viewer"
               >
                 ×
               </button>
             </div>
-            <div className="bg-slate-950 flex items-center justify-center min-h-[320px]">
-              <img src={receiptModalUrl} alt="Maintenance receipt preview" className="max-h-[70vh] w-full object-contain" referrerPolicy="no-referrer" />
+            <div className="bg-slate-950 flex items-center justify-center min-h-[320px] p-4">
+              {receiptModalUrl ? (
+                <img src={receiptModalUrl} alt="Maintenance receipt preview" className="max-h-[70vh] w-full object-contain" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="text-center text-slate-200">
+                  <p className="text-lg font-semibold">No receipt attached</p>
+                  <p className="text-sm text-slate-400 mt-2">This maintenance log has no receipt image available.</p>
+                </div>
+              )}
             </div>
             <div className="px-4 py-3 border-t border-slate-150 text-right bg-slate-50">
               <button
                 type="button"
-                onClick={() => setReceiptModalUrl('')}
+                onClick={() => {
+                  setReceiptModalUrl('');
+                  setIsReceiptModalOpen(false);
+                }}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-all"
               >
                 Close
