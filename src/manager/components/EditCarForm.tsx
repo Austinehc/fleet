@@ -46,6 +46,7 @@ export default function EditCarForm({
   // Picture state
   const [editCarPhoto, setEditCarPhoto] = useState<string>(car.photos?.[0] || '');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [receiptModalUrl, setReceiptModalUrl] = useState<string>('');
   
   // Export loading state
   const [isExportingPDF, setIsExportingPDF] = useState(false);
@@ -601,9 +602,13 @@ export default function EditCarForm({
                                       {log.category}
                                     </span>
                                     {log.receiptUrl && (
-                                      <span className="text-[8px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                      <button
+                                        type="button"
+                                        onClick={() => setReceiptModalUrl(log.receiptUrl || '')}
+                                        className="text-[8px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100 transition-colors"
+                                      >
                                         Receipt attached
-                                      </span>
+                                      </button>
                                     )}
                                   </div>
                                   <span className="text-[10px] font-mono text-slate-400 font-bold">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
@@ -969,6 +974,39 @@ export default function EditCarForm({
         </div>
 
       </div>
+
+      {receiptModalUrl && (
+        <div className="fixed inset-0 z-60 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" id="receipt-viewer-overlay">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-150 bg-slate-50">
+              <div>
+                <p className="text-sm font-bold text-slate-900">Maintenance Receipt</p>
+                <p className="text-[11px] text-slate-500">View the attached receipt image for this maintenance log.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReceiptModalUrl('')}
+                className="text-slate-500 hover:text-slate-900 rounded-full border border-slate-200 px-2 py-1 text-sm transition-colors"
+                aria-label="Close receipt viewer"
+              >
+                ×
+              </button>
+            </div>
+            <div className="bg-slate-950 flex items-center justify-center min-h-[320px]">
+              <img src={receiptModalUrl} alt="Maintenance receipt preview" className="max-h-[70vh] w-full object-contain" referrerPolicy="no-referrer" />
+            </div>
+            <div className="px-4 py-3 border-t border-slate-150 text-right bg-slate-50">
+              <button
+                type="button"
+                onClick={() => setReceiptModalUrl('')}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
