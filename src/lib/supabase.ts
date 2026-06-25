@@ -48,7 +48,7 @@ export async function getCarsFromDB(): Promise<CarAsset[]> {
     throw error;
   }
 
-  const { dbCars, dbSvc, dbRev, dbFuel, dbInsurance } = data!;
+  const { dbCars, dbSvc, dbRev, dbInsurance } = data!;
 
   const serviceLogsMap = (dbSvc || []).reduce((acc: any, log: any) => {
     if (!acc[log.car_id]) acc[log.car_id] = [];
