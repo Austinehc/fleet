@@ -992,13 +992,7 @@ export default function EditCarForm({
             </div>
             <div className="bg-slate-950 flex flex-col items-center justify-center min-h-[220px] p-4 gap-3">
               {receiptModalUrl ? (
-                <>
-                  <img src={receiptModalUrl} alt="Maintenance receipt preview" className="max-h-[60vh] w-full object-contain rounded" referrerPolicy="no-referrer" />
-                  <div className="flex items-center gap-2">
-                    <a href={receiptModalUrl} target="_blank" rel="noreferrer" className="px-3 py-1 bg-white text-slate-800 rounded-md text-sm border border-slate-100 hover:bg-slate-50">Open in new tab</a>
-                    <a href={receiptModalUrl} download className="px-3 py-1 bg-white text-slate-800 rounded-md text-sm border border-slate-100 hover:bg-slate-50">Download</a>
-                  </div>
-                </>
+                <img src={receiptModalUrl} alt="Maintenance receipt preview" className="max-h-[60vh] w-full object-contain rounded" referrerPolicy="no-referrer" />
               ) : (
                 <div className="text-center text-slate-200">
                   <p className="text-lg font-semibold">No receipt attached</p>

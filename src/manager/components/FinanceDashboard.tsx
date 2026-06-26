@@ -253,252 +253,135 @@ export default function FinanceDashboard({
   const pendingReviewCount = filteredRevenues.filter(r => r.status === 'Pending').length;
   const totalPendingCount = allRevenueLogs.filter(r => r.status === 'Pending').length;
 
-  // Export Monthly Performance as PDF
-  const exportMonthlyPerformancePDF = async () => {
+  const downloadCsvReport = (filename: string, headers: string[], rows: Array<Array<string | number | null | undefined>>) => {
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map((value) => {
+        const normalized = value === null || value === undefined ? '' : String(value);
+        if (normalized.includes(',') || normalized.includes('"') || normalized.includes('\n')) {
+          return `"${normalized.replace(/"/g, '""')}"`;
+        }
+        return normalized;
+      }).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  // Export Monthly Performance as CSV
+  const exportMonthlyPerformanceCSV = async () => {
     setIsExportingPDF(true);
     try {
-      const html2pdf = (window as any).html2pdf;
-      if (!html2pdf) {
-        alert('PDF export library not loaded. Please refresh the page and try again.');
-        setIsExportingPDF(false);
-        return;
-      }
-
-      // Calculate totals for summary
       const totalRevenue = monthlyPerformanceData.reduce((sum, m) => sum + m.revenue, 0);
       const totalExpenses = monthlyPerformanceData.reduce((sum, m) => sum + m.maintenance, 0);
       const totalProfit = totalRevenue - totalExpenses;
+      const totalMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
-      // Create a container for the PDF content
-      const element = document.createElement('div');
-      element.style.backgroundColor = 'white';
-      element.style.padding = '20px';
-      element.style.fontFamily = 'Arial, sans-serif';
-
-      // Header
-      const header = document.createElement('div');
-      header.style.textAlign = 'center';
-      header.style.borderBottom = '2px solid #6366f1';
-      header.style.paddingBottom = '15px';
-      header.style.marginBottom = '20px';
-      header.innerHTML = `
-        <h1 style="color: #6366f1; margin: 0; font-size: 24px; font-weight: bold;">North Links Fleet Management</h1>
-        <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 16px;">Monthly Performance Report - FY ${selectedFiscalYear}</h2>
-      `;
-      element.appendChild(header);
-
-      // Summary boxes
-      const summary = document.createElement('div');
-      summary.style.display = 'grid';
-      summary.style.gridTemplateColumns = '1fr 1fr 1fr';
-      summary.style.gap = '12px';
-      summary.style.marginBottom = '20px';
-      summary.innerHTML = `
-        <div style="background: #f0f9ff; padding: 10px; border-radius: 6px; border: 1px solid #bae6fd;">
-          <div style="font-size: 14px; font-weight: bold; color: #0284c7;">ZMK ${totalRevenue.toLocaleString()}</div>
-          <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Total Annual Revenue</div>
-        </div>
-        <div style="background: #fff1f2; padding: 10px; border-radius: 6px; border: 1px solid #fecaca;">
-          <div style="font-size: 14px; font-weight: bold; color: #dc2626;">ZMK ${totalExpenses.toLocaleString()}</div>
-          <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Total Annual Expenses</div>
-        </div>
-        <div style="background: #f0fdf4; padding: 10px; border-radius: 6px; border: 1px solid #bbf7d0;">
-          <div style="font-size: 14px; font-weight: bold; color: #16a34a;">ZMK ${totalProfit.toLocaleString()}</div>
-          <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Net Annual Profit</div>
-        </div>
-      `;
-      element.appendChild(summary);
-
-      // Table
-      const table = document.createElement('table');
-      table.style.width = '100%';
-      table.style.borderCollapse = 'collapse';
-      table.style.fontSize = '12px';
-
-      // Table header
-      const thead = document.createElement('thead');
-      thead.innerHTML = `
-        <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
-          <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0; font-weight: bold;">Month</th>
-          <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0; font-weight: bold;">Revenue (ZMK)</th>
-          <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0; font-weight: bold;">Expenses (ZMK)</th>
-          <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0; font-weight: bold;">Net Profit (ZMK)</th>
-          <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0; font-weight: bold;">Margin %</th>
-        </tr>
-      `;
-      table.appendChild(thead);
-
-      // Table body - populate with months
-      const tbody = document.createElement('tbody');
-      monthlyPerformanceData.forEach((month) => {
-        const row = document.createElement('tr');
-        row.style.borderBottom = '1px solid #e5e7eb';
+      const rows = monthlyPerformanceData.map((month) => {
         const netProfit = month.revenue - month.maintenance;
-        const margin = month.revenue > 0 ? ((netProfit / month.revenue) * 100).toFixed(1) : '0';
-        row.innerHTML = `
-          <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">${month.name}</td>
-          <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${month.revenue.toLocaleString()}</td>
-          <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${month.maintenance.toLocaleString()}</td>
-          <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: ${netProfit >= 0 ? '#16a34a' : '#dc2626'}; font-weight: bold;">${netProfit.toLocaleString()}</td>
-          <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${margin}%</td>
-        `;
-        tbody.appendChild(row);
+        const margin = month.revenue > 0 ? (netProfit / month.revenue) * 100 : 0;
+        return [
+          month.name,
+          month.revenue.toFixed(2),
+          month.maintenance.toFixed(2),
+          netProfit.toFixed(2),
+          `${margin.toFixed(1)}%`
+        ];
       });
-      table.appendChild(tbody);
-      element.appendChild(table);
 
-      // Footer
-      const footer = document.createElement('div');
-      footer.style.marginTop = '30px';
-      footer.style.paddingTop = '15px';
-      footer.style.borderTop = '1px solid #e5e7eb';
-      footer.style.textAlign = 'center';
-      footer.style.color = '#6b7280';
-      footer.style.fontSize = '11px';
-      footer.innerHTML = `
-        <p style="margin: 5px 0;">Monthly Performance Report - Generated on ${new Date().toLocaleString()}</p>
-        <p style="margin: 5px 0;">North Links Fleet Management System</p>
-      `;
-      element.appendChild(footer);
+      rows.push([
+        'TOTAL',
+        totalRevenue.toFixed(2),
+        totalExpenses.toFixed(2),
+        totalProfit.toFixed(2),
+        `${totalMargin.toFixed(1)}%`
+      ]);
 
-      // Append to body temporarily
-      document.body.appendChild(element);
-      element.style.display = 'block';
-
-      // Generate PDF
-      await html2pdf()
-        .set({
-          margin: [10, 10, 10, 10],
-          filename: `Monthly_Performance_FY${selectedFiscalYear}_${new Date().toISOString().split('T')[0]}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        })
-        .from(element)
-        .save();
-
-      // Cleanup
-      document.body.removeChild(element);
+      downloadCsvReport(
+        `Monthly_Performance_FY${selectedFiscalYear}_${new Date().toISOString().split('T')[0]}.csv`,
+        ['Month', 'Revenue (ZMK)', 'Expenses (ZMK)', 'Net Profit (ZMK)', 'Margin %'],
+        rows
+      );
     } catch (error) {
-      console.error('PDF generation error:', error);
-      alert('Failed to generate PDF. Please try again.');
+      console.error('CSV export error:', error);
+      alert('Failed to export monthly performance report. Please try again.');
     } finally {
       setIsExportingPDF(false);
     }
   };
 
-
-
-  // Export Asset Profit & Loss as PDF  
-  const exportAssetProfitLossPDF = async () => {
+  // Export Asset Profit & Loss as CSV
+  const exportAssetProfitLossCSV = async () => {
     setIsExportingPDF(true);
-    
-    // Calculate vehicles data for PDF (use all cars, not filtered)
-    const vehiclesForPDF = cars.map(car => {
-      const carRevenue = (car.revenueLogs || []).reduce((sum, log) => sum + log.amount, 0);
-      const carMaintenance = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
-      const carInsurance = (car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0);
-      const carExpenditure = carMaintenance + carInsurance;
-      
-      return {
-        make: car.make,
-        model: car.model,
-        plateNumber: car.plateNumber,
-        totalRevenue: carRevenue,
-        maintenanceCost: carMaintenance,
-        insuranceCost: carInsurance,
-        totalExpenses: carExpenditure,
-      };
-    });
-    
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = `
-      <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto;">
-        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 20px;">
-          <h1 style="color: #6366f1; margin: 0; font-size: 24px;">North Links Fleet Management</h1>
-          <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 18px;">Asset Profit & Loss Breakdown</h2>
-        </div>
-        
-        <div style="margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px;">
-          <h3 style="color: #374151; margin: 0 0 10px 0;">Fleet Performance Overview</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-            <div>
-              <p><strong>Total Fleet Revenue:</strong> ZMK ${vehiclesForPDF.reduce((sum, vehicle) => sum + vehicle.totalRevenue, 0).toLocaleString()}</p>
-              <p><strong>Total Fleet Expenses:</strong> ZMK ${vehiclesForPDF.reduce((sum, vehicle) => sum + vehicle.totalExpenses, 0).toLocaleString()}</p>
-            </div>
-            <div>
-              <p><strong>Net Fleet Profit:</strong> ZMK ${vehiclesForPDF.reduce((sum, vehicle) => sum + (vehicle.totalRevenue - vehicle.totalExpenses), 0).toLocaleString()}</p>
-              <p><strong>Active Vehicles:</strong> ${vehiclesForPDF.length}</p>
-            </div>
-            <div>
-              <p><strong>Profitable Vehicles:</strong> ${vehiclesForPDF.filter(v => v.totalRevenue > v.totalExpenses).length}</p>
-              <p><strong>Loss-Making Vehicles:</strong> ${vehiclesForPDF.filter(v => v.totalRevenue < v.totalExpenses).length}</p>
-            </div>
-          </div>
-        </div>
 
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-          <thead>
-            <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
-              <th style="padding: 10px 8px; text-align: left; border: 1px solid #e2e8f0;">Vehicle</th>
-              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Revenue (ZMK)</th>
-              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Maintenance (ZMK)</th>
-              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Insurance (ZMK)</th>
-              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Total Expenses (ZMK)</th>
-              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Net Profit (ZMK)</th>
-              <th style="padding: 10px 8px; text-align: right; border: 1px solid #e2e8f0;">Margin %</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${vehiclesForPDF.map(vehicle => `
-              <tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 8px; border: 1px solid #e5e7eb;">
-                  <div style="font-weight: bold;">${vehicle.make} ${vehicle.model}</div>
-                  <div style="font-size: 9px; color: #6b7280; font-family: monospace;">${vehicle.plateNumber}</div>
-                </td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: #059669; font-weight: bold;">${vehicle.totalRevenue.toLocaleString()}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: #ea580c;">${vehicle.maintenanceCost.toLocaleString()}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: #dc2626;">${vehicle.insuranceCost.toLocaleString()}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: #dc2626; font-weight: bold;">${vehicle.totalExpenses.toLocaleString()}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; color: ${vehicle.totalRevenue - vehicle.totalExpenses >= 0 ? '#059669' : '#dc2626'}; font-weight: bold;">${(vehicle.totalRevenue - vehicle.totalExpenses).toLocaleString()}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace;">${vehicle.totalRevenue > 0 ? (((vehicle.totalRevenue - vehicle.totalExpenses) / vehicle.totalRevenue) * 100).toFixed(1) + '%' : '0%'}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
-          <p>Asset Profit & Loss Breakdown - Generated on ${new Date().toLocaleString()}</p>
-          <p>North Links Fleet Management System</p>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(tempDiv);
-    
     try {
-      const html2pdf = (window as any).html2pdf;
-      if (!html2pdf) {
-        alert('PDF export library not loaded. Please refresh the page and try again.');
-        return;
-      }
-      
-      await html2pdf()
-        .set({
-          margin: [0.4, 0.4, 0.4, 0.4],
-          filename: `Asset_Profit_Loss_${new Date().toISOString().split('T')[0]}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'in', format: 'legal', orientation: 'landscape' }
-        })
-        .from(tempDiv)
-        .save();
+      const vehiclesForExport = cars
+        .filter(car => plAssetFilter === 'all' || car.id === plAssetFilter)
+        .map(car => {
+          const carRevenue = (car.revenueLogs || []).reduce((sum, log) => sum + log.amount, 0);
+          const carMaintenance = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
+          const carInsurance = (car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0);
+          const carExpenditure = carMaintenance + carInsurance;
+          const netProfit = carRevenue - carExpenditure;
+          const margin = carRevenue > 0 ? (netProfit / carRevenue) * 100 : 0;
+
+          return {
+            vehicle: `${car.make} ${car.model}`,
+            plateNumber: car.plateNumber,
+            totalRevenue: carRevenue,
+            maintenanceCost: carMaintenance,
+            insuranceCost: carInsurance,
+            totalExpenses: carExpenditure,
+            netProfit,
+            margin,
+          };
+        });
+
+      const totalRevenue = vehiclesForExport.reduce((sum, vehicle) => sum + vehicle.totalRevenue, 0);
+      const totalExpenses = vehiclesForExport.reduce((sum, vehicle) => sum + vehicle.totalExpenses, 0);
+      const totalNetProfit = totalRevenue - totalExpenses;
+      const totalMargin = totalRevenue > 0 ? (totalNetProfit / totalRevenue) * 100 : 0;
+
+      const rows = vehiclesForExport.map(vehicle => [
+        vehicle.vehicle,
+        vehicle.plateNumber,
+        vehicle.totalRevenue.toFixed(2),
+        vehicle.maintenanceCost.toFixed(2),
+        vehicle.insuranceCost.toFixed(2),
+        vehicle.totalExpenses.toFixed(2),
+        vehicle.netProfit.toFixed(2),
+        `${vehicle.margin.toFixed(1)}%`
+      ]);
+
+      rows.push([
+        'TOTAL',
+        '',
+        totalRevenue.toFixed(2),
+        '',
+        '',
+        totalExpenses.toFixed(2),
+        totalNetProfit.toFixed(2),
+        `${totalMargin.toFixed(1)}%`
+      ]);
+
+      downloadCsvReport(
+        `Asset_Profit_Loss_${new Date().toISOString().split('T')[0]}.csv`,
+        ['Vehicle', 'Plate Number', 'Revenue (ZMK)', 'Maintenance (ZMK)', 'Insurance (ZMK)', 'Total Expenses (ZMK)', 'Net Profit (ZMK)', 'Margin %'],
+        rows
+      );
     } catch (error) {
-      console.error('PDF generation error:', error);
-      alert('Failed to generate PDF. Please try again.');
+      console.error('CSV export error:', error);
+      alert('Failed to export asset profit & loss report. Please try again.');
     } finally {
       setIsExportingPDF(false);
-      document.body.removeChild(tempDiv);
     }
   };
 
@@ -818,14 +701,14 @@ export default function FinanceDashboard({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      exportMonthlyPerformancePDF();
+                      exportMonthlyPerformanceCSV();
                     }}
                     disabled={isExportingPDF}
                     className="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg text-[9px] font-bold transition-all cursor-pointer font-sans shadow-sm flex items-center gap-1"
-                    title="Export Monthly Performance as PDF"
+                    title="Export Monthly Performance as CSV"
                   >
                     <FileText className="w-3 h-3" />
-                    {isExportingPDF ? 'Exporting...' : 'Export PDF'}
+                    {isExportingPDF ? 'Exporting...' : 'Export CSV'}
                   </button>
 
                   {/* Fiscal Year Switcher Dropdown */}
@@ -933,13 +816,13 @@ export default function FinanceDashboard({
                 <div className="flex items-center gap-1.5 shrink-0" id="pnl-asset-filter-wrapper">
                   {/* Export Asset P&L Button */}
                   <button
-                    onClick={exportAssetProfitLossPDF}
+                    onClick={exportAssetProfitLossCSV}
                     disabled={isExportingPDF}
                     className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-[9px] font-bold transition-all cursor-pointer font-sans shadow-sm flex items-center gap-1"
-                    title="Export Asset P&L as PDF"
+                    title="Export Asset P&L as CSV"
                   >
                     <FileText className="w-3 h-3" />
-                    {isExportingPDF ? 'Exporting...' : 'Export PDF'}
+                    {isExportingPDF ? 'Exporting...' : 'Export CSV'}
                   </button>
 
                   <span className="text-[9px] font-black uppercase text-gray-400 tracking-wider font-sans">Filter Asset:</span>
