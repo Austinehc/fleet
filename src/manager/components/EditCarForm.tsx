@@ -643,14 +643,6 @@ export default function EditCarForm({
                                     <span className="text-[9px] text-slate-500">Click to view receipt</span>
                                   </div>
                                 )}
-                                {log.receiptUrl && (
-                                  <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
-                                    <a href={log.receiptUrl} target="_blank" rel="noreferrer" className="block">
-                                      <img src={log.receiptUrl} alt="Maintenance receipt" className="w-full h-28 object-cover" referrerPolicy="no-referrer" />
-                                    </a>
-                                    <p className="text-[9px] text-slate-500 text-center py-2">Receipt attached</p>
-                                  </div>
-                                )}
                               </div>
 
                               <div className="text-right shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 border-dashed border-gray-100 pt-2 sm:pt-0">
