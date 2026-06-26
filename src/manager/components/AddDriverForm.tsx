@@ -173,7 +173,7 @@ export default function AddDriverForm({
     // Update state
     setDrivers(prev => [createdDriver, ...prev]);
 
-    alert(`🎉 Staff Profile Created For ${createdDriver.fullName}!\n\n🔑 Generated 6-digit access code: ${code}\n\nDeliver this secure access key to the driver. They will use this code on the Driver Station login.`);
+    alert(`Staff Profile Created For ${createdDriver.fullName}!\n\n🔑 Generated 6-digit access code: ${code}\n\nDeliver this secure access key to the driver. They will use this code on the Driver Station login.`);
 
     if (newDrvAssignedCarId) {
       setCars(prevCars =>
@@ -253,7 +253,7 @@ export default function AddDriverForm({
             <input
               type="text"
               required
-              placeholder="e.g. Sarah Jenkins"
+              placeholder="e.g. John Banda"
               value={newDrvName}
               onChange={(e) => setNewDrvName(e.target.value)}
               className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -267,7 +267,7 @@ export default function AddDriverForm({
               <input
                 type="text"
                 required
-                placeholder="e.g. 523456/11/1"
+                placeholder="e.g. 1234567/89/0"
                 value={newDrvNrc}
                 onChange={(e) => setNewDrvNrc(e.target.value)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono uppercase"
@@ -293,7 +293,7 @@ export default function AddDriverForm({
               <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Email Address</label>
               <input
                 type="email"
-                placeholder="s.jenkins@corp.com"
+                placeholder="JohnBanda@email.com"
                 value={newDrvEmail}
                 onChange={(e) => setNewDrvEmail(e.target.value)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -304,7 +304,7 @@ export default function AddDriverForm({
               <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Mobile Phone No.</label>
               <input
                 type="text"
-                placeholder="(512) 555-0199"
+                placeholder="(+260) 95123-4567"
                 value={newDrvPhone}
                 onChange={(e) => setNewDrvPhone(e.target.value)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"

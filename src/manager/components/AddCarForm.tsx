@@ -178,7 +178,7 @@ export default function AddCarForm({
               <input
                 type="text"
                 required
-                placeholder="e.g. Chevrolet"
+                placeholder="e.g. Toyota"
                 value={newCarMake}
                 onChange={(e) => setNewCarMake(e.target.value)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-850 font-medium"
@@ -190,7 +190,7 @@ export default function AddCarForm({
               <input
                 type="text"
                 required
-                placeholder="e.g. Bolt EV"
+                placeholder="e.g. Mark X"
                 value={newCarModel}
                 onChange={(e) => setNewCarModel(e.target.value)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-850 font-medium"
@@ -215,7 +215,7 @@ export default function AddCarForm({
               <input
                 type="text"
                 required
-                placeholder="e.g. NY-44X8"
+                placeholder="e.g. ABC 123X"
                 value={newCarPlate}
                 onChange={(e) => setNewCarPlate(e.target.value)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-gray-850 font-medium uppercase text-center"

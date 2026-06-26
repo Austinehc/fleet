@@ -406,7 +406,7 @@ export default function DriverLogForms({
             <textarea
               required
               rows={3}
-              placeholder="Trip logs details: e.g. completed city shuttle transfers, afternoon shifts log..."
+              placeholder="Casing for Month of July 2026"
               value={drvRevDesc}
               onChange={(e) => setDrvRevDesc(e.target.value)}
               className="w-full bg-slate-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none font-normal"
