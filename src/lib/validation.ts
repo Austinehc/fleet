@@ -51,12 +51,7 @@ export function validateVIN(vin: string): { valid: boolean; error?: string } {
   if (!sanitized) {
     return { valid: false, error: 'VIN is required' };
   }
-  
-  if (sanitized.length !== 17) {
-    return { valid: false, error: 'VIN must be exactly 17 characters' };
-  }
-  
-  if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(sanitized)) {
+  if (!/^[A-HJ-NPR-Z0-9]+$/.test(sanitized)) {
     return { valid: false, error: 'VIN contains invalid characters' };
   }
   
