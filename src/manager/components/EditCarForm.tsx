@@ -587,7 +587,7 @@ export default function EditCarForm({
                       
                       {(car.serviceLogs || []).length > 0 ? (
                         <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto border border-slate-150 rounded-xl px-4 bg-white" id="maintenance-logs-sub-ledger">
-                          {(car.serviceLogs || []).map((log) => (
+                          {(car.serviceLogs || []).slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((log) => (
                             <div key={log.id} className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b last:border-b-0 gap-2.5" id={`maintenance-item-${log.id}`}>
                               <div className="text-left font-sans flex-1">
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
@@ -763,7 +763,7 @@ export default function EditCarForm({
                       
                       {(car.insuranceLogs || []).length > 0 ? (
                         <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto border border-slate-150 rounded-xl px-4 bg-white" id="insurance-logs-sub-ledger">
-                          {(car.insuranceLogs || []).map((log) => (
+                          {(car.insuranceLogs || []).slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((log) => (
                             <div key={log.id} className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b last:border-b-0 gap-2.5" id={`insurance-item-${log.id}`}>
                               <div className="text-left font-sans flex-1">
                                 <div className="flex items-center gap-2">
@@ -972,7 +972,7 @@ export default function EditCarForm({
 
       {isReceiptModalOpen && (
         <div className="fixed inset-0 z-60 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" id="receipt-viewer-overlay">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full overflow-hidden">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-150 bg-slate-50">
               <div>
                 <p className="text-sm font-bold text-slate-900">Maintenance Receipt</p>
@@ -990,9 +990,15 @@ export default function EditCarForm({
                 ×
               </button>
             </div>
-            <div className="bg-slate-950 flex items-center justify-center min-h-[320px] p-4">
+            <div className="bg-slate-950 flex flex-col items-center justify-center min-h-[220px] p-4 gap-3">
               {receiptModalUrl ? (
-                <img src={receiptModalUrl} alt="Maintenance receipt preview" className="max-h-[70vh] w-full object-contain" referrerPolicy="no-referrer" />
+                <>
+                  <img src={receiptModalUrl} alt="Maintenance receipt preview" className="max-h-[60vh] w-full object-contain rounded" referrerPolicy="no-referrer" />
+                  <div className="flex items-center gap-2">
+                    <a href={receiptModalUrl} target="_blank" rel="noreferrer" className="px-3 py-1 bg-white text-slate-800 rounded-md text-sm border border-slate-100 hover:bg-slate-50">Open in new tab</a>
+                    <a href={receiptModalUrl} download className="px-3 py-1 bg-white text-slate-800 rounded-md text-sm border border-slate-100 hover:bg-slate-50">Download</a>
+                  </div>
+                </>
               ) : (
                 <div className="text-center text-slate-200">
                   <p className="text-lg font-semibold">No receipt attached</p>
@@ -1007,7 +1013,7 @@ export default function EditCarForm({
                   setReceiptModalUrl('');
                   setIsReceiptModalOpen(false);
                 }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-all"
+                className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-semibold transition-all"
               >
                 Close
               </button>

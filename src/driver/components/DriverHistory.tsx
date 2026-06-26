@@ -39,7 +39,7 @@ export default function DriverHistory({
           {!isServiceSectionCollapsed && (
             <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1" id="drv-hist-svc-list">
             {(assignedCar.serviceLogs || []).length > 0 ? (
-              (assignedCar.serviceLogs || []).map((log) => {
+              (assignedCar.serviceLogs || []).slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((log) => {
                 const isExpanded = expandedLogId === log.id;
                 return (
                   <div
@@ -118,7 +118,7 @@ export default function DriverHistory({
           {!isCashingSectionCollapsed && (
             <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1" id="drv-hist-rev-list">
             {(() => {
-              const matchedLogs = (assignedCar.revenueLogs || []).filter(r => r.driverId === activeDriver.id);
+              const matchedLogs = (assignedCar.revenueLogs || []).filter(r => r.driverId === activeDriver.id).slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
               return matchedLogs.length > 0 ? (
                 matchedLogs.map((rev) => {
                 const isExpanded = expandedLogId === rev.id;
