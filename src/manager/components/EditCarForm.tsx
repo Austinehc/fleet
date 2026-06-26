@@ -621,28 +621,7 @@ export default function EditCarForm({
                                   <span>|</span>
                                   <span>By: <b className="text-slate-605">{log.performedBy || 'Unknown'}</b></span>
                                 </div>
-                                {log.receiptUrl && (
-                                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                                    {(() => {
-                                      const receiptUrl = log.receiptUrl;
-                                      return (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            if (receiptUrl) {
-                                              setReceiptModalUrl(receiptUrl);
-                                              setIsReceiptModalOpen(true);
-                                            }
-                                          }}
-                                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[9px] font-semibold uppercase tracking-wider hover:bg-emerald-100 transition-colors"
-                                        >
-                                          Receipt attached
-                                        </button>
-                                      );
-                                    })()}
-                                    <span className="text-[9px] text-slate-500">Click to view receipt</span>
-                                  </div>
-                                )}
+                                {/* Only 'View receipt' button is shown; inline 'Receipt attached' badge removed */}
                               </div>
 
                               <div className="text-right shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 border-dashed border-gray-100 pt-2 sm:pt-0">
