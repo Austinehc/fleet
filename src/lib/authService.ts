@@ -216,6 +216,14 @@ class AuthService {
     if (supabase) {
       await supabase.auth.signOut();
     }
+
+    if (typeof window !== 'undefined') {
+      for (const key of Object.keys(window.localStorage)) {
+        if (key.startsWith('sb-')) {
+          window.localStorage.removeItem(key);
+        }
+      }
+    }
     
     // Clear driver session if exists
     this.clearDriverSession();

@@ -11,7 +11,13 @@ export const isSupabaseConfigured = () => {
 
 // Initialize Supabase. If missing, we'll return a stub or guide the user
 export const supabase = isSupabaseConfigured()
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      }
+    })
   : null;
 
 // Helper to convert DB snake_case columns back to CarAsset type
