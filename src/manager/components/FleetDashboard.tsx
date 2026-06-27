@@ -30,6 +30,7 @@ export default function FleetDashboard({
   const [disposeAction, setDisposeAction] = useState<'sold' | 'delete' | null>(null);
   const [disposeSalePrice, setDisposeSalePrice] = useState('');
   const [disposeError, setDisposeError] = useState('');
+  const [deleteExportConfirmed, setDeleteExportConfirmed] = useState(false);
 
   // Stats Counters
   const totalAssets = cars.length;
@@ -45,6 +46,11 @@ export default function FleetDashboard({
     if (!disposeTargetCar) return;
 
     if (disposeAction === 'delete') {
+      if (!deleteExportConfirmed) {
+        setDisposeError('Please confirm that all data has been exported before deleting this asset.');
+        return;
+      }
+
       setCars(prev => prev.filter(car => car.id !== disposeTargetCar.id));
       setDrivers(prev => prev.map(driver => {
         if (driver.assignedCarId === disposeTargetCar.id) {
@@ -56,6 +62,7 @@ export default function FleetDashboard({
       setDisposeAction(null);
       setDisposeSalePrice('');
       setDisposeError('');
+      setDeleteExportConfirmed(false);
       return;
     }
 
@@ -101,6 +108,7 @@ export default function FleetDashboard({
     setDisposeAction(null);
     setDisposeSalePrice('');
     setDisposeError('');
+    setDeleteExportConfirmed(false);
   };
 
   // Filter cars list
@@ -363,6 +371,7 @@ export default function FleetDashboard({
                             setDisposeAction(car.status === 'Disposed' ? 'delete' : null);
                             setDisposeSalePrice('');
                             setDisposeError('');
+                            setDeleteExportConfirmed(false);
                           }}
                           className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-700 hover:bg-rose-100 cursor-pointer"
                         >
@@ -410,6 +419,7 @@ export default function FleetDashboard({
                   onClick={() => {
                     setDisposeAction('sold');
                     setDisposeError('');
+                    setDeleteExportConfirmed(false);
                   }}
                   className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${disposeAction === 'sold' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}
                 >
@@ -421,6 +431,7 @@ export default function FleetDashboard({
                 onClick={() => {
                   setDisposeAction('delete');
                   setDisposeError('');
+                  setDeleteExportConfirmed(false);
                 }}
                 className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${disposeAction === 'delete' ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}
               >
@@ -442,6 +453,18 @@ export default function FleetDashboard({
               </div>
             )}
 
+            {disposeAction === 'delete' && (
+              <label className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+                <input
+                  type="checkbox"
+                  checked={deleteExportConfirmed}
+                  onChange={(e) => setDeleteExportConfirmed(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                />
+                <span>Ensure that all data has been exported for this asset before deleting it.</span>
+              </label>
+            )}
+
             {disposeError && <p className="mt-3 text-[11px] font-medium text-rose-600">{disposeError}</p>}
 
             <div className="mt-5 flex justify-end gap-2">
@@ -452,6 +475,7 @@ export default function FleetDashboard({
                   setDisposeAction(null);
                   setDisposeSalePrice('');
                   setDisposeError('');
+                  setDeleteExportConfirmed(false);
                 }}
                 className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
               >
@@ -460,9 +484,10 @@ export default function FleetDashboard({
               <button
                 type="button"
                 onClick={handleDisposeCar}
-                className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                disabled={disposeAction === 'delete' && !deleteExportConfirmed}
+                className={`rounded-lg px-3 py-2 text-xs font-semibold text-white transition-all ${disposeAction === 'delete' && !deleteExportConfirmed ? 'cursor-not-allowed bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
               >
-                Confirm
+                {disposeAction === 'delete' ? 'Delete vehicle' : 'Confirm'}
               </button>
             </div>
           </div>

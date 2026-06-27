@@ -53,64 +53,53 @@ export default function StaffManager({
     // Create a temporary DOM element for PDF generation
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = `
-      <div style="padding: 30px; font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; line-height: 1.6;">
-        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 25px; margin-bottom: 30px;">
-          <h1 style="color: #6366f1; margin: 0; font-size: 28px; font-weight: bold;">North Links Fleet Management</h1>
-          <h2 style="color: #374151; margin: 15px 0 0 0; font-size: 20px;">Driver Profile Report</h2>
-          <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 12px;">Generated on ${formatDate(new Date())}</p>
+      <div style="padding: 0.4in 0.3in; font-family: Arial, sans-serif; line-height: 1.5; width: 100%; max-width: 720px; margin: 0 auto; box-sizing: border-box;">
+        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 0.3in; margin-bottom: 0.3in;">
+          <h1 style="color: #6366f1; margin: 0; font-size: 26px; font-weight: bold;">North Links Fleet Management</h1>
+          <h2 style="color: #374151; margin: 0.15in 0 0 0; font-size: 18px;">Driver Profile Report</h2>
+          <p style="color: #6b7280; margin: 0.1in 0 0 0; font-size: 11px;">Generated on ${formatDate(new Date())}</p>
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
-          <div style="background: #f8fafc; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <h3 style="color: #374151; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 20px; font-size: 16px; font-weight: bold;">Driver Information</h3>
-            <div style="space-y: 12px;">
-              <p style="margin: 12px 0; font-size: 14px;"><strong>Full Name:</strong> ${driver.fullName}</p>
-              <p style="margin: 12px 0; font-size: 14px;"><strong>License Number:</strong> ${driver.licenseNumber}</p>
-              <p style="margin: 12px 0; font-size: 14px;"><strong>NRC Number:</strong> ${driver.nrcNumber}</p>
-              <p style="margin: 12px 0; font-size: 14px;"><strong>Email:</strong> ${driver.email || 'Not provided'}</p>
-              <p style="margin: 12px 0; font-size: 14px;"><strong>Phone:</strong> ${driver.phone || 'Not provided'}</p>
-              <p style="margin: 12px 0; font-size: 14px;"><strong>Status:</strong> <span style="color: ${driver.status === 'Active' ? '#059669' : '#dc2626'}; font-weight: bold;">${driver.status}</span></p>
-              <p style="margin: 12px 0; font-size: 14px;"><strong>Access Code:</strong> <span style="background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold;">${driver.accessCode || 'Not set'}</span></p>
-              <p style="margin: 12px 0; font-size: 14px;"><strong>Created:</strong> ${formatDate(driver.createdAt)}</p>
-            </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.2in; margin-bottom: 0.3in;">
+          <div style="background: #f8fafc; padding: 0.2in; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <h4 style="color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.08in; margin: 0 0 0.15in 0; font-size: 13px; font-weight: bold;">Driver Information</h4>
+            <p style="margin: 0.08in 0; font-size: 11px;"><strong>Name:</strong> ${driver.fullName}</p>
+            <p style="margin: 0.08in 0; font-size: 11px;"><strong>License:</strong> ${driver.licenseNumber}</p>
+            <p style="margin: 0.08in 0; font-size: 11px;"><strong>NRC:</strong> ${driver.nrcNumber}</p>
+            <p style="margin: 0.08in 0; font-size: 11px;"><strong>Email:</strong> ${driver.email || 'Not provided'}</p>
+            <p style="margin: 0.08in 0; font-size: 11px;"><strong>Phone:</strong> ${driver.phone || 'Not provided'}</p>
+            <p style="margin: 0.08in 0; font-size: 11px;"><strong>Status:</strong> <span style="color: ${driver.status === 'Active' ? '#059669' : '#dc2626'}; font-weight: bold;">${driver.status}</span></p>
+            <p style="margin: 0.08in 0; font-size: 11px;"><strong>Code:</strong> <span style="background: #f1f5f9; padding: 2px 4px; border-radius: 3px; font-family: monospace; font-weight: bold;">${driver.accessCode || 'N/A'}</span></p>
           </div>
           
-          <div style="background: #f0f9ff; padding: 25px; border-radius: 8px; border: 1px solid #bae6fd;">
-            <h3 style="color: #374151; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 20px; font-size: 16px; font-weight: bold;">Assigned Vehicle</h3>
+          <div style="background: #f0f9ff; padding: 0.2in; border-radius: 6px; border: 1px solid #bae6fd;">
+            <h4 style="color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.08in; margin: 0 0 0.15in 0; font-size: 13px; font-weight: bold;">Assigned Vehicle</h4>
             ${assignedCar ? `
-              <div style="space-y: 12px;">
-                <p style="margin: 12px 0; font-size: 14px;"><strong>Vehicle:</strong> ${assignedCar.make} ${assignedCar.model} (${assignedCar.year})</p>
-                <p style="margin: 12px 0; font-size: 14px;"><strong>License Plate:</strong> <span style="background: #1e40af; color: white; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold;">${assignedCar.plateNumber}</span></p>
-                <p style="margin: 12px 0; font-size: 14px;"><strong>Color:</strong> ${assignedCar.color}</p>
-                <p style="margin: 12px 0; font-size: 14px;"><strong>VIN:</strong> <span style="font-family: monospace; font-size: 12px;">${assignedCar.vin}</span></p>
-                <p style="margin: 12px 0; font-size: 14px;"><strong>Current Mileage:</strong> ${assignedCar.mileage.toLocaleString()} km</p>
-                <p style="margin: 12px 0; font-size: 14px;"><strong>Vehicle Status:</strong> <span style="color: ${assignedCar.status === 'Available' ? '#059669' : '#6366f1'}; font-weight: bold;">${assignedCar.status}</span></p>
-                <p style="margin: 12px 0; font-size: 14px;"><strong>Service Records:</strong> ${assignedCar.serviceLogs?.length || 0} entries</p>
-                <p style="margin: 12px 0; font-size: 14px;"><strong>Revenue Records:</strong> ${assignedCar.revenueLogs?.length || 0} entries</p>
-              </div>
-            ` : '<div style="padding: 20px; text-align: center;"><p style="color: #6b7280; font-style: italic; font-size: 14px;">No vehicle currently assigned to this driver</p></div>'}
+              <p style="margin: 0.08in 0; font-size: 11px;"><strong>Vehicle:</strong> ${assignedCar.make} ${assignedCar.model} (${assignedCar.year})</p>
+              <p style="margin: 0.08in 0; font-size: 11px;"><strong>Plate:</strong> <span style="background: #1e40af; color: white; padding: 2px 4px; border-radius: 3px; font-family: monospace; font-weight: bold;">${assignedCar.plateNumber}</span></p>
+              <p style="margin: 0.08in 0; font-size: 11px;"><strong>Color:</strong> ${assignedCar.color}</p>
+              <p style="margin: 0.08in 0; font-size: 11px;"><strong>Mileage:</strong> ${assignedCar.mileage.toLocaleString()} km</p>
+              <p style="margin: 0.08in 0; font-size: 11px;"><strong>Status:</strong> <span style="color: ${assignedCar.status === 'Available' ? '#059669' : '#6366f1'}; font-weight: bold;">${assignedCar.status}</span></p>
+            ` : '<p style="color: #6b7280; font-style: italic; font-size: 11px;">No vehicle assigned</p>'}
           </div>
         </div>
         
         ${assignedCar && (assignedCar.serviceLogs?.length || 0) > 0 ? `
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #374151; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 20px; font-size: 16px; font-weight: bold;">Recent Service History</h3>
-          <div style="background: #fff7ed; padding: 20px; border-radius: 8px; border: 1px solid #fed7aa;">
-            ${(assignedCar.serviceLogs || []).slice(0, 5).map(log => `
-              <div style="border-bottom: 1px solid #fed7aa; padding: 10px 0; margin: 10px 0;">
-                <p style="margin: 5px 0; font-size: 13px;"><strong>${log.date}</strong> - ${log.category}</p>
-                <p style="margin: 5px 0; font-size: 12px; color: #374151;">${log.description}</p>
-                <p style="margin: 5px 0; font-size: 12px;"><strong>Cost:</strong> ZMK ${log.cost.toLocaleString()}</p>
-              </div>
-            `).join('')}
-          </div>
+        <div style="page-break-before: always; break-before: page; padding: 0.4in 0; width: 100%; box-sizing: border-box; page-break-inside: avoid; break-inside: avoid;">
+          <h3 style="color: #374151; border-bottom: 2px solid #6366f1; padding-bottom: 0.1in; margin: 0 0 0.2in 0; font-size: 14px; font-weight: bold;">Service History</h3>
+          ${(assignedCar.serviceLogs || []).map(log => `
+            <div style="border-left: 3px solid #f97316; padding-left: 0.15in; margin-bottom: 0.15in; background: #fffaf0; padding: 0.15in; border-radius: 4px;">
+              <p style="margin: 0.05in 0; font-size: 11px;"><strong>${formatDate(log.date)}</strong> - <span style="color: #ea580c; font-weight: bold;">${log.category}</span></p>
+              <p style="margin: 0.05in 0; font-size: 10px; color: #374151;">${log.description}</p>
+              <p style="margin: 0.05in 0; font-size: 10px;"><strong>Cost:</strong> ZMK ${log.cost.toLocaleString()} | <strong>Mileage:</strong> ${log.mileage.toLocaleString()} km | <strong>By:</strong> ${log.performedBy}</p>
+            </div>
+          `).join('')}
         </div>
         ` : ''}
         
-        <div style="margin-top: 40px; padding-top: 25px; border-top: 2px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px; background: #f8fafc; padding: 20px; border-radius: 8px;">
-          <p style="margin: 5px 0; font-weight: bold;">Driver Profile Report</p>
-          <p style="margin: 5px 0;">North Links Fleet Management System</p>
-          <p style="margin: 5px 0;">This document contains confidential driver information</p>
+        <div style="margin-top: 0.3in; padding-top: 0.2in; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 10px;">
+          <p style="margin: 0.05in 0;">Driver Profile Report</p>
+          <p style="margin: 0.05in 0;">North Links Fleet Management System</p>
         </div>
       </div>
     `;
@@ -126,11 +115,12 @@ export default function StaffManager({
       
       await html2pdf()
         .set({
-          margin: [0.6, 0.6, 0.6, 0.6],
+          margin: [0.4, 0.4, 0.4, 0.4],
           filename: `Driver_${driver.fullName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'legacy'], avoid: ['tr'] }
         })
         .from(tempDiv)
         .save();
@@ -148,77 +138,43 @@ export default function StaffManager({
     setIsExportingPDF(true);
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = `
-      <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto;">
-        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 30px;">
-          <h1 style="color: #6366f1; margin: 0; font-size: 28px;">North Links Fleet Management</h1>
-          <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 20px;">Complete Driver Registry Report</h2>
-          <p style="color: #6b7280; margin: 10px 0 0 0;">Generated on ${formatDate(new Date())}</p>
-        </div>
-        
-        <div style="margin-bottom: 20px;">
-          <h3 style="color: #374151;">Summary Statistics</h3>
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
-            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-              <div style="font-size: 24px; font-weight: bold; color: #059669;">${drivers.filter(d => d.status === 'Active').length}</div>
-              <div style="font-size: 12px; color: #6b7280; text-transform: uppercase;">Active Drivers</div>
-            </div>
-            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-              <div style="font-size: 24px; font-weight: bold; color: #6366f1;">${drivers.filter(d => d.assignedCarId).length}</div>
-              <div style="font-size: 12px; color: #6b7280; text-transform: uppercase;">With Vehicles</div>
-            </div>
-            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-              <div style="font-size: 24px; font-weight: bold; color: #f59e0b;">${drivers.filter(d => d.status === 'On Leave').length}</div>
-              <div style="font-size: 12px; color: #6b7280; text-transform: uppercase;">On Leave</div>
-            </div>
-            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-              <div style="font-size: 24px; font-weight: bold; color: #dc2626;">${drivers.filter(d => d.status === 'Suspended').length}</div>
-              <div style="font-size: 12px; color: #6b7280; text-transform: uppercase;">Suspended</div>
-            </div>
-          </div>
+      <div style="padding: 0.4in 0.3in; font-family: Arial, sans-serif; width: 100%; max-width: 720px; margin: 0 auto; box-sizing: border-box; overflow: visible;">
+        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 0.2in; margin-bottom: 0.3in;">
+          <h1 style="color: #6366f1; margin: 0; font-size: 26px; font-weight: bold;">North Links Fleet Management</h1>
+          <h2 style="color: #374151; margin: 0.15in 0 0 0; font-size: 18px;">Complete Driver Registry</h2>
+          <p style="color: #6b7280; margin: 0.1in 0 0 0; font-size: 11px;">Generated on ${formatDate(new Date())}</p>
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-          <thead>
-            <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
-              <th style="padding: 12px 8px; text-align: left; border: 1px solid #e2e8f0;">Driver Name</th>
-              <th style="padding: 12px 8px; text-align: left; border: 1px solid #e2e8f0;">License #</th>
-              <th style="padding: 12px 8px; text-align: left; border: 1px solid #e2e8f0;">Contact</th>
-              <th style="padding: 12px 8px; text-align: left; border: 1px solid #e2e8f0;">Status</th>
-              <th style="padding: 12px 8px; text-align: left; border: 1px solid #e2e8f0;">Assigned Vehicle</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${drivers.map(driver => {
-              const assignedCar = cars.find(c => c.id === driver.assignedCarId);
-              return `
-                <tr style="border-bottom: 1px solid #e2e8f0;">
-                  <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">
-                    <div style="font-weight: bold;">${driver.fullName}</div>
-                    <div style="color: #6b7280; font-size: 10px;">NRC: ${driver.nrcNumber}</div>
-                  </td>
-                  <td style="padding: 10px 8px; border: 1px solid #e2e8f0; font-family: monospace;">${driver.licenseNumber}</td>
-                  <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">
-                    <div style="font-size: 10px;">${driver.email || 'No email'}</div>
-                    <div style="font-size: 10px; font-family: monospace;">${driver.phone || 'No phone'}</div>
-                  </td>
-                  <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">
-                    <span style="color: ${driver.status === 'Active' ? '#059669' : driver.status === 'Suspended' ? '#dc2626' : '#6b7280'}; font-weight: bold;">${driver.status}</span>
-                  </td>
-                  <td style="padding: 10px 8px; border: 1px solid #e2e8f0;">
-                    ${assignedCar ? `
-                      <div style="font-weight: bold;">${assignedCar.make} ${assignedCar.model}</div>
-                      <div style="color: #6b7280; font-size: 10px; font-family: monospace;">${assignedCar.plateNumber}</div>
-                    ` : '<span style="color: #6b7280; font-style: italic;">Unassigned</span>'}
-                  </td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
+        ${drivers.map((driver, index) => {
+          const assignedCar = cars.find(c => c.id === driver.assignedCarId);
+          return `
+            <div style="margin-bottom: 0.2in; padding: 0.15in; border: 1px solid #e2e8f0; border-radius: 6px; background: #ffffff; ${index > 0 ? 'page-break-before: always; break-before: page; padding-top: 0.5in;' : ''}; page-break-inside: avoid; break-inside: avoid; overflow: visible;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.15in;">
+                <div style="flex: 1;">
+                  <h3 style="margin: 0; font-size: 14px; color: #111827; font-weight: bold;">${driver.fullName}</h3>
+                  <p style="margin: 0.05in 0 0 0; font-size: 11px; color: #6b7280;"><strong>License:</strong> ${driver.licenseNumber} | <strong>NRC:</strong> ${driver.nrcNumber}</p>
+                </div>
+                <span style="color: ${driver.status === 'Active' ? '#059669' : driver.status === 'Suspended' ? '#dc2626' : '#6b7280'}; font-weight: bold; font-size: 11px; background: ${driver.status === 'Active' ? '#ecfdf5' : driver.status === 'Suspended' ? '#fef2f2' : '#f3f4f6'}; padding: 0.05in 0.1in; border-radius: 3px;">${driver.status}</span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.15in; font-size: 11px; color: #374151;">
+                <div style="background: #f8fafc; padding: 0.1in; border-radius: 4px;">
+                  <p style="margin: 0.05in 0;"><strong>Email:</strong> ${driver.email || 'Not provided'}</p>
+                  <p style="margin: 0.05in 0;"><strong>Phone:</strong> ${driver.phone || 'Not provided'}</p>
+                  <p style="margin: 0.05in 0;"><strong>Code:</strong> <span style="font-family: monospace;">${driver.accessCode || 'N/A'}</span></p>
+                </div>
+                <div style="background: #f0f9ff; padding: 0.1in; border-radius: 4px;">
+                  <p style="margin: 0.05in 0;"><strong>Vehicle:</strong> ${assignedCar ? `${assignedCar.make} ${assignedCar.model}` : 'Unassigned'}</p>
+                  <p style="margin: 0.05in 0;"><strong>Plate:</strong> ${assignedCar ? `<span style=\"font-family: monospace;\">${assignedCar.plateNumber}</span>` : '—'}</p>
+                  <p style="margin: 0.05in 0;"><strong>Mileage:</strong> ${assignedCar ? `${assignedCar.mileage.toLocaleString()} km` : '—'}</p>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
         
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
-          <p>Complete Driver Registry Report - ${drivers.length} total drivers</p>
-          <p>North Links Fleet Management System</p>
+        <div style="margin-top: 0.3in; padding-top: 0.2in; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 10px;">
+          <p style="margin: 0.05in 0;">Driver Registry Report — ${drivers.length} total drivers</p>
+          <p style="margin: 0.05in 0;">North Links Fleet Management System</p>
         </div>
       </div>
     `;
@@ -234,11 +190,12 @@ export default function StaffManager({
       
       await html2pdf()
         .set({
-          margin: [0.5, 0.5, 0.5, 0.5],
+          margin: [0.4, 0.4, 0.4, 0.4],
           filename: `Fleet_Driver_Registry_${new Date().toISOString().split('T')[0]}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'legacy'], avoid: ['tr'] }
         })
         .from(tempDiv)
         .save();

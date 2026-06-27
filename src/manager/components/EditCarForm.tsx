@@ -157,53 +157,13 @@ export default function EditCarForm({
     setIsExportingPDF(true);
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = `
-      <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
-        <div style="text-align: center; border-bottom: 2px solid #ea580c; padding-bottom: 20px; margin-bottom: 20px;">
-          <h1 style="color: #ea580c; margin: 0; font-size: 24px;">North Links Fleet Management</h1>
-          <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 18px;">Vehicle Maintenance History</h2>
+      <div style="padding: 0.4in; font-family: Arial, sans-serif;">
+        <div style="text-align: center; border-bottom: 2px solid #ea580c; padding-bottom: 0.2in; margin-bottom: 0.25in;">
+          <h1 style="color: #ea580c; margin: 0; font-size: 24px; font-weight: bold;">North Links Fleet Management</h1>
+          <h2 style="color: #374151; margin: 0.1in 0 0 0; font-size: 16px;">Maintenance History</h2>
+          <p style="color: #6b7280; margin: 0.05in 0 0 0; font-size: 11px;">Generated on ${formatDate(new Date())}</p>
         </div>
         
-        <div style="margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px;">
-          <h3 style="color: #374151; margin: 0 0 10px 0;">Vehicle Information</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div>
-              <p><strong>Vehicle:</strong> ${car.make} ${car.model} (${car.year})</p>
-              <p><strong>License Plate:</strong> ${car.plateNumber}</p>
-              <p><strong>Color:</strong> ${car.color}</p>
-            </div>
-            <div>
-              <p><strong>Current Mileage:</strong> ${car.mileage.toLocaleString()} km</p>
-              <p><strong>Status:</strong> ${car.status}</p>
-              <p><strong>Total Maintenance Records:</strong> ${(car.serviceLogs || []).length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-          <h3 style="color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">Maintenance Summary</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-            <div style="background: #fff7ed; padding: 10px; border-radius: 6px; border: 1px solid #fed7aa;">
-              <div style="font-size: 18px; font-weight: bold; color: #ea580c;">ZMK ${(car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0).toLocaleString()}</div>
-              <div style="font-size: 12px; color: #6b7280;">Total Maintenance Cost</div>
-            </div>
-            <div style="background: #f0f9ff; padding: 10px; border-radius: 6px; border: 1px solid #bae6fd;">
-              <div style="font-size: 18px; font-weight: bold; color: #0284c7;">${(car.serviceLogs || []).length}</div>
-              <div style="font-size: 12px; color: #6b7280;">Total Services</div>
-            </div>
-            <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-              <div style="font-size: 14px; font-weight: bold; color: #374151;">
-                ${(() => {
-                  const logs = car.serviceLogs || [];
-                  return logs.length > 0 && logs[0] 
-                    ? new Date(logs[0].date).toLocaleDateString()
-                    : 'No services';
-                })()}
-              </div>
-              <div style="font-size: 12px; color: #6b7280;">Last Service Date</div>
-            </div>
-          </div>
-        </div>
-
         ${(car.serviceLogs || []).length > 0 ? `
         <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 20px;">
           <thead>
@@ -265,11 +225,12 @@ export default function EditCarForm({
       
       await html2pdf()
         .set({
-          margin: [0.5, 0.5, 0.5, 0.5],
+          margin: [0.4, 0.4, 0.4, 0.4],
           filename: `${car.plateNumber}_Maintenance_History_${new Date().toISOString().split('T')[0]}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'legacy'], avoid: ['tr'] }
         })
         .from(tempDiv)
         .save();
@@ -1019,3 +980,4 @@ export default function EditCarForm({
     </div>
   );
 }
+

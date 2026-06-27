@@ -387,6 +387,44 @@ export default function FinanceDashboard({
     }
   };
 
+  const exportDisposedAssetsCSV = async () => {
+    setIsExportingPDF(true);
+
+    try {
+      const rows = disposedAssets.map(car => {
+        const totalRevenue = (car.revenueLogs || []).reduce((sum, log) => sum + log.amount, 0);
+        const totalMaintenance = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
+        const totalInsurance = (car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0);
+        const totalDeductions = totalMaintenance + totalInsurance;
+        const netOutcome = totalRevenue + (car.salePrice || 0) - ((car.purchasePrice || 0) + totalDeductions);
+        const returnBase = (car.purchasePrice || 0) + totalDeductions;
+        const roi = returnBase > 0 ? (netOutcome / returnBase) * 100 : 0;
+
+        return [
+          `${car.make} ${car.model}`,
+          car.plateNumber,
+          totalRevenue.toFixed(2),
+          totalDeductions.toFixed(2),
+          (car.purchasePrice || 0).toFixed(2),
+          (car.salePrice || 0).toFixed(2),
+          `${roi.toFixed(2)}%`,
+          netOutcome.toFixed(2)
+        ];
+      });
+
+      downloadCsvReport(
+        `Disposed_Assets_${new Date().toISOString().split('T')[0]}.csv`,
+        ['Vehicle', 'Plate Number', 'Revenue (ZMK)', 'Expenses (ZMK)', 'Bought (ZMK)', 'Sold (ZMK)', 'ROI (%)', 'Net Yield (ZMK)'],
+        rows
+      );
+    } catch (error) {
+      console.error('CSV export error:', error);
+      alert('Failed to export disposed assets report. Please try again.');
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
+
   // Gather all expenditures across all cars based on maintenance logs AND insurance logs
   const allServiceLogs = cars.flatMap(car =>
     (car.serviceLogs || []).map(log => ({
@@ -780,7 +818,7 @@ export default function FinanceDashboard({
                       <tr className="border-b border-gray-100 text-[9px] uppercase text-gray-455 font-extrabold tracking-wider bg-slate-50/50 select-none">
                         <th className="py-2 px-3 font-sans">Month</th>
                         <th className="py-2 px-2 text-right font-sans">Total Revenue</th>
-                        <th className="py-2 px-2 text-right text-rose-600 font-sans">Maintenance Costs</th>
+                        <th className="py-2 px-2 text-right text-rose-600 font-sans">expenses</th>
                         <th className="py-2 px-3 text-right font-sans">Net Profit</th>
                       </tr>
                     </thead>
@@ -812,7 +850,7 @@ export default function FinanceDashboard({
             <div className="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-xs text-left" id="asset-financial-breakdown-card">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-150 pb-2.5 mb-3 gap-2">
                 <div>
-                  <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">Asset profit & loss breakdown</h3>
+                  <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">Operating Performance</h3>
                   <p className="text-[10px] text-gray-400 mt-0.5">Performance tracking model comparing generated collections vs. overhead costs per fleet vehicle.</p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0" id="pnl-asset-filter-wrapper">
@@ -847,7 +885,7 @@ export default function FinanceDashboard({
                   <table className="w-full text-left text-[11px] border-collapse">
                     <thead>
                       <tr className="border-b border-gray-100 text-[9px] uppercase text-gray-400 font-extrabold tracking-wider bg-slate-50/50 select-none">
-                        <th className="py-2 px-3">Vehicle Details</th>
+                        <th className="py-2 px-3">Vehicle</th>
                         <th className="py-2 px-2 text-right">Revenue</th>
                         <th className="py-2 px-2 text-right text-orange-600">Maintenance</th>
                         <th className="py-2 px-2 text-right text-rose-600">Insurance</th>
@@ -901,9 +939,29 @@ export default function FinanceDashboard({
             </div>
 
             <div className="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-xs text-left" id="disposed-assets-section">
-              <div className="border-b border-gray-150 pb-2.5 mb-3">
-                <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">Disposed assets</h3>
-                <p className="text-[10px] text-gray-400 mt-0.5">Summary of vehicles marked sold and removed from active fleet operations.</p>
+              <div className="border-b border-gray-150 pb-2.5 mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">Disposed assets Breakdown</h3>
+                  <p className="text-[10px] text-gray-400 mt-0.5">Summary of vehicles marked sold and removed from active fleet operations.</p>
+                </div>
+                <button
+                  onClick={exportDisposedAssetsCSV}
+                  disabled={isExportingPDF}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  title="Export CSV"
+                >
+                  {isExportingPDF ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-3.5 h-3.5" />
+                      Export CSV
+                    </>
+                  )}
+                </button>
               </div>
 
               {disposedAssets.length > 0 ? (
@@ -912,12 +970,12 @@ export default function FinanceDashboard({
                     <thead>
                       <tr className="border-b border-gray-100 text-[9px] uppercase text-gray-400 font-extrabold tracking-wider bg-slate-50/50 select-none">
                         <th className="py-2 px-3">Vehicle</th>
-                        <th className="py-2 px-2 text-right">Revenue pooled</th>
-                        <th className="py-2 px-2 text-right text-orange-600">Maintenance + insurance</th>
-                        <th className="py-2 px-2 text-right">Bought at</th>
-                        <th className="py-2 px-2 text-right">Sold at</th>
-                        <th className="py-2 px-2 text-right">ROI %</th>
-                        <th className="py-2 px-3 text-right">Net outcome</th>
+                        <th className="py-2 px-2 text-right">Revenue</th>
+                        <th className="py-2 px-2 text-right text-orange-600">Expenses</th>
+                        <th className="py-2 px-2 text-right">Bought</th>
+                        <th className="py-2 px-2 text-right">Sold</th>
+                        <th className="py-2 px-2 text-right">ROI(%)</th>
+                        <th className="py-2 px-3 text-right">Net Yield</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 border-b border-gray-100">
