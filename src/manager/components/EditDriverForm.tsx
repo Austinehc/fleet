@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Driver } from '../../types';
 import { Camera, Upload } from 'lucide-react';
+import { validateEmail, validateNRCNumber, validatePhone } from '../../lib/validation';
 
 interface EditDriverFormProps {
   driver: Driver;
@@ -25,7 +26,7 @@ export default function EditDriverForm({
   const [editDrvNextOfKinPhone, setEditDrvNextOfKinPhone] = useState(driver.nextOfKinPhone || '');
   const [editDrvDateOfBirth, setEditDrvDateOfBirth] = useState(driver.dateOfBirth || '');
   const [editDrvStatus, setEditDrvStatus] = useState<Driver['status']>(driver.status);
-  const [editDrvAccessCode, setEditDrvAccessCode] = useState(driver.accessCode || '');
+  const [editDrvAccessCode] = useState(driver.accessCode || '');
 
   // Photograph upload state
   const [editDrvPhoto, setEditDrvPhoto] = useState<string>(driver.profilePicture || '');
@@ -68,6 +69,28 @@ export default function EditDriverForm({
       return;
     }
 
+    const nrcValidation = validateNRCNumber(editDrvNrc);
+    if (!nrcValidation.valid) {
+      alert(nrcValidation.error!);
+      return;
+    }
+
+    if (editDrvEmail.trim()) {
+      const emailValidation = validateEmail(editDrvEmail);
+      if (!emailValidation.valid) {
+        alert(emailValidation.error!);
+        return;
+      }
+    }
+
+    if (editDrvPhone.trim()) {
+      const phoneValidation = validatePhone(editDrvPhone);
+      if (!phoneValidation.valid) {
+        alert(phoneValidation.error!);
+        return;
+      }
+    }
+
     const updatedDriver: Driver = {
       ...driver,
       fullName: editDrvName.trim(),
@@ -76,7 +99,7 @@ export default function EditDriverForm({
       email: editDrvEmail.trim(),
       phone: editDrvPhone.trim(),
       status: editDrvStatus,
-      accessCode: editDrvAccessCode.trim().toUpperCase()
+      accessCode: editDrvAccessCode ? editDrvAccessCode.trim().toUpperCase() : ''
     };
 
     if (editDrvAddress.trim()) {
@@ -307,39 +330,6 @@ export default function EditDriverForm({
               <option value="Suspended">Suspended</option>
               <option value="Inactive">Inactive</option>
             </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Driver Access Code (6 digits)</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                maxLength={6}
-                required
-                placeholder="e.g. AD3F89"
-                value={editDrvAccessCode}
-                onChange={(e) => setEditDrvAccessCode(e.target.value.toUpperCase())}
-                className="flex-1 bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-mono font-bold uppercase text-gray-900 tracking-widest text-center"
-                id="edit-input-drv-access-code"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                  let code = '';
-                  for (let i = 0; i < 6; i++) {
-                    code += chars.charAt(Math.floor(Math.random() * chars.length));
-                  }
-                  setEditDrvAccessCode(code);
-                }}
-                className="px-3 py-2 bg-indigo-5 level bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl border border-indigo-100 transition-all cursor-pointer"
-              >
-                Regenerate
-              </button>
-            </div>
-            <p className="text-[10px] text-gray-450 mt-1 leading-normal font-sans">
-              The driver needs this 6-digit alphanumeric code to log in directly via the Driver Station URL.
-            </p>
           </div>
 
           <div className="pt-4 border-t border-gray-150 flex items-center justify-end gap-3" id="edit-drv-actions">

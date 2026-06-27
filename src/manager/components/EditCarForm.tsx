@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CarAsset, Driver, InsuranceLog } from '../../types';
+import { validatePlateNumber } from '../../lib/validation';
 
 const downloadCsvReport = (filename: string, headers: string[], rows: Array<Array<string | number | null | undefined>>) => {
   const csvContent = [
@@ -157,6 +158,12 @@ export default function EditCarForm({
     e.preventDefault();
     if (!editCarMake.trim() || !editCarModel.trim() || !editCarPlate.trim() || !editCarColor.trim()) {
       alert('Please fill out all mandatory fields tagged with an asterisk.');
+      return;
+    }
+
+    const plateValidation = validatePlateNumber(editCarPlate);
+    if (!plateValidation.valid) {
+      alert(plateValidation.error!);
       return;
     }
 
@@ -383,10 +390,6 @@ export default function EditCarForm({
                         <div className="flex items-center gap-1.5">
                           <Phone className="w-3.5 h-3.5 text-slate-400" />
                           <span className="text-slate-705 font-mono font-bold">{currentAssignedDriver.phone}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 pt-1 border-t border-gray-100 font-semibold text-[8px] uppercase tracking-wider text-indigo-600">
-                          <Check className="w-3.5 h-3.5 text-emerald-500" />
-                          <span>Access Code: {currentAssignedDriver.accessCode || 'N/A'}</span>
                         </div>
                       </div>
                     </div>

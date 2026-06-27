@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Edit, Trash2, Key, RefreshCw, Search, Phone, Mail, Check, Car, FileText } from 'lucide-react';
+import { User, Edit, Trash2, Key, RefreshCw, Search, Phone, Mail, Check, Car, FileText, Eye, EyeOff } from 'lucide-react';
 import { Driver, CarAsset } from '../../types';
 import { formatDate } from '../../lib/dateFormat';
 
@@ -46,6 +46,7 @@ export default function StaffManager({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'On Leave' | 'Suspended' | 'Inactive'>('All');
   const [justRegeneratedCode, setJustRegeneratedCode] = useState<{ [key: string]: boolean }>({});
+  const [hiddenAccessCodes, setHiddenAccessCodes] = useState<Record<string, boolean>>({});
   const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   const handleRegenerateCode = (driver: Driver) => {
@@ -66,6 +67,10 @@ export default function StaffManager({
     setTimeout(() => {
       setJustRegeneratedCode(prev => ({ ...prev, [driver.id]: false }));
     }, 2000);
+  };
+
+  const toggleAccessCodeVisibility = (driverId: string) => {
+    setHiddenAccessCodes(prev => ({ ...prev, [driverId]: !prev[driverId] }));
   };
 
   const exportAllDriversCSV = async () => {
@@ -306,8 +311,18 @@ export default function StaffManager({
                     
                     <div className="flex items-center gap-2">
                       <div className="flex-1 bg-white border border-slate-205 py-2.5 px-3 rounded-lg text-center font-mono font-extrabold uppercase tracking-widest text-slate-855 text-sm shadow-3xs" id={`access-code-box-${drv.id}`}>
-                        {drv.accessCode || 'CODE_ERR'}
+                        {hiddenAccessCodes[drv.id] ? '••••••' : (drv.accessCode || 'CODE_ERR')}
                       </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => toggleAccessCodeVisibility(drv.id)}
+                        className="p-2.5 border rounded-lg transition-all text-center flex items-center justify-center shrink-0 cursor-pointer bg-white hover:bg-slate-100 border-slate-205 text-slate-600 hover:text-slate-800"
+                        title={hiddenAccessCodes[drv.id] ? 'Show Access Code' : 'Hide Access Code'}
+                        id={`btn-toggle-code-${drv.id}`}
+                      >
+                        {hiddenAccessCodes[drv.id] ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                      </button>
                       
                       <button
                         type="button"

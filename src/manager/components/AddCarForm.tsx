@@ -226,7 +226,7 @@ export default function AddCarForm({
               <input
                 type="text"
                 required
-                placeholder="e.g. ABC 123X"
+                placeholder="e.g. ABC 123 or 1234"
                 value={newCarPlate}
                 onChange={(e) => setNewCarPlate(e.target.value)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-gray-850 font-medium uppercase text-center"

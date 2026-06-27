@@ -21,9 +21,9 @@ export function validateEmail(email: string): { valid: boolean; error?: string }
     return { valid: false, error: 'Email is required' };
   }
   
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\s@]+@(gmail|yahoo|outlook|hotmail)\.com$/i;
   if (!emailRegex.test(sanitized)) {
-    return { valid: false, error: 'Invalid email format' };
+    return { valid: false, error: 'Email must end with gmail.com, yahoo.com, outlook.com, or hotmail.com' };
   }
   
   return { valid: true };
@@ -31,14 +31,31 @@ export function validateEmail(email: string): { valid: boolean; error?: string }
 
 // Validate phone number
 export function validatePhone(phone: string): { valid: boolean; error?: string } {
-  const sanitized = sanitizeString(phone).replace(/\D/g, ''); // Keep only digits
+  const sanitized = sanitizeString(phone);
   
   if (!sanitized) {
     return { valid: false, error: 'Phone number is required' };
   }
   
-  if (sanitized.length < 10 || sanitized.length > 15) {
-    return { valid: false, error: 'Phone number must be 10-15 digits' };
+  const phoneRegex = /^\(\+260\)\s?\d{9}$/;
+  if (!phoneRegex.test(sanitized)) {
+    return { valid: false, error: 'Phone number must start with (+260) followed by 9 digits' };
+  }
+  
+  return { valid: true };
+}
+
+// Validate NRC number
+export function validateNRCNumber(nrc: string): { valid: boolean; error?: string } {
+  const sanitized = sanitizeString(nrc).toUpperCase();
+  
+  if (!sanitized) {
+    return { valid: false, error: 'NRC number is required' };
+  }
+  
+  const nrcRegex = /^\d{7}\/\d{2}\/\d$/;
+  if (!nrcRegex.test(sanitized)) {
+    return { valid: false, error: 'NRC must be in the format XXXXXXX/XX/X' };
   }
   
   return { valid: true };
@@ -125,12 +142,8 @@ export function validatePlateNumber(plate: string): { valid: boolean; error?: st
     return { valid: false, error: 'Plate number is required' };
   }
   
-  if (sanitized.length < 3 || sanitized.length > 10) {
-    return { valid: false, error: 'Plate number must be 3-10 characters' };
-  }
-  
-  if (!/^[A-Z0-9-\s]+$/.test(sanitized)) {
-    return { valid: false, error: 'Plate number contains invalid characters' };
+  if (!/^(?:[A-Z]{3}\s\d{3}|[A-Z]{1,4}|\d{1,4})$/.test(sanitized)) {
+    return { valid: false, error: 'Plate number must be in the format ABC 123 or up to 4 characters like 1234' };
   }
   
   return { valid: true };

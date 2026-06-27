@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Info } from 'lucide-react';
 import { Driver, CarAsset } from '../../types';
+import { validateEmail, validateNRCNumber, validatePhone } from '../../lib/validation';
 
 interface AddDriverFormProps {
   cars: CarAsset[];
@@ -141,6 +142,28 @@ export default function AddDriverForm({
     if (!newDrvName || !newDrvLicense || !newDrvNrc) {
       alert('Please fill out the Driver Name, NRC Number, and Licence details.');
       return;
+    }
+
+    const nrcValidation = validateNRCNumber(newDrvNrc);
+    if (!nrcValidation.valid) {
+      alert(nrcValidation.error!);
+      return;
+    }
+
+    if (newDrvEmail.trim()) {
+      const emailValidation = validateEmail(newDrvEmail);
+      if (!emailValidation.valid) {
+        alert(emailValidation.error!);
+        return;
+      }
+    }
+
+    if (newDrvPhone.trim()) {
+      const phoneValidation = validatePhone(newDrvPhone);
+      if (!phoneValidation.valid) {
+        alert(phoneValidation.error!);
+        return;
+      }
     }
 
     const newDriverId = `driver-${Date.now()}`;
