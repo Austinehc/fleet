@@ -44,11 +44,15 @@ export interface CarAsset {
   color: string;
   vin: string;
   mileage: number;
-  status: 'Available' | 'Assigned' | 'Maintenance' | 'Out of Service';
+  status: 'Available' | 'Assigned' | 'Maintenance' | 'Out of Service' | 'Disposed';
   photos: string[]; // base64 or object URLs
   serviceLogs: ServiceLog[];
   revenueLogs?: RevenueLog[];
   insuranceLogs?: InsuranceLog[];
+  purchasePrice?: number;
+  salePrice?: number;
+  disposedAt?: string;
+  isDisposed?: boolean;
   createdAt: string;
 }
 

@@ -111,6 +111,10 @@ export async function getCarsFromDB(): Promise<CarAsset[]> {
     revenueLogs: revenueLogsMap[car.id] || [],
 
     insuranceLogs: insuranceLogsMap[car.id] || [],
+    purchasePrice: car.purchase_price != null ? Number(car.purchase_price) : 0,
+    salePrice: car.sale_price != null ? Number(car.sale_price) : 0,
+    disposedAt: car.disposed_at || '',
+    isDisposed: Boolean(car.is_disposed),
     createdAt: car.created_at
   }));
 }
@@ -165,6 +169,10 @@ export async function saveCarAssetToDB(car: CarAsset): Promise<void> {
       mileage: car.mileage,
       status: car.status,
       photos: car.photos,
+      purchase_price: car.purchasePrice ?? 0,
+      sale_price: car.salePrice ?? 0,
+      disposed_at: car.disposedAt || null,
+      is_disposed: Boolean(car.isDisposed),
       created_at: car.createdAt
     });
 

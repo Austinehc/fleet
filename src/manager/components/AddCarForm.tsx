@@ -31,6 +31,7 @@ export default function AddCarForm({
   const [newCarColor, setNewCarColor] = useState('');
   const [newCarVin, setNewCarVin] = useState('');
   const [newCarMileage, setNewCarMileage] = useState<number>(0);
+  const [newCarPurchasePrice, setNewCarPurchasePrice] = useState<number>(0);
   const [newCarStatus, setNewCarStatus] = useState<CarAsset['status']>('Available');
 
   // Initial service state
@@ -75,6 +76,12 @@ export default function AddCarForm({
       return;
     }
 
+    const purchasePriceValidation = validateNumber(newCarPurchasePrice, 0, 1000000000, 'Purchase price');
+    if (!purchasePriceValidation.valid) {
+      alert(purchasePriceValidation.error!);
+      return;
+    }
+
     try {
       const newCarId = `car-${Date.now()}`;
       const initialServices: ServiceLog[] = [];
@@ -107,6 +114,10 @@ export default function AddCarForm({
       photos: newCarPhoto ? [newCarPhoto] : [],
       serviceLogs: initialServices,
       revenueLogs: [],
+      purchasePrice: Number(newCarPurchasePrice) || 0,
+      salePrice: 0,
+      disposedAt: '',
+      isDisposed: false,
       createdAt: new Date().toISOString()
     };
 
@@ -255,6 +266,18 @@ export default function AddCarForm({
                 onChange={(e) => setNewCarMileage(Number(e.target.value))}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-850 font-medium"
                 id="input-car-miles"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Purchase Price (zmk)</label>
+              <input
+                type="number"
+                min="0"
+                placeholder="0"
+                value={newCarPurchasePrice || ''}
+                onChange={(e) => setNewCarPurchasePrice(Number(e.target.value))}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-850 font-medium"
+                id="input-car-purchase-price"
               />
             </div>
             <div>

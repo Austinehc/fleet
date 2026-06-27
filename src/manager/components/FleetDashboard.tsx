@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SlidersHorizontal, Search, AlertTriangle, User, Gauge, Edit, Car } from 'lucide-react';
+import { SlidersHorizontal, Search, AlertTriangle, User, Gauge, Edit, Car, Trash2 } from 'lucide-react';
 import { CarAsset, Driver } from '../../types';
 
 interface FleetDashboardProps {
@@ -17,12 +17,17 @@ interface FleetDashboardProps {
 
 export default function FleetDashboard({
   cars,
+  setCars,
   drivers,
   onEditCar
 }: FleetDashboardProps) {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [disposeTargetCar, setDisposeTargetCar] = useState<CarAsset | null>(null);
+  const [disposeAction, setDisposeAction] = useState<'sold' | 'delete' | null>(null);
+  const [disposeSalePrice, setDisposeSalePrice] = useState('');
+  const [disposeError, setDisposeError] = useState('');
 
   // Stats Counters
   const totalAssets = cars.length;
@@ -33,6 +38,55 @@ export default function FleetDashboard({
     oos: cars.filter(c => c.status === 'Out of Service').length
   };
   const activeDrivers = drivers.filter(d => d.status === 'Active').length;
+
+  const handleDisposeCar = () => {
+    if (!disposeTargetCar) return;
+
+    if (disposeAction === 'delete') {
+      setCars(prev => prev.filter(car => car.id !== disposeTargetCar.id));
+      setDisposeTargetCar(null);
+      setDisposeAction(null);
+      setDisposeSalePrice('');
+      setDisposeError('');
+      return;
+    }
+
+    const parsedSalePrice = Number(disposeSalePrice);
+    if (!Number.isFinite(parsedSalePrice) || parsedSalePrice < 0) {
+      setDisposeError('Please enter a valid sale price');
+      return;
+    }
+
+    const today = new Date().toISOString().split('T')[0] || '';
+
+    setCars(prev => prev.map(car => {
+      if (car.id !== disposeTargetCar.id) return car;
+
+      const saleLog = {
+        id: `sale-${Date.now()}`,
+        date: today,
+        amount: parsedSalePrice,
+        category: 'Other' as const,
+        description: `Vehicle disposal sale - ${car.make} ${car.model} (${car.plateNumber})`,
+        status: 'Approved' as const,
+      };
+
+      return {
+        ...car,
+        status: 'Disposed' as const,
+        isDisposed: true,
+        disposedAt: today,
+        salePrice: parsedSalePrice,
+        purchasePrice: car.purchasePrice ?? 0,
+        revenueLogs: [...(car.revenueLogs || []), saleLog],
+      };
+    }));
+
+    setDisposeTargetCar(null);
+    setDisposeAction(null);
+    setDisposeSalePrice('');
+    setDisposeError('');
+  };
 
   // Filter cars list
   const filteredCars = cars.filter(car => {
@@ -274,7 +328,7 @@ export default function FleetDashboard({
                       </div>
 
                       {/* Driver assignment footer */}
-                      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between" id={`card-driver-sec-${car.id}`}>
+                      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2" id={`card-driver-sec-${car.id}`}>
                         <div className="flex items-center gap-2 text-left" id={`driver-meta-${car.id}`}>
                           <div className={`p-1.5 rounded-lg ${driverAssigned ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-400'}`}>
                             <User className="w-3.5 h-3.5" />
@@ -286,6 +340,20 @@ export default function FleetDashboard({
                             </p>
                           </div>
                         </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDisposeTargetCar(car);
+                            setDisposeAction(null);
+                            setDisposeSalePrice('');
+                            setDisposeError('');
+                          }}
+                          className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-700 hover:bg-rose-100 cursor-pointer"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Dispose
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -311,6 +379,78 @@ export default function FleetDashboard({
           </div>
         </div>
       </main>
+
+      {disposeTargetCar && (
+        <div className="fixed inset-0 z-[60] bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4" id="dispose-car-modal">
+          <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl text-left" id="dispose-car-modal-box">
+            <h3 className="text-sm font-bold text-gray-900">Dispose vehicle</h3>
+            <p className="mt-1 text-xs text-gray-500">
+              Choose what to do with {disposeTargetCar.make} {disposeTargetCar.model} ({disposeTargetCar.plateNumber}).
+            </p>
+
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDisposeAction('sold');
+                  setDisposeError('');
+                }}
+                className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${disposeAction === 'sold' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}
+              >
+                Mark as sold
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDisposeAction('delete');
+                  setDisposeError('');
+                }}
+                className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${disposeAction === 'delete' ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}
+              >
+                Delete vehicle
+              </button>
+            </div>
+
+            {disposeAction === 'sold' && (
+              <div className="mt-4 space-y-2">
+                <label className="block text-[10px] font-bold uppercase tracking-wide text-gray-500">Sale price (zmk)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={disposeSalePrice}
+                  onChange={(e) => setDisposeSalePrice(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-800 focus:border-indigo-400 focus:outline-none"
+                  placeholder="Enter sale price"
+                />
+              </div>
+            )}
+
+            {disposeError && <p className="mt-3 text-[11px] font-medium text-rose-600">{disposeError}</p>}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDisposeTargetCar(null);
+                  setDisposeAction(null);
+                  setDisposeSalePrice('');
+                  setDisposeError('');
+                }}
+                className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDisposeCar}
+                className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

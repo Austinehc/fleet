@@ -252,6 +252,7 @@ export default function FinanceDashboard({
   // Calculate high-level financial parameters (filtered metrics for target elements)
   const pendingReviewCount = filteredRevenues.filter(r => r.status === 'Pending').length;
   const totalPendingCount = allRevenueLogs.filter(r => r.status === 'Pending').length;
+  const disposedAssets = cars.filter(car => car.isDisposed);
 
   const downloadCsvReport = (filename: string, headers: string[], rows: Array<Array<string | number | null | undefined>>) => {
     const csvContent = [
@@ -898,7 +899,62 @@ export default function FinanceDashboard({
               </div>
             </div>
 
+            {disposedAssets.length > 0 && (
+              <div className="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-xs text-left" id="disposed-assets-section">
+                <div className="border-b border-gray-150 pb-2.5 mb-3">
+                  <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">Disposed assets</h3>
+                  <p className="text-[10px] text-gray-400 mt-0.5">Summary of vehicles marked sold and removed from active fleet operations.</p>
+                </div>
 
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-[11px] border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-[9px] uppercase text-gray-400 font-extrabold tracking-wider bg-slate-50/50 select-none">
+                        <th className="py-2 px-3">Vehicle</th>
+                        <th className="py-2 px-2 text-right">Revenue pooled</th>
+                        <th className="py-2 px-2 text-right text-orange-600">Maintenance + insurance</th>
+                        <th className="py-2 px-2 text-right">Bought at</th>
+                        <th className="py-2 px-2 text-right">Sold at</th>
+                        <th className="py-2 px-3 text-right">Net outcome</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 border-b border-gray-100">
+                      {disposedAssets.map(car => {
+                        const totalRevenue = (car.revenueLogs || []).reduce((sum, log) => sum + log.amount, 0);
+                        const totalMaintenance = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
+                        const totalInsurance = (car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0);
+                        const totalDeductions = totalMaintenance + totalInsurance;
+                        const netOutcome = (car.salePrice || 0) - (car.purchasePrice || 0) - totalDeductions;
+
+                        return (
+                          <tr key={car.id} className="hover:bg-slate-50/30 transition-colors">
+                            <td className="py-2 px-3">
+                              <span className="font-extrabold text-gray-800 block truncate max-w-[140px] uppercase font-sans">{car.make} {car.model}</span>
+                              <span className="font-mono text-[9px] text-gray-400 block mt-0.5">{car.plateNumber}</span>
+                            </td>
+                            <td className="py-2 px-2 text-right font-mono font-bold text-slate-700">
+                              zmk {totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2 px-2 text-right font-mono font-bold text-orange-500">
+                              zmk {totalDeductions.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2 px-2 text-right font-mono font-bold text-slate-700">
+                              zmk {(car.purchasePrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2 px-2 text-right font-mono font-bold text-emerald-600">
+                              zmk {(car.salePrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className={`py-2 px-3 text-right font-mono font-bold ${netOutcome >= 0 ? 'text-emerald-600' : 'text-rose-600 font-black'}`}>
+                              zmk {netOutcome.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
           </div>
 
@@ -910,7 +966,7 @@ export default function FinanceDashboard({
                 <div>
                   <h3 className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
                     <FileText className="w-4 h-4 text-indigo-505 shrink-0 animate-pulse" />
-                    Submissions Ledger Registry
+                    Ledger Registry
                   </h3>
                   <p className="text-[10px] text-gray-400 mt-0.5">Showing {filteredRevenues.length} revenue logging entries matching filters</p>
                 </div>

@@ -306,6 +306,10 @@ export default function App() {
             prevCar.vin !== nextCar.vin ||
             prevCar.mileage !== nextCar.mileage ||
             prevCar.status !== nextCar.status ||
+            (prevCar.purchasePrice ?? 0) !== (nextCar.purchasePrice ?? 0) ||
+            (prevCar.salePrice ?? 0) !== (nextCar.salePrice ?? 0) ||
+            prevCar.disposedAt !== nextCar.disposedAt ||
+            Boolean(prevCar.isDisposed) !== Boolean(nextCar.isDisposed) ||
             JSON.stringify(prevCar.photos) !== JSON.stringify(nextCar.photos);
 
           if (hasCarChanges) {

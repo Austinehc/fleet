@@ -18,6 +18,10 @@ CREATE TABLE IF NOT EXISTS public.cars (
     mileage INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'Available',
     photos TEXT[] DEFAULT '{}',
+    purchase_price NUMERIC DEFAULT 0,
+    sale_price NUMERIC DEFAULT 0,
+    disposed_at TEXT,
+    is_disposed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -136,6 +140,10 @@ ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS nrc_front TEXT;
 ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS nrc_back TEXT;
 ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS license_front TEXT;
 ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS license_back TEXT;
+ALTER TABLE public.cars ADD COLUMN IF NOT EXISTS purchase_price NUMERIC DEFAULT 0;
+ALTER TABLE public.cars ADD COLUMN IF NOT EXISTS sale_price NUMERIC DEFAULT 0;
+ALTER TABLE public.cars ADD COLUMN IF NOT EXISTS disposed_at TEXT;
+ALTER TABLE public.cars ADD COLUMN IF NOT EXISTS is_disposed BOOLEAN DEFAULT FALSE;
 
 -- Enable RLS for Security
 ALTER TABLE public.cars ENABLE ROW LEVEL SECURITY;
