@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { CarAsset, Driver, InsuranceLog } from '../../types';
-import { validatePlateNumber } from '../../lib/validation';
 
 const downloadCsvReport = (filename: string, headers: string[], rows: Array<Array<string | number | null | undefined>>) => {
   const csvContent = [
@@ -158,12 +157,6 @@ export default function EditCarForm({
     e.preventDefault();
     if (!editCarMake.trim() || !editCarModel.trim() || !editCarPlate.trim() || !editCarColor.trim()) {
       alert('Please fill out all mandatory fields tagged with an asterisk.');
-      return;
-    }
-
-    const plateValidation = validatePlateNumber(editCarPlate);
-    if (!plateValidation.valid) {
-      alert(plateValidation.error!);
       return;
     }
 
@@ -474,7 +467,7 @@ export default function EditCarForm({
                           {(() => {
                             const logs = car.serviceLogs || [];
                             return logs.length > 0 && logs[0] 
-                              ? new Date(logs[0].date).toLocaleDateString()
+                              ? formatDate(logs[0].date)
                               : 'No services';
                           })()}
                         </span>
@@ -535,7 +528,7 @@ export default function EditCarForm({
                                       View receipt
                                     </button>
                                   </div>
-                                  <span className="text-[10px] font-mono text-slate-400 font-bold">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                  <span className="text-[10px] font-mono text-slate-400 font-bold">{formatDate(log.date)}</span>
                                 </div>
                                 <p className="text-xs font-bold text-slate-800 mt-1.5 line-clamp-2">{log.description}</p>
                                 <div className="text-[9px] text-slate-400 mt-1 flex items-center gap-1 font-sans">
@@ -586,7 +579,7 @@ export default function EditCarForm({
                               .map(log => new Date(log.expiryDate))
                               .filter(date => date > new Date())
                               .sort((a, b) => a.getTime() - b.getTime())[0];
-                            return nextExpiry ? nextExpiry.toLocaleDateString() : 'No upcoming';
+                            return nextExpiry ? formatDate(nextExpiry) : 'No upcoming';
                           })()}
                         </span>
                       </div>
@@ -697,7 +690,7 @@ export default function EditCarForm({
                                   }`}>
                                     {log.type}
                                   </span>
-                                  <span className="text-[10px] font-mono text-slate-400 font-bold">{new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                  <span className="text-[10px] font-mono text-slate-400 font-bold">{formatDate(log.date)}</span>
                                 </div>
                                 <p className="text-xs font-bold text-slate-800 mt-1.5 line-clamp-2">{log.description}</p>
                                 <div className="text-[9px] text-slate-400 mt-1 flex items-center gap-1 font-sans">

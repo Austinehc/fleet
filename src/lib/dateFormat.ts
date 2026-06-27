@@ -6,7 +6,7 @@ export function formatDate(date: string | Date): string {
     
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
+    const year = String(d.getFullYear()).slice(-2);
     
     return `${day}/${month}/${year}`;
   } catch {
@@ -15,7 +15,7 @@ export function formatDate(date: string | Date): string {
 }
 
 /**
- * Format a date for CSV export (compact dd/mm/yyyy)
+ * Format a date for CSV export (compact dd/mm/yy)
  */
 export function formatDateForCSV(date: string | Date): string {
   return formatDate(date);

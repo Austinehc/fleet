@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { CarAsset, Driver } from '../../types';
+import { formatDate } from '../../lib/dateFormat';
 
 interface DriverHistoryProps {
   assignedCar: CarAsset;
@@ -54,7 +55,7 @@ export default function DriverHistory({
                       <div>
                         <div className="flex items-center gap-1.5">
                           <strong className="text-slate-800">{log.category}</strong>
-                          <span className="text-[9px] text-slate-400 font-mono bg-white py-0.5 px-1.5 rounded border border-slate-100">{log.date}</span>
+                          <span className="text-[9px] text-slate-400 font-mono bg-white py-0.5 px-1.5 rounded border border-slate-100">{formatDate(log.date)}</span>
                         </div>
                         <p className={`text-[10px] text-slate-500 mt-0.5 font-normal leading-relaxed ${isExpanded ? '' : 'line-clamp-1'}`}>{log.description}</p>
                       </div>
@@ -135,7 +136,7 @@ export default function DriverHistory({
                       <div>
                         <div className="flex flex-wrap items-center gap-1.5">
                           <strong className="text-slate-800">{rev.category} Yield</strong>
-                          <span className="text-[9px] text-slate-400 font-mono bg-white py-0.5 px-1.5 rounded border border-slate-100">{rev.date}</span>
+                          <span className="text-[9px] text-slate-400 font-mono bg-white py-0.5 px-1.5 rounded border border-slate-100">{formatDate(rev.date)}</span>
                           {rev.status === 'Pending' ? (
                             <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.2 rounded-full border border-amber-200 animate-pulse text-nowrap">Pending Approval</span>
                           ) : (
@@ -161,7 +162,7 @@ export default function DriverHistory({
                           </div>
                           <div>
                             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block font-sans">Submission Timestamp</span>
-                            <span className="font-semibold text-slate-755 font-mono">{rev.date}</span>
+                            <span className="font-semibold text-slate-755 font-mono">{formatDate(rev.date)}</span>
                           </div>
                           <div>
                             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block">Declared Yield</span>

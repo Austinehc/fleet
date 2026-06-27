@@ -1231,7 +1231,7 @@ export default function FinanceDashboard({
                           <div>
                             <div className="flex flex-wrap items-center gap-1.5 text-xs text-left">
                               <strong className="text-gray-900 font-extrabold">{rev.category}</strong>
-                              <span className="text-[8px] text-gray-400 font-semibold font-mono bg-gray-150 px-1 py-0.5 rounded leading-none">{rev.date}</span>
+                              <span className="text-[8px] text-gray-400 font-semibold font-mono bg-gray-150 px-1 py-0.5 rounded leading-none">{formatDate(rev.date)}</span>
                             </div>
                             <p className="text-[10px] text-gray-400 font-semibold mt-0.5 font-mono text-left">
                               Plate: <span className="text-indigo-600 font-bold">{rev.carPlate}</span> • {rev.carMake} {rev.carModel}
@@ -1427,7 +1427,7 @@ export default function FinanceDashboard({
               <tbody className="divide-y divide-gray-200 text-left">
                 {filteredRevenues.map((rev) => (
                   <tr key={rev.id} className="hover:bg-slate-50/50">
-                    <td className="py-1.5 px-2 font-mono border-r border-gray-200 text-left">{rev.date}</td>
+                    <td className="py-1.5 px-2 font-mono border-r border-gray-200 text-left">{formatDate(rev.date)}</td>
                     <td className="py-1.5 px-2 font-bold border-r border-gray-200 text-left">{rev.category}</td>
                     <td className="py-1.5 px-2 border-r border-gray-200 text-left">
                       <div className="font-semibold text-gray-800 text-left font-sans">{rev.carMake} {rev.carModel} ({rev.carPlate})</div>

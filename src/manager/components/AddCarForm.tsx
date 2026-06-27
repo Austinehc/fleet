@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Camera } from 'lucide-react';
 import { CarAsset, ServiceLog } from '../../types';
 import { 
-  validateVIN, 
-  validatePlateNumber, 
+  validateVIN,  
   validateNumber, 
   sanitizeString,
   validateDescription 
@@ -50,12 +49,6 @@ export default function AddCarForm({
     }
 
     // Additional validations
-    const plateValidation = validatePlateNumber(newCarPlate);
-    if (!plateValidation.valid) {
-      alert(plateValidation.error!);
-      return;
-    }
-
     if (newCarVin.trim()) {
       const vinValidation = validateVIN(newCarVin);
       if (!vinValidation.valid) {

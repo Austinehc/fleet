@@ -134,21 +134,6 @@ export function validateFileUpload(file: File): { valid: boolean; error?: string
   return { valid: true };
 }
 
-// Validate plate number
-export function validatePlateNumber(plate: string): { valid: boolean; error?: string } {
-  const sanitized = sanitizeString(plate).toUpperCase();
-  
-  if (!sanitized) {
-    return { valid: false, error: 'Plate number is required' };
-  }
-  
-  if (!/^(?:[A-Z]{3}\s\d{3}|[A-Z]{1,4}|\d{1,4})$/.test(sanitized)) {
-    return { valid: false, error: 'Plate number must be in the format ABC 123 or up to 4 characters like 1234' };
-  }
-  
-  return { valid: true };
-}
-
 // Sanitize and validate description/text fields
 export function validateDescription(description: string, maxLength = 500): { valid: boolean; error?: string; value?: string } {
   const sanitized = sanitizeString(description);
