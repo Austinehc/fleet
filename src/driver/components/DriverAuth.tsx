@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { UserCheck, Shield, Clock, AlertTriangle } from 'lucide-react';
+import { UserCheck, Shield, Clock} from 'lucide-react';
 import { Driver } from '../../types';
 import { validatePinFormat, pinAttemptTracker } from '../../lib/auth';
 import { errorHandler, FleetError } from '../../lib/errorHandling';
@@ -211,14 +211,6 @@ export default function DriverAuth({
               <div className="font-semibold">Account Temporarily Locked</div>
               <div>Time remaining: {Math.ceil(lockoutTime / 60000)} minutes</div>
             </div>
-          </div>
-        )}
-
-        {/* Security Status */}
-        {attemptCount > 0 && lockoutTime === 0 && (
-          <div className="p-3 bg-orange-50 border border-orange-100 text-orange-700 rounded-xl text-xs text-center flex items-center justify-center gap-2" id="drv-attempt-warning">
-            <AlertTriangle className="w-4 h-4 text-orange-600" />
-            <span>{AUTH_CONSTANTS.MAX_LOGIN_ATTEMPTS - attemptCount} attempts remaining</span>
           </div>
         )}
 
