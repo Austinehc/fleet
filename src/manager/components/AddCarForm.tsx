@@ -168,9 +168,9 @@ export default function AddCarForm({
                   id="btn-open-camera-capture"
                 >
                   <Camera className="w-4 h-4" />
-                  {newCarPhoto ? 'Re-take / Change Photo' : 'Capture or Pick Photo'}
+                  {newCarPhoto ? 'Change Photo' : 'Upload Photo'}
                 </button>
-                <p className="text-[10px] text-gray-400 max-w-sm">Capture real vehicle photos using device camera, upload local files, or choose from high quality presets.</p>
+                <p className="text-[10px] text-gray-400 max-w-sm">Choose a vehicle photo from your device storage.</p>
               </div>
             </div>
           </div>

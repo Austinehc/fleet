@@ -307,9 +307,8 @@ export default function DriverLogForms({
                 id="drv-svc-receipt-capture"
                 disabled={isUploadingReceipt}
               >
-                {receiptImageUrl ? 'Change Receipt Photo' : 'Attach Receipt Photo'}
+                {receiptImageUrl ? 'Change Receipt Photo' : 'Attach Receipt Photo / File'}
               </button>
-              {/* Camera-only receipt capture — file upload removed per flow requirements */}
             </div>
             {receiptImageUrl && (
               <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
@@ -439,25 +438,17 @@ export default function DriverLogForms({
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2" id="receipt-capture-overlay">
           <CameraCapture
             defaultOption="camera"
-            availableOptions={['camera']}
-            onPhotoCaptured={async (capturedDataUrl) => {
-              console.log('📸 Receipt captured from camera');
+            availableOptions={['camera', 'upload']}
+            requireCloudinaryUpload={true}
+            title="Attach Receipt"
+            subtitle="Capture a receipt from camera or upload one from your device storage"
+            onPhotoCaptured={(capturedDataUrl) => {
               setIsUploadingReceipt(true);
               try {
-                const { uploadToCloudinary, isCloudinaryConfigured } = await import('../../lib/cloudinary');
-                if (isCloudinaryConfigured()) {
-                  console.log('🚀 Uploading receipt to Cloudinary...');
-                  const url = await uploadToCloudinary(capturedDataUrl);
-                  console.log('✅ Receipt uploaded to Cloudinary:', url);
-                  setReceiptImageUrl(url);
-                } else {
-                  console.log('⚠️ Cloudinary not configured, using camera capture as base64');
-                  setReceiptImageUrl(capturedDataUrl);
-                }
-              } catch (err: any) {
-                console.error('❌ Receipt upload failed:', err);
-                alert('Failed to upload receipt to Cloudinary. Using camera capture as backup.');
                 setReceiptImageUrl(capturedDataUrl);
+              } catch (err: any) {
+                console.error('❌ Receipt attachment failed:', err);
+                alert('Failed to attach receipt image. Please try again.');
               } finally {
                 setIsUploadingReceipt(false);
                 setShowReceiptCapture(false);

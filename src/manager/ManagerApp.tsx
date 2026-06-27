@@ -207,6 +207,10 @@ export default function ManagerApp({
       {showCamera && (
         <div className="fixed inset-0 z-55 bg-gray-950/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto" id="camera-overlay-bg">
           <CameraCapture
+            defaultOption={isAddingCar ? 'upload' : 'preset'}
+            availableOptions={isAddingCar ? ['upload'] : ['preset', 'camera', 'upload']}
+            title={isAddingCar ? 'Upload Car Photo' : 'Vehicle Photo Capture'}
+            subtitle={isAddingCar ? 'Choose a photo from your device storage' : 'Capture or upload an image of the car asset'}
             onPhotoCaptured={(capturedDataUrl) => {
               if (isAddingCar) {
                 setNewCarPhoto(capturedDataUrl);

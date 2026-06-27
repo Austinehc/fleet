@@ -12,6 +12,8 @@ interface CameraCaptureProps {
   defaultOption?: 'camera' | 'upload' | 'preset';
   availableOptions?: Array<'camera' | 'upload' | 'preset'>;
   requireCloudinaryUpload?: boolean;
+  title?: string;
+  subtitle?: string;
 }
 
 const STOCK_CAR_PRESETS = [
@@ -22,7 +24,7 @@ const STOCK_CAR_PRESETS = [
   { name: 'Red Sport Coupé', url: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&auto=format&fit=crop&q=80' }
 ];
 
-export default function CameraCapture({ onPhotoCaptured, onClose, defaultOption = 'preset', availableOptions, requireCloudinaryUpload = false }: CameraCaptureProps) {
+export default function CameraCapture({ onPhotoCaptured, onClose, defaultOption = 'preset', availableOptions, requireCloudinaryUpload = false, title = 'Vehicle Photo Capture', subtitle = 'Capture or upload an image of the car asset' }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraActive, setCameraActive] = useState<boolean>(false);
@@ -169,9 +171,9 @@ export default function CameraCapture({ onPhotoCaptured, onClose, defaultOption 
         <div>
           <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-base">
             <Camera className="w-5 h-5 text-indigo-600" id="camera-icon-hdr" />
-            Vehicle Photo Capture
+            {title}
           </h3>
-          <p className="text-xs text-gray-500 mt-0.5">Capture or upload an image of the car asset</p>
+          <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
         </div>
         <button
           onClick={onClose}
