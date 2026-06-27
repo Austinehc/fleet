@@ -933,9 +933,9 @@ export default function EditCarForm({
       </div>
 
       {isReceiptModalOpen && (
-        <div className="fixed inset-0 z-60 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" id="receipt-viewer-overlay">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-150 bg-slate-50">
+        <div className="fixed inset-0 z-60 bg-slate-900/20 backdrop-blur-[2px] flex items-center justify-center p-4" id="receipt-viewer-overlay">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_24px_90px_-30px_rgba(15,23,42,0.45)] max-w-3xl w-full overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white/95">
               <div>
                 <p className="text-sm font-bold text-slate-900">Maintenance Receipt</p>
                 <p className="text-[11px] text-slate-500">View the attached receipt image for this maintenance log.</p>
@@ -946,30 +946,32 @@ export default function EditCarForm({
                   setReceiptModalUrl('');
                   setIsReceiptModalOpen(false);
                 }}
-                className="text-slate-500 hover:text-slate-900 rounded-full border border-slate-200 px-2 py-1 text-sm transition-colors"
+                className="text-slate-500 hover:text-slate-900 rounded-full border border-slate-200 bg-white px-2 py-1 text-sm transition-colors shadow-sm"
                 aria-label="Close receipt viewer"
               >
                 ×
               </button>
             </div>
-            <div className="bg-slate-950 flex flex-col items-center justify-center min-h-[220px] p-4 gap-3">
+            <div className="bg-gradient-to-br from-slate-50 to-white flex flex-col items-center justify-center min-h-[260px] p-4 gap-3">
               {receiptModalUrl ? (
-                <img src={receiptModalUrl} alt="Maintenance receipt preview" className="max-h-[60vh] w-full object-contain rounded" referrerPolicy="no-referrer" />
+                <div className="w-full rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+                  <img src={receiptModalUrl} alt="Maintenance receipt preview" className="max-h-[65vh] w-full object-contain rounded-xl" referrerPolicy="no-referrer" />
+                </div>
               ) : (
-                <div className="text-center text-slate-200">
-                  <p className="text-lg font-semibold">No receipt attached</p>
+                <div className="text-center text-slate-500 bg-white rounded-2xl border border-dashed border-slate-200 px-8 py-10 shadow-sm">
+                  <p className="text-lg font-semibold text-slate-700">No receipt attached</p>
                   <p className="text-sm text-slate-400 mt-2">This maintenance log has no receipt image available.</p>
                 </div>
               )}
             </div>
-            <div className="px-4 py-3 border-t border-slate-150 text-right bg-slate-50">
+            <div className="px-4 py-3 border-t border-slate-200 text-right bg-white/95">
               <button
                 type="button"
                 onClick={() => {
                   setReceiptModalUrl('');
                   setIsReceiptModalOpen(false);
                 }}
-                className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-semibold transition-all"
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all shadow-sm"
               >
                 Close
               </button>
