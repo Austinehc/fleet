@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Coins, Check, CheckCircle2, Clock, Car, Search, FileText, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { ResponsiveContainer, ComposedChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { CarAsset } from '../../types';
+import { formatDate } from '../../lib/dateFormat';
 
 interface FinanceDashboardProps {
   cars: CarAsset[];
@@ -170,7 +171,7 @@ export default function FinanceDashboard({
       cumulativeNetProfit += net;
       return {
         date: d,
-        formattedDate: new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        formattedDate: formatDate(d),
         Revenue: rev,
         Expenditure: exp,
         'Net Profit': net,
@@ -899,13 +900,13 @@ export default function FinanceDashboard({
               </div>
             </div>
 
-            {disposedAssets.length > 0 && (
-              <div className="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-xs text-left" id="disposed-assets-section">
-                <div className="border-b border-gray-150 pb-2.5 mb-3">
-                  <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">Disposed assets</h3>
-                  <p className="text-[10px] text-gray-400 mt-0.5">Summary of vehicles marked sold and removed from active fleet operations.</p>
-                </div>
+            <div className="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-xs text-left" id="disposed-assets-section">
+              <div className="border-b border-gray-150 pb-2.5 mb-3">
+                <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">Disposed assets</h3>
+                <p className="text-[10px] text-gray-400 mt-0.5">Summary of vehicles marked sold and removed from active fleet operations.</p>
+              </div>
 
+              {disposedAssets.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-[11px] border-collapse">
                     <thead>
@@ -953,8 +954,13 @@ export default function FinanceDashboard({
                     </tbody>
                   </table>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="py-6 text-center border border-dashed border-gray-150 rounded-xl bg-gray-50/50" id="empty-disposed-assets-state">
+                  <Car className="w-8 h-8 text-gray-300 mx-auto" />
+                  <p className="text-xs text-gray-400 italic mt-2 font-sans">No disposed assets yet. Once a vehicle is sold or removed, it will appear here.</p>
+                </div>
+              )}
+            </div>
 
           </div>
 
@@ -1261,7 +1267,7 @@ export default function FinanceDashboard({
             <div className="flex justify-between items-end">
               <div className="text-left animate-none">
                 <h1 className="text-2xl font-black uppercase text-gray-900 tracking-tight">Fleet Financial Status Report</h1>
-                <p className="text-xs text-gray-500 font-mono mt-1">Generated: {new Date().toLocaleString()}</p>
+                <p className="text-xs text-gray-500 font-mono mt-1">Generated: {formatDate(new Date())}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs font-black text-indigo-600 uppercase tracking-wider font-sans">Enterprise Management System</p>

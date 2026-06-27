@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CarAsset, Driver, InsuranceLog } from '../../types';
+import { formatDate } from '../../lib/dateFormat';
 import { 
   Wrench, 
   User, 
@@ -218,7 +219,7 @@ export default function EditCarForm({
           <tbody>
             ${(car.serviceLogs || []).map(log => `
               <tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 8px; border: 1px solid #e5e7eb; font-family: monospace;">${new Date(log.date).toLocaleDateString()}</td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb; font-family: monospace;">${formatDate(log.date)}</td>
                 <td style="padding: 8px; border: 1px solid #e5e7eb;">
                   <span style="background: ${
                     log.category === 'Maintenance' ? '#dbeafe' :
@@ -247,7 +248,7 @@ export default function EditCarForm({
         ` : '<p style="text-align: center; color: #6b7280; font-style: italic;">No maintenance records available</p>'}
         
         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
-          <p>Maintenance History Report - Generated on ${new Date().toLocaleString()}</p>
+          <p>Maintenance History Report - Generated on ${formatDate(new Date())}</p>
           <p>North Links Fleet Management System</p>
         </div>
       </div>
@@ -489,7 +490,7 @@ export default function EditCarForm({
                 {/* System Registry Log metadata */}
                 <div className="border border-slate-100 p-4 rounded-xl flex items-center justify-between text-left text-[10px]" id="sys-metadata-row">
                   <span className="text-slate-400 flex items-center gap-1"><ShieldCheck className="w-4 h-4 text-emerald-500" /> Internal Registry Compliance Verified</span>
-                  <span className="text-slate-400">Created: <b className="font-mono text-slate-650">{new Date(car.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</b></span>
+                  <span className="text-slate-400">Created: <b className="font-mono text-slate-650">{formatDate(car.createdAt)}</b></span>
                 </div>
 
               </div>
@@ -780,7 +781,7 @@ export default function EditCarForm({
                                 <p className="text-xs font-bold text-slate-800 mt-1.5 line-clamp-2">{log.description}</p>
                                 <div className="text-[9px] text-slate-400 mt-1 flex items-center gap-1 font-sans">
                                   <span>Expires: <b className={`font-mono ${new Date(log.expiryDate) < new Date() ? 'text-red-600' : new Date(log.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-amber-600' : 'text-green-600'}`}>
-                                    {new Date(log.expiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    {formatDate(log.expiryDate)}
                                   </b></span>
                                   <span>|</span>
                                   <span>By: <b className="text-slate-605">{log.performedBy || 'Unknown'}</b></span>

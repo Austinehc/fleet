@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { User, Edit, Trash2, Key, RefreshCw, Search, Phone, Mail, Check, Car, FileText } from 'lucide-react';
 import { Driver, CarAsset } from '../../types';
+import { formatDate } from '../../lib/dateFormat';
 
 interface StaffManagerProps {
   drivers: Driver[];
@@ -56,7 +57,7 @@ export default function StaffManager({
         <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 25px; margin-bottom: 30px;">
           <h1 style="color: #6366f1; margin: 0; font-size: 28px; font-weight: bold;">North Links Fleet Management</h1>
           <h2 style="color: #374151; margin: 15px 0 0 0; font-size: 20px;">Driver Profile Report</h2>
-          <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 12px;">Generated on ${new Date().toLocaleString()}</p>
+          <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 12px;">Generated on ${formatDate(new Date())}</p>
         </div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
@@ -70,7 +71,7 @@ export default function StaffManager({
               <p style="margin: 12px 0; font-size: 14px;"><strong>Phone:</strong> ${driver.phone || 'Not provided'}</p>
               <p style="margin: 12px 0; font-size: 14px;"><strong>Status:</strong> <span style="color: ${driver.status === 'Active' ? '#059669' : '#dc2626'}; font-weight: bold;">${driver.status}</span></p>
               <p style="margin: 12px 0; font-size: 14px;"><strong>Access Code:</strong> <span style="background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold;">${driver.accessCode || 'Not set'}</span></p>
-              <p style="margin: 12px 0; font-size: 14px;"><strong>Created:</strong> ${new Date(driver.createdAt).toLocaleDateString()}</p>
+              <p style="margin: 12px 0; font-size: 14px;"><strong>Created:</strong> ${formatDate(driver.createdAt)}</p>
             </div>
           </div>
           
@@ -151,7 +152,7 @@ export default function StaffManager({
         <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 30px;">
           <h1 style="color: #6366f1; margin: 0; font-size: 28px;">North Links Fleet Management</h1>
           <h2 style="color: #374151; margin: 10px 0 0 0; font-size: 20px;">Complete Driver Registry Report</h2>
-          <p style="color: #6b7280; margin: 10px 0 0 0;">Generated on ${new Date().toLocaleString()}</p>
+          <p style="color: #6b7280; margin: 10px 0 0 0;">Generated on ${formatDate(new Date())}</p>
         </div>
         
         <div style="margin-bottom: 20px;">
@@ -486,7 +487,7 @@ export default function StaffManager({
                 {/* Footer Controls Segment */}
                 <div className="p-4 border-t border-gray-100 bg-slate-50/50 flex items-center justify-between gap-2 shrink-0">
                   <div className="text-[10px] text-slate-400 font-medium">
-                    Added: {new Date(drv.createdAt || '').toLocaleDateString()}
+                    Added: {formatDate(drv.createdAt || '')}
                   </div>
                   
                   <div className="flex items-center gap-1.5">
