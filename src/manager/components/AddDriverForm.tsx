@@ -22,6 +22,12 @@ export default function AddDriverForm({
   const [newDrvNrc, setNewDrvNrc] = useState('');
   const [newDrvEmail, setNewDrvEmail] = useState('');
   const [newDrvPhone, setNewDrvPhone] = useState('');
+  const [newDrvAddress, setNewDrvAddress] = useState('');
+  const [newDrvMaritalStatus, setNewDrvMaritalStatus] = useState('');
+  const [newDrvNextOfKinName, setNewDrvNextOfKinName] = useState('');
+  const [newDrvNextOfKinRelationship, setNewDrvNextOfKinRelationship] = useState('');
+  const [newDrvNextOfKinPhone, setNewDrvNextOfKinPhone] = useState('');
+  const [newDrvDateOfBirth, setNewDrvDateOfBirth] = useState('');
   const [newDrvStatus, setNewDrvStatus] = useState<Driver['status']>('Active');
   const [newDrvAssignedCarId, setNewDrvAssignedCarId] = useState('');
   const [newDrvPhoto, setNewDrvPhoto] = useState<string>('');
@@ -152,6 +158,25 @@ export default function AddDriverForm({
       accessCode: code,
       createdAt: new Date().toISOString()
     };
+
+    if (newDrvAddress.trim()) {
+      createdDriver.address = newDrvAddress.trim();
+    }
+    if (newDrvMaritalStatus.trim()) {
+      createdDriver.maritalStatus = newDrvMaritalStatus.trim();
+    }
+    if (newDrvNextOfKinName.trim()) {
+      createdDriver.nextOfKinName = newDrvNextOfKinName.trim();
+    }
+    if (newDrvNextOfKinRelationship.trim()) {
+      createdDriver.nextOfKinRelationship = newDrvNextOfKinRelationship.trim();
+    }
+    if (newDrvNextOfKinPhone.trim()) {
+      createdDriver.nextOfKinPhone = newDrvNextOfKinPhone.trim();
+    }
+    if (newDrvDateOfBirth) {
+      createdDriver.dateOfBirth = newDrvDateOfBirth;
+    }
     
     // Add optional fields if provided
     if (newDrvPhoto) {
@@ -309,6 +334,80 @@ export default function AddDriverForm({
                 onChange={(e) => setNewDrvPhone(e.target.value)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 id="input-drv-phone"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3" id="driver-personal-details-grid">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Address</label>
+              <input
+                type="text"
+                placeholder="e.g. Plot 123, Lusaka"
+                value={newDrvAddress}
+                onChange={(e) => setNewDrvAddress(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                id="input-drv-address"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Marital Status</label>
+              <input
+                type="text"
+                placeholder="e.g. Married"
+                value={newDrvMaritalStatus}
+                onChange={(e) => setNewDrvMaritalStatus(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                id="input-drv-marital-status"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3" id="driver-next-of-kin-grid">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Next of Kin Name</label>
+              <input
+                type="text"
+                placeholder="e.g. Mary Banda"
+                value={newDrvNextOfKinName}
+                onChange={(e) => setNewDrvNextOfKinName(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                id="input-drv-next-of-kin-name"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Relationship</label>
+              <input
+                type="text"
+                placeholder="e.g. Spouse"
+                value={newDrvNextOfKinRelationship}
+                onChange={(e) => setNewDrvNextOfKinRelationship(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                id="input-drv-next-of-kin-relationship"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3" id="driver-next-of-kin-contact-grid">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Next of Kin Phone</label>
+              <input
+                type="text"
+                placeholder="(+260) 955123456"
+                value={newDrvNextOfKinPhone}
+                onChange={(e) => setNewDrvNextOfKinPhone(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                id="input-drv-next-of-kin-phone"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Date of Birth</label>
+              <input
+                type="date"
+                value={newDrvDateOfBirth}
+                onChange={(e) => setNewDrvDateOfBirth(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                id="input-drv-date-of-birth"
               />
             </div>
           </div>

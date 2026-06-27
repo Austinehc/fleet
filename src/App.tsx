@@ -411,6 +411,12 @@ export default function App() {
             prevDrv.nrcNumber !== nextDrv.nrcNumber ||
             prevDrv.email !== nextDrv.email ||
             prevDrv.phone !== nextDrv.phone ||
+            prevDrv.address !== nextDrv.address ||
+            prevDrv.maritalStatus !== nextDrv.maritalStatus ||
+            prevDrv.nextOfKinName !== nextDrv.nextOfKinName ||
+            prevDrv.nextOfKinRelationship !== nextDrv.nextOfKinRelationship ||
+            prevDrv.nextOfKinPhone !== nextDrv.nextOfKinPhone ||
+            prevDrv.dateOfBirth !== nextDrv.dateOfBirth ||
             prevDrv.status !== nextDrv.status ||
             prevDrv.assignedCarId !== nextDrv.assignedCarId ||
             prevDrv.profilePicture !== nextDrv.profilePicture ||

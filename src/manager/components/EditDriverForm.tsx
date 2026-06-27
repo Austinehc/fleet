@@ -18,6 +18,12 @@ export default function EditDriverForm({
   const [editDrvLicense, setEditDrvLicense] = useState(driver.licenseNumber);
   const [editDrvEmail, setEditDrvEmail] = useState(driver.email || '');
   const [editDrvPhone, setEditDrvPhone] = useState(driver.phone || '');
+  const [editDrvAddress, setEditDrvAddress] = useState(driver.address || '');
+  const [editDrvMaritalStatus, setEditDrvMaritalStatus] = useState(driver.maritalStatus || '');
+  const [editDrvNextOfKinName, setEditDrvNextOfKinName] = useState(driver.nextOfKinName || '');
+  const [editDrvNextOfKinRelationship, setEditDrvNextOfKinRelationship] = useState(driver.nextOfKinRelationship || '');
+  const [editDrvNextOfKinPhone, setEditDrvNextOfKinPhone] = useState(driver.nextOfKinPhone || '');
+  const [editDrvDateOfBirth, setEditDrvDateOfBirth] = useState(driver.dateOfBirth || '');
   const [editDrvStatus, setEditDrvStatus] = useState<Driver['status']>(driver.status);
   const [editDrvAccessCode, setEditDrvAccessCode] = useState(driver.accessCode || '');
 
@@ -72,6 +78,25 @@ export default function EditDriverForm({
       status: editDrvStatus,
       accessCode: editDrvAccessCode.trim().toUpperCase()
     };
+
+    if (editDrvAddress.trim()) {
+      updatedDriver.address = editDrvAddress.trim();
+    }
+    if (editDrvMaritalStatus.trim()) {
+      updatedDriver.maritalStatus = editDrvMaritalStatus.trim();
+    }
+    if (editDrvNextOfKinName.trim()) {
+      updatedDriver.nextOfKinName = editDrvNextOfKinName.trim();
+    }
+    if (editDrvNextOfKinRelationship.trim()) {
+      updatedDriver.nextOfKinRelationship = editDrvNextOfKinRelationship.trim();
+    }
+    if (editDrvNextOfKinPhone.trim()) {
+      updatedDriver.nextOfKinPhone = editDrvNextOfKinPhone.trim();
+    }
+    if (editDrvDateOfBirth) {
+      updatedDriver.dateOfBirth = editDrvDateOfBirth;
+    }
     
     // Add profilePicture only if provided
     if (editDrvPhoto) {
@@ -191,6 +216,80 @@ export default function EditDriverForm({
                 onChange={(e) => setEditDrvPhone(e.target.value)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
                 id="edit-input-drv-phone"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4" id="edit-driver-personal-details-grid">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Address</label>
+              <input
+                type="text"
+                placeholder="Plot 123, Lusaka"
+                value={editDrvAddress}
+                onChange={(e) => setEditDrvAddress(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
+                id="edit-input-drv-address"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Marital Status</label>
+              <input
+                type="text"
+                placeholder="Married"
+                value={editDrvMaritalStatus}
+                onChange={(e) => setEditDrvMaritalStatus(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
+                id="edit-input-drv-marital-status"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4" id="edit-driver-next-of-kin-grid">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Next of Kin Name</label>
+              <input
+                type="text"
+                placeholder="Mary Banda"
+                value={editDrvNextOfKinName}
+                onChange={(e) => setEditDrvNextOfKinName(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
+                id="edit-input-drv-next-of-kin-name"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Relationship</label>
+              <input
+                type="text"
+                placeholder="Spouse"
+                value={editDrvNextOfKinRelationship}
+                onChange={(e) => setEditDrvNextOfKinRelationship(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
+                id="edit-input-drv-next-of-kin-relationship"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4" id="edit-driver-next-of-kin-contact-grid">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Next of Kin Phone</label>
+              <input
+                type="text"
+                placeholder="(+260) 955123456"
+                value={editDrvNextOfKinPhone}
+                onChange={(e) => setEditDrvNextOfKinPhone(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
+                id="edit-input-drv-next-of-kin-phone"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Date of Birth</label>
+              <input
+                type="date"
+                value={editDrvDateOfBirth}
+                onChange={(e) => setEditDrvDateOfBirth(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
+                id="edit-input-drv-date-of-birth"
               />
             </div>
           </div>

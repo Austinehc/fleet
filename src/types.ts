@@ -63,6 +63,12 @@ export interface Driver {
   nrcNumber: string;
   email: string;
   phone: string;
+  address?: string;
+  maritalStatus?: string;
+  nextOfKinName?: string;
+  nextOfKinRelationship?: string;
+  nextOfKinPhone?: string;
+  dateOfBirth?: string;
   status: 'Active' | 'On Leave' | 'Suspended' | 'Inactive';
   assignedCarId: string | null; // ID of the CarAsset
   profilePicture?: string; // Base64 or URL

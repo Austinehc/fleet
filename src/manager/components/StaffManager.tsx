@@ -3,6 +3,29 @@ import { User, Edit, Trash2, Key, RefreshCw, Search, Phone, Mail, Check, Car, Fi
 import { Driver, CarAsset } from '../../types';
 import { formatDate } from '../../lib/dateFormat';
 
+const downloadCsvReport = (filename: string, headers: string[], rows: Array<Array<string | number | null | undefined>>) => {
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map((value) => {
+      const normalized = value === null || value === undefined ? '' : String(value);
+      if (normalized.includes(',') || normalized.includes('"') || normalized.includes('\n')) {
+        return `"${normalized.replace(/"/g, '""')}"`;
+      }
+      return normalized;
+    }).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+};
+
 interface StaffManagerProps {
   drivers: Driver[];
   cars: CarAsset[];
@@ -45,166 +68,37 @@ export default function StaffManager({
     }, 2000);
   };
 
-  // Export individual driver PDF
-  const exportDriverPDF = async (driver: Driver) => {
+  const exportAllDriversCSV = async () => {
     setIsExportingPDF(true);
-    const assignedCar = cars.find(c => c.id === driver.assignedCarId);
-    
-    // Create a temporary DOM element for PDF generation
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = `
-      <div style="padding: 0.4in 0.3in; font-family: Arial, sans-serif; line-height: 1.5; width: 100%; max-width: 720px; margin: 0 auto; box-sizing: border-box;">
-        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 0.3in; margin-bottom: 0.3in;">
-          <h1 style="color: #6366f1; margin: 0; font-size: 26px; font-weight: bold;">North Links Fleet Management</h1>
-          <h2 style="color: #374151; margin: 0.15in 0 0 0; font-size: 18px;">Driver Profile Report</h2>
-          <p style="color: #6b7280; margin: 0.1in 0 0 0; font-size: 11px;">Generated on ${formatDate(new Date())}</p>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.2in; margin-bottom: 0.3in;">
-          <div style="background: #f8fafc; padding: 0.2in; border-radius: 6px; border: 1px solid #e2e8f0;">
-            <h4 style="color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.08in; margin: 0 0 0.15in 0; font-size: 13px; font-weight: bold;">Driver Information</h4>
-            <p style="margin: 0.08in 0; font-size: 11px;"><strong>Name:</strong> ${driver.fullName}</p>
-            <p style="margin: 0.08in 0; font-size: 11px;"><strong>License:</strong> ${driver.licenseNumber}</p>
-            <p style="margin: 0.08in 0; font-size: 11px;"><strong>NRC:</strong> ${driver.nrcNumber}</p>
-            <p style="margin: 0.08in 0; font-size: 11px;"><strong>Email:</strong> ${driver.email || 'Not provided'}</p>
-            <p style="margin: 0.08in 0; font-size: 11px;"><strong>Phone:</strong> ${driver.phone || 'Not provided'}</p>
-            <p style="margin: 0.08in 0; font-size: 11px;"><strong>Status:</strong> <span style="color: ${driver.status === 'Active' ? '#059669' : '#dc2626'}; font-weight: bold;">${driver.status}</span></p>
-            <p style="margin: 0.08in 0; font-size: 11px;"><strong>Code:</strong> <span style="background: #f1f5f9; padding: 2px 4px; border-radius: 3px; font-family: monospace; font-weight: bold;">${driver.accessCode || 'N/A'}</span></p>
-          </div>
-          
-          <div style="background: #f0f9ff; padding: 0.2in; border-radius: 6px; border: 1px solid #bae6fd;">
-            <h4 style="color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.08in; margin: 0 0 0.15in 0; font-size: 13px; font-weight: bold;">Assigned Vehicle</h4>
-            ${assignedCar ? `
-              <p style="margin: 0.08in 0; font-size: 11px;"><strong>Vehicle:</strong> ${assignedCar.make} ${assignedCar.model} (${assignedCar.year})</p>
-              <p style="margin: 0.08in 0; font-size: 11px;"><strong>Plate:</strong> <span style="background: #1e40af; color: white; padding: 2px 4px; border-radius: 3px; font-family: monospace; font-weight: bold;">${assignedCar.plateNumber}</span></p>
-              <p style="margin: 0.08in 0; font-size: 11px;"><strong>Color:</strong> ${assignedCar.color}</p>
-              <p style="margin: 0.08in 0; font-size: 11px;"><strong>Mileage:</strong> ${assignedCar.mileage.toLocaleString()} km</p>
-              <p style="margin: 0.08in 0; font-size: 11px;"><strong>Status:</strong> <span style="color: ${assignedCar.status === 'Available' ? '#059669' : '#6366f1'}; font-weight: bold;">${assignedCar.status}</span></p>
-            ` : '<p style="color: #6b7280; font-style: italic; font-size: 11px;">No vehicle assigned</p>'}
-          </div>
-        </div>
-        
-        ${assignedCar && (assignedCar.serviceLogs?.length || 0) > 0 ? `
-        <div style="page-break-before: always; break-before: page; padding: 0.4in 0; width: 100%; box-sizing: border-box; page-break-inside: avoid; break-inside: avoid;">
-          <h3 style="color: #374151; border-bottom: 2px solid #6366f1; padding-bottom: 0.1in; margin: 0 0 0.2in 0; font-size: 14px; font-weight: bold;">Service History</h3>
-          ${(assignedCar.serviceLogs || []).map(log => `
-            <div style="border-left: 3px solid #f97316; padding-left: 0.15in; margin-bottom: 0.15in; background: #fffaf0; padding: 0.15in; border-radius: 4px;">
-              <p style="margin: 0.05in 0; font-size: 11px;"><strong>${formatDate(log.date)}</strong> - <span style="color: #ea580c; font-weight: bold;">${log.category}</span></p>
-              <p style="margin: 0.05in 0; font-size: 10px; color: #374151;">${log.description}</p>
-              <p style="margin: 0.05in 0; font-size: 10px;"><strong>Cost:</strong> ZMK ${log.cost.toLocaleString()} | <strong>Mileage:</strong> ${log.mileage.toLocaleString()} km | <strong>By:</strong> ${log.performedBy}</p>
-            </div>
-          `).join('')}
-        </div>
-        ` : ''}
-        
-        <div style="margin-top: 0.3in; padding-top: 0.2in; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 10px;">
-          <p style="margin: 0.05in 0;">Driver Profile Report</p>
-          <p style="margin: 0.05in 0;">North Links Fleet Management System</p>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(tempDiv);
-    
     try {
-      const html2pdf = (window as any).html2pdf;
-      if (!html2pdf) {
-        alert('PDF export library not loaded. Please refresh the page and try again.');
-        return;
-      }
-      
-      await html2pdf()
-        .set({
-          margin: [0.4, 0.4, 0.4, 0.4],
-          filename: `Driver_${driver.fullName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'], avoid: ['tr'] }
-        })
-        .from(tempDiv)
-        .save();
+      const rows = drivers.map(driver => {
+        const assignedCar = cars.find(c => c.id === driver.assignedCarId);
+        return [
+          driver.fullName,
+          driver.nrcNumber,
+          driver.licenseNumber,
+          driver.status,
+          driver.accessCode || 'N/A',
+          assignedCar ? `${assignedCar.make} ${assignedCar.model} (${assignedCar.plateNumber})` : 'Unassigned',
+          driver.phone || 'Not provided',
+          driver.email || 'Not provided',
+          driver.address || 'Not provided',
+          driver.maritalStatus || 'Not provided',
+          `${driver.nextOfKinName || 'Not provided'} | ${driver.nextOfKinPhone || 'Not provided'}`,
+          driver.dateOfBirth || 'Not provided'
+        ];
+      });
+
+      downloadCsvReport(
+        `Fleet_Driver_Registry_${new Date().toISOString().split('T')[0]}.csv`,
+        ['Name', 'NRC', 'Licence Number', 'Status', 'Current Driver Code', 'Vehicle Assigned', 'Phone Number', 'Email', 'Address', 'Marital Status', 'Next of Kin (Name/Phone)', 'Date of Birth'],
+        rows
+      );
     } catch (error) {
-      console.error('PDF generation error:', error);
-      alert('Failed to generate PDF. Please try again.');
+      console.error('CSV export error:', error);
+      alert('Failed to export driver registry. Please try again.');
     } finally {
       setIsExportingPDF(false);
-      document.body.removeChild(tempDiv);
-    }
-  };
-
-  // Export all drivers PDF
-  const exportAllDriversPDF = async () => {
-    setIsExportingPDF(true);
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = `
-      <div style="padding: 0.4in 0.3in; font-family: Arial, sans-serif; width: 100%; max-width: 720px; margin: 0 auto; box-sizing: border-box; overflow: visible;">
-        <div style="text-align: center; border-bottom: 2px solid #6366f1; padding-bottom: 0.2in; margin-bottom: 0.3in;">
-          <h1 style="color: #6366f1; margin: 0; font-size: 26px; font-weight: bold;">North Links Fleet Management</h1>
-          <h2 style="color: #374151; margin: 0.15in 0 0 0; font-size: 18px;">Complete Driver Registry</h2>
-          <p style="color: #6b7280; margin: 0.1in 0 0 0; font-size: 11px;">Generated on ${formatDate(new Date())}</p>
-        </div>
-
-        ${drivers.map((driver, index) => {
-          const assignedCar = cars.find(c => c.id === driver.assignedCarId);
-          return `
-            <div style="margin-bottom: 0.2in; padding: 0.15in; border: 1px solid #e2e8f0; border-radius: 6px; background: #ffffff; ${index > 0 ? 'page-break-before: always; break-before: page; padding-top: 0.5in;' : ''}; page-break-inside: avoid; break-inside: avoid; overflow: visible;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.15in;">
-                <div style="flex: 1;">
-                  <h3 style="margin: 0; font-size: 14px; color: #111827; font-weight: bold;">${driver.fullName}</h3>
-                  <p style="margin: 0.05in 0 0 0; font-size: 11px; color: #6b7280;"><strong>License:</strong> ${driver.licenseNumber} | <strong>NRC:</strong> ${driver.nrcNumber}</p>
-                </div>
-                <span style="color: ${driver.status === 'Active' ? '#059669' : driver.status === 'Suspended' ? '#dc2626' : '#6b7280'}; font-weight: bold; font-size: 11px; background: ${driver.status === 'Active' ? '#ecfdf5' : driver.status === 'Suspended' ? '#fef2f2' : '#f3f4f6'}; padding: 0.05in 0.1in; border-radius: 3px;">${driver.status}</span>
-              </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.15in; font-size: 11px; color: #374151;">
-                <div style="background: #f8fafc; padding: 0.1in; border-radius: 4px;">
-                  <p style="margin: 0.05in 0;"><strong>Email:</strong> ${driver.email || 'Not provided'}</p>
-                  <p style="margin: 0.05in 0;"><strong>Phone:</strong> ${driver.phone || 'Not provided'}</p>
-                  <p style="margin: 0.05in 0;"><strong>Code:</strong> <span style="font-family: monospace;">${driver.accessCode || 'N/A'}</span></p>
-                </div>
-                <div style="background: #f0f9ff; padding: 0.1in; border-radius: 4px;">
-                  <p style="margin: 0.05in 0;"><strong>Vehicle:</strong> ${assignedCar ? `${assignedCar.make} ${assignedCar.model}` : 'Unassigned'}</p>
-                  <p style="margin: 0.05in 0;"><strong>Plate:</strong> ${assignedCar ? `<span style=\"font-family: monospace;\">${assignedCar.plateNumber}</span>` : '—'}</p>
-                  <p style="margin: 0.05in 0;"><strong>Mileage:</strong> ${assignedCar ? `${assignedCar.mileage.toLocaleString()} km` : '—'}</p>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('')}
-        
-        <div style="margin-top: 0.3in; padding-top: 0.2in; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 10px;">
-          <p style="margin: 0.05in 0;">Driver Registry Report — ${drivers.length} total drivers</p>
-          <p style="margin: 0.05in 0;">North Links Fleet Management System</p>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(tempDiv);
-    
-    try {
-      const html2pdf = (window as any).html2pdf;
-      if (!html2pdf) {
-        alert('PDF export library not loaded. Please refresh the page and try again.');
-        return;
-      }
-      
-      await html2pdf()
-        .set({
-          margin: [0.4, 0.4, 0.4, 0.4],
-          filename: `Fleet_Driver_Registry_${new Date().toISOString().split('T')[0]}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'], avoid: ['tr'] }
-        })
-        .from(tempDiv)
-        .save();
-    } catch (error) {
-      console.error('PDF generation error:', error);
-      alert('Failed to generate PDF. Please try again.');
-    } finally {
-      setIsExportingPDF(false);
-      document.body.removeChild(tempDiv);
     }
   };
 
@@ -276,10 +170,10 @@ export default function StaffManager({
           {/* Export All Drivers Button */}
           <div className="ml-3 border-l border-gray-200 pl-3">
             <button
-              onClick={exportAllDriversPDF}
+              onClick={exportAllDriversCSV}
               disabled={isExportingPDF}
               className="px-4 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all cursor-pointer font-sans shadow-3xs flex items-center gap-1.5"
-              title="Export Complete Driver Registry as PDF"
+              title="Export Complete Driver Registry as CSV"
               id="btn-export-all-drivers"
             >
               {isExportingPDF ? (
@@ -448,19 +342,6 @@ export default function StaffManager({
                   </div>
                   
                   <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => exportDriverPDF(drv)}
-                      disabled={isExportingPDF}
-                      className="p-2 border border-slate-200 hover:bg-green-50/40 disabled:bg-gray-50 text-slate-600 hover:text-green-600 disabled:text-gray-400 disabled:cursor-not-allowed rounded-xl transition-all cursor-pointer"
-                      title="Export Driver PDF Report"
-                      id={`btn-export-pdf-${drv.id}`}
-                    >
-                      {isExportingPDF ? (
-                        <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <FileText className="w-4 h-4" />
-                      )}
-                    </button>
                     <button
                       onClick={() => onEditDriver(drv)}
                       className="p-2 border border-slate-200 hover:bg-indigo-50/40 text-slate-600 hover:text-indigo-600 rounded-xl transition-all cursor-pointer"

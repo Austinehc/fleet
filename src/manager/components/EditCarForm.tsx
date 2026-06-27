@@ -1,5 +1,28 @@
 import { useState } from 'react';
 import { CarAsset, Driver, InsuranceLog } from '../../types';
+
+const downloadCsvReport = (filename: string, headers: string[], rows: Array<Array<string | number | null | undefined>>) => {
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map((value) => {
+      const normalized = value === null || value === undefined ? '' : String(value);
+      if (normalized.includes(',') || normalized.includes('"') || normalized.includes('\n')) {
+        return `"${normalized.replace(/"/g, '""')}"`;
+      }
+      return normalized;
+    }).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+};
 import { formatDate } from '../../lib/dateFormat';
 import { 
   Wrench, 
@@ -152,94 +175,28 @@ export default function EditCarForm({
     onSave(updatedCar, editAssignedDriverId);
   };
 
-  // Export maintenance logs as PDF
-  const exportMaintenanceLogsPDF = async (car: CarAsset) => {
+  const exportMaintenanceLogsCSV = async (car: CarAsset) => {
     setIsExportingPDF(true);
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = `
-      <div style="padding: 0.4in; font-family: Arial, sans-serif;">
-        <div style="text-align: center; border-bottom: 2px solid #ea580c; padding-bottom: 0.2in; margin-bottom: 0.25in;">
-          <h1 style="color: #ea580c; margin: 0; font-size: 24px; font-weight: bold;">North Links Fleet Management</h1>
-          <h2 style="color: #374151; margin: 0.1in 0 0 0; font-size: 16px;">Maintenance History</h2>
-          <p style="color: #6b7280; margin: 0.05in 0 0 0; font-size: 11px;">Generated on ${formatDate(new Date())}</p>
-        </div>
-        
-        ${(car.serviceLogs || []).length > 0 ? `
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 20px;">
-          <thead>
-            <tr style="background: #f97316; color: white;">
-              <th style="padding: 10px 8px; text-align: left; border: 1px solid #ea580c;">Date</th>
-              <th style="padding: 10px 8px; text-align: left; border: 1px solid #ea580c;">Category</th>
-              <th style="padding: 10px 8px; text-align: left; border: 1px solid #ea580c;">Description</th>
-              <th style="padding: 10px 8px; text-align: left; border: 1px solid #ea580c;">Mileage</th>
-              <th style="padding: 10px 8px; text-align: left; border: 1px solid #ea580c;">Performed By</th>
-              <th style="padding: 10px 8px; text-align: right; border: 1px solid #ea580c;">Cost (ZMK)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${(car.serviceLogs || []).map(log => `
-              <tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 8px; border: 1px solid #e5e7eb; font-family: monospace;">${formatDate(log.date)}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb;">
-                  <span style="background: ${
-                    log.category === 'Maintenance' ? '#dbeafe' :
-                    log.category === 'Repair' ? '#fee2e2' :
-                    log.category === 'Inspection' ? '#dcfce7' :
-                    log.category === 'Tire Service' ? '#f3e8ff' :
-                    log.category === 'Oil Change' ? '#fef3c7' :
-                    '#f1f5f9'
-                  }; color: ${
-                    log.category === 'Maintenance' ? '#1d4ed8' :
-                    log.category === 'Repair' ? '#dc2626' :
-                    log.category === 'Inspection' ? '#16a34a' :
-                    log.category === 'Tire Service' ? '#9333ea' :
-                    log.category === 'Oil Change' ? '#d97706' :
-                    '#64748b'
-                  }; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">${log.category}</span>
-                </td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb;">${log.description}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; font-family: monospace;">${log.mileage.toLocaleString()} km</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb;">${log.performedBy}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-family: monospace; font-weight: bold;">${log.cost.toLocaleString()}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        ` : '<p style="text-align: center; color: #6b7280; font-style: italic;">No maintenance records available</p>'}
-        
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
-          <p>Maintenance History Report - Generated on ${formatDate(new Date())}</p>
-          <p>North Links Fleet Management System</p>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(tempDiv);
-    
     try {
-      const html2pdf = (window as any).html2pdf;
-      if (!html2pdf) {
-        alert('PDF export library not loaded. Please refresh the page and try again.');
-        return;
-      }
-      
-      await html2pdf()
-        .set({
-          margin: [0.4, 0.4, 0.4, 0.4],
-          filename: `${car.plateNumber}_Maintenance_History_${new Date().toISOString().split('T')[0]}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'], avoid: ['tr'] }
-        })
-        .from(tempDiv)
-        .save();
+      const rows = (car.serviceLogs || []).map(log => [
+        formatDate(log.date),
+        log.category,
+        log.description,
+        log.mileage.toLocaleString(),
+        log.performedBy,
+        log.cost.toFixed(2)
+      ]);
+
+      downloadCsvReport(
+        `${car.plateNumber}_Maintenance_History_${new Date().toISOString().split('T')[0]}.csv`,
+        ['Date', 'Category', 'Description', 'Mileage', 'Performed By', 'Cost (ZMK)'],
+        rows
+      );
     } catch (error) {
-      console.error('PDF generation error:', error);
-      alert('Failed to generate PDF. Please try again.');
+      console.error('CSV export error:', error);
+      alert('Failed to export maintenance history. Please try again.');
     } finally {
       setIsExportingPDF(false);
-      document.body.removeChild(tempDiv);
     }
   };
 
@@ -527,10 +484,10 @@ export default function EditCarForm({
                         <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">Maintenance History ({(car.serviceLogs || []).length})</h4>
                         {(car.serviceLogs || []).length > 0 && (
                           <button
-                            onClick={() => exportMaintenanceLogsPDF(car)}
+                            onClick={() => exportMaintenanceLogsCSV(car)}
                             disabled={isExportingPDF}
                             className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg text-[9px] font-bold transition-all cursor-pointer uppercase flex items-center gap-1 shadow-sm select-none"
-                            title="Export Maintenance Logs as PDF"
+                            title="Export Maintenance Logs as CSV"
                           >
                             {isExportingPDF ? (
                               <>
@@ -540,7 +497,7 @@ export default function EditCarForm({
                             ) : (
                               <>
                                 <FileText className="w-3 h-3" />
-                                Export Logs
+                                Export CSV
                               </>
                             )}
                           </button>
