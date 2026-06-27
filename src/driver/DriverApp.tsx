@@ -117,6 +117,8 @@ export default function DriverApp({
     ? (cars.find(c => c.id === activeDriver.assignedCarId) || null)
     : null;
 
+  const isVehicleLocked = Boolean(assignedCar?.isDisposed || assignedCar?.status === 'Disposed');
+
   return (
     <div className="min-h-screen bg-slate-50/70 text-gray-900 font-sans flex flex-col antialiased" id="driver-app-root">
       {/* Top Banner Header - Only show when authenticated */}
@@ -247,7 +249,14 @@ export default function DriverApp({
                 {/* Right Column Component: Form / History */}
                 {assignedCar && (
                   <div className="lg:col-span-2 space-y-4 text-left" id="driver-actions-panel-col">
-                    {driverPortalTab === 'log_work' ? (
+                    {isVehicleLocked ? (
+                      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm text-left opacity-70">
+                        <h3 className="text-sm font-bold text-gray-700">Operations locked</h3>
+                        <p className="mt-2 text-xs text-gray-500">
+                          This vehicle has been disposed and is no longer active. All driver operations are disabled until a new vehicle is assigned.
+                        </p>
+                      </div>
+                    ) : driverPortalTab === 'log_work' ? (
                       <DriverLogForms
                         assignedCar={assignedCar}
                         activeDriver={activeDriver}
