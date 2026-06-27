@@ -338,7 +338,7 @@ export default function AddDriverForm({
               >
                 <option value="">-- No Car Assigned --</option>
                 {cars
-                  .filter(c => c.status === 'Available' || !drivers.some(d => d.assignedCarId === c.id))
+                  .filter(c => c.status === 'Available' && !drivers.some(d => d.assignedCarId === c.id))
                   .map(car => (
                     <option key={car.id} value={car.id} className="font-mono">
                       {car.plateNumber} ({car.make} {car.model})

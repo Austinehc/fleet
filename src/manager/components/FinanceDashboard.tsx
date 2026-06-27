@@ -916,6 +916,7 @@ export default function FinanceDashboard({
                         <th className="py-2 px-2 text-right text-orange-600">Maintenance + insurance</th>
                         <th className="py-2 px-2 text-right">Bought at</th>
                         <th className="py-2 px-2 text-right">Sold at</th>
+                        <th className="py-2 px-2 text-right">ROI %</th>
                         <th className="py-2 px-3 text-right">Net outcome</th>
                       </tr>
                     </thead>
@@ -925,7 +926,9 @@ export default function FinanceDashboard({
                         const totalMaintenance = (car.serviceLogs || []).reduce((sum, log) => sum + log.cost, 0);
                         const totalInsurance = (car.insuranceLogs || []).reduce((sum, log) => sum + log.amount, 0);
                         const totalDeductions = totalMaintenance + totalInsurance;
-                        const netOutcome = (car.salePrice || 0) - (car.purchasePrice || 0) - totalDeductions;
+                        const netOutcome = totalRevenue + (car.salePrice || 0) - ((car.purchasePrice || 0) + totalDeductions);
+                        const returnBase = (car.purchasePrice || 0) + totalDeductions;
+                        const roi = returnBase > 0 ? (netOutcome / returnBase) * 100 : 0;
 
                         return (
                           <tr key={car.id} className="hover:bg-slate-50/30 transition-colors">
@@ -944,6 +947,9 @@ export default function FinanceDashboard({
                             </td>
                             <td className="py-2 px-2 text-right font-mono font-bold text-emerald-600">
                               zmk {(car.salePrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className={`py-2 px-2 text-right font-mono font-bold ${roi >= 0 ? 'text-emerald-600' : 'text-rose-600 font-black'}`}>
+                              {roi.toFixed(2)}%
                             </td>
                             <td className={`py-2 px-3 text-right font-mono font-bold ${netOutcome >= 0 ? 'text-emerald-600' : 'text-rose-600 font-black'}`}>
                               zmk {netOutcome.toLocaleString(undefined, { minimumFractionDigits: 2 })}

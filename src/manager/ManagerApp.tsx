@@ -128,6 +128,7 @@ export default function ManagerApp({
             cars={cars}
             setCars={setCars}
             drivers={drivers}
+            setDrivers={setDrivers}
             selectedCarId={selectedCarId}
             setSelectedCarId={setSelectedCarId}
             onEditCar={setEditingCar}

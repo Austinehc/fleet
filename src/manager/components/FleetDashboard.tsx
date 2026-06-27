@@ -6,6 +6,7 @@ interface FleetDashboardProps {
   cars: CarAsset[];
   setCars: React.Dispatch<React.SetStateAction<CarAsset[]>>;
   drivers: Driver[];
+  setDrivers: React.Dispatch<React.SetStateAction<Driver[]>>;
   selectedCarId: string | null;
   setSelectedCarId: (id: string | null) => void;
   onEditCar: (car: CarAsset) => void;
@@ -19,6 +20,7 @@ export default function FleetDashboard({
   cars,
   setCars,
   drivers,
+  setDrivers,
   onEditCar
 }: FleetDashboardProps) {
   // Search state
@@ -44,6 +46,12 @@ export default function FleetDashboard({
 
     if (disposeAction === 'delete') {
       setCars(prev => prev.filter(car => car.id !== disposeTargetCar.id));
+      setDrivers(prev => prev.map(driver => {
+        if (driver.assignedCarId === disposeTargetCar.id) {
+          return { ...driver, assignedCarId: null, status: 'On Leave' as const };
+        }
+        return driver;
+      }));
       setDisposeTargetCar(null);
       setDisposeAction(null);
       setDisposeSalePrice('');
@@ -80,6 +88,13 @@ export default function FleetDashboard({
         purchasePrice: car.purchasePrice ?? 0,
         revenueLogs: [...(car.revenueLogs || []), saleLog],
       };
+    }));
+
+    setDrivers(prev => prev.map(driver => {
+      if (driver.assignedCarId === disposeTargetCar.id) {
+        return { ...driver, assignedCarId: null, status: 'On Leave' as const };
+      }
+      return driver;
     }));
 
     setDisposeTargetCar(null);
@@ -249,8 +264,8 @@ export default function FleetDashboard({
                 return (
                     <div
                     key={car.id}
-                    onClick={() => onEditCar(car)}
-                    className="group bg-white rounded-2xl border border-gray-200/75 hover:border-indigo-300 hover:shadow-xs transition-all overflow-hidden relative flex flex-col justify-between cursor-pointer"
+                    onClick={() => car.status !== 'Disposed' && onEditCar(car)}
+                    className={`group bg-white rounded-2xl border border-gray-200/75 hover:border-indigo-300 hover:shadow-xs transition-all overflow-hidden relative flex flex-col justify-between ${car.status === 'Disposed' ? 'cursor-not-allowed opacity-90' : 'cursor-pointer'}`}
                     id={`car-card-${car.id}`}
                   >
                     {/* Insurance Alert Banner */}
@@ -345,14 +360,14 @@ export default function FleetDashboard({
                           onClick={(e) => {
                             e.stopPropagation();
                             setDisposeTargetCar(car);
-                            setDisposeAction(null);
+                            setDisposeAction(car.status === 'Disposed' ? 'delete' : null);
                             setDisposeSalePrice('');
                             setDisposeError('');
                           }}
                           className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-700 hover:bg-rose-100 cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" />
-                          Dispose
+                          {car.status === 'Disposed' ? 'Delete' : 'Dispose'}
                         </button>
                       </div>
                     </div>
@@ -389,16 +404,18 @@ export default function FleetDashboard({
             </p>
 
             <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setDisposeAction('sold');
-                  setDisposeError('');
-                }}
-                className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${disposeAction === 'sold' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}
-              >
-                Mark as sold
-              </button>
+                {!disposeTargetCar?.isDisposed && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDisposeAction('sold');
+                    setDisposeError('');
+                  }}
+                  className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${disposeAction === 'sold' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}
+                >
+                  Mark as sold
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
