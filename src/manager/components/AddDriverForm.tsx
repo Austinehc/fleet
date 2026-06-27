@@ -34,11 +34,6 @@ export default function AddDriverForm({
   const [newDrvPhoto, setNewDrvPhoto] = useState<string>('');
   const [isUploadingDriverPhoto, setIsUploadingDriverPhoto] = useState(false);
 
-  const formatPhoneInput = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 9);
-    return digits ? `(+260) ${digits}` : '(+260)';
-  };
-  
   // Document uploads
   const [nrcFront, setNrcFront] = useState<string>('');
   const [nrcBack, setNrcBack] = useState<string>('');
@@ -351,7 +346,7 @@ export default function AddDriverForm({
                 type="text"
                 placeholder="(+260)"
                 value={newDrvPhone}
-                onChange={(e) => setNewDrvPhone(formatPhoneInput(e.target.value))}
+                onChange={(e) => setNewDrvPhone(e.target.value)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 id="input-drv-phone"
               />
@@ -415,7 +410,7 @@ export default function AddDriverForm({
                 type="text"
                 placeholder="(+260)"
                 value={newDrvNextOfKinPhone}
-                onChange={(e) => setNewDrvNextOfKinPhone(formatPhoneInput(e.target.value))}
+                onChange={(e) => setNewDrvNextOfKinPhone(e.target.value)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 id="input-drv-next-of-kin-phone"
               />
