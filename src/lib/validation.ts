@@ -33,7 +33,7 @@ export function validateEmail(email: string): { valid: boolean; error?: string }
 export function validatePhone(phone: string): { valid: boolean; error?: string } {
   const sanitized = sanitizeString(phone);
   
-  if (!sanitized) {
+  if (!sanitized || sanitized === '(+260)') {
     return { valid: false, error: 'Phone number is required' };
   }
   
@@ -53,9 +53,9 @@ export function validateNRCNumber(nrc: string): { valid: boolean; error?: string
     return { valid: false, error: 'NRC number is required' };
   }
   
-  const nrcRegex = /^\d{7}\/\d{2}\/\d$/;
+  const nrcRegex = /^\d{6}\/\d{2}\/\d$/;
   if (!nrcRegex.test(sanitized)) {
-    return { valid: false, error: 'NRC must be in the format XXXXXXX/XX/X' };
+    return { valid: false, error: 'NRC must be in the format XXXXXX/XX/X' };
   }
   
   return { valid: true };

@@ -32,6 +32,11 @@ export default function EditDriverForm({
   const [editDrvPhoto, setEditDrvPhoto] = useState<string>(driver.profilePicture || '');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
+  const formatPhoneInput = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 9);
+    return digits ? `(+260) ${digits}` : '(+260)';
+  };
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -234,9 +239,9 @@ export default function EditDriverForm({
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Mobile Phone No.</label>
               <input
                 type="text"
-                placeholder="(512) 555-0199"
+                placeholder="(+260)"
                 value={editDrvPhone}
-                onChange={(e) => setEditDrvPhone(e.target.value)}
+                onChange={(e) => setEditDrvPhone(formatPhoneInput(e.target.value))}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
                 id="edit-input-drv-phone"
               />
@@ -298,9 +303,9 @@ export default function EditDriverForm({
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 font-sans">Next of Kin Phone</label>
               <input
                 type="text"
-                placeholder="(+260) 955123456"
+                placeholder="(+260)"
                 value={editDrvNextOfKinPhone}
-                onChange={(e) => setEditDrvNextOfKinPhone(e.target.value)}
+                onChange={(e) => setEditDrvNextOfKinPhone(formatPhoneInput(e.target.value))}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
                 id="edit-input-drv-next-of-kin-phone"
               />

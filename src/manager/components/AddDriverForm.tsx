@@ -33,6 +33,11 @@ export default function AddDriverForm({
   const [newDrvAssignedCarId, setNewDrvAssignedCarId] = useState('');
   const [newDrvPhoto, setNewDrvPhoto] = useState<string>('');
   const [isUploadingDriverPhoto, setIsUploadingDriverPhoto] = useState(false);
+
+  const formatPhoneInput = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 9);
+    return digits ? `(+260) ${digits}` : '(+260)';
+  };
   
   // Document uploads
   const [nrcFront, setNrcFront] = useState<string>('');
@@ -352,9 +357,9 @@ export default function AddDriverForm({
               <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Mobile Phone No.</label>
               <input
                 type="text"
-                placeholder="(+260) 95123-4567"
+                placeholder="(+260)"
                 value={newDrvPhone}
-                onChange={(e) => setNewDrvPhone(e.target.value)}
+                onChange={(e) => setNewDrvPhone(formatPhoneInput(e.target.value))}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 id="input-drv-phone"
               />
@@ -416,9 +421,9 @@ export default function AddDriverForm({
               <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 font-sans">Next of Kin Phone</label>
               <input
                 type="text"
-                placeholder="(+260) 955123456"
+                placeholder="(+260)"
                 value={newDrvNextOfKinPhone}
-                onChange={(e) => setNewDrvNextOfKinPhone(e.target.value)}
+                onChange={(e) => setNewDrvNextOfKinPhone(formatPhoneInput(e.target.value))}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 id="input-drv-next-of-kin-phone"
               />
