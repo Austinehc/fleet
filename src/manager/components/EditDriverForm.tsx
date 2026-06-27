@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Driver } from '../../types';
 import { Camera, Upload } from 'lucide-react';
-import { validateEmail, validateNRCNumber, validatePhone } from '../../lib/validation';
+import { validateEmail, validateNRCNumber } from '../../lib/validation';
 
 interface EditDriverFormProps {
   driver: Driver;
@@ -88,14 +88,6 @@ export default function EditDriverForm({
       }
     }
 
-    if (editDrvPhone.trim()) {
-      const phoneValidation = validatePhone(editDrvPhone);
-      if (!phoneValidation.valid) {
-        alert(phoneValidation.error!);
-        return;
-      }
-    }
-
     const updatedDriver: Driver = {
       ...driver,
       fullName: editDrvName.trim(),
@@ -136,7 +128,7 @@ export default function EditDriverForm({
 
   return (
     <div className="fixed inset-0 z-55 bg-gray-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in" id="edit-driver-modal">
-      <div className="bg-white rounded-2xl max-w-lg w-full border border-gray-150 overflow-hidden shadow-2xl flex flex-col max-h-[90vh] md:max-h-[min(560px,85vh)]" id="edit-driver-modal-box">
+      <div className="bg-white rounded-2xl max-w-2xl w-full border border-gray-150 overflow-hidden shadow-2xl flex flex-col max-h-[90vh] md:max-h-[min(720px,85vh)]" id="edit-driver-modal-box">
         
         <div className="p-4 border-b border-gray-150 flex items-center justify-between bg-slate-50/50" id="edit-driver-hdr">
           <div className="text-left">
