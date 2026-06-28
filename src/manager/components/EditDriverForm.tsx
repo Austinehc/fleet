@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Driver } from '../../types';
 import { Camera, Upload } from 'lucide-react';
-import { validateEmail, validateNRCNumber } from '../../lib/validation';
+import { validateEmail, validateNRCNumber, validatePhone } from '../../lib/validation';
 
 interface EditDriverFormProps {
   driver: Driver;
@@ -79,6 +79,22 @@ export default function EditDriverForm({
       const emailValidation = validateEmail(editDrvEmail);
       if (!emailValidation.valid) {
         alert(emailValidation.error!);
+        return;
+      }
+    }
+
+    if (editDrvPhone.trim()) {
+      const phoneValidation = validatePhone(editDrvPhone);
+      if (!phoneValidation.valid) {
+        alert(phoneValidation.error!);
+        return;
+      }
+    }
+
+    if (editDrvNextOfKinPhone.trim()) {
+      const kinPhoneValidation = validatePhone(editDrvNextOfKinPhone);
+      if (!kinPhoneValidation.valid) {
+        alert(kinPhoneValidation.error!);
         return;
       }
     }
@@ -228,7 +244,7 @@ export default function EditDriverForm({
                 type="text"
                 placeholder="(+260)"
                 value={editDrvPhone}
-                onChange={(e) => setEditDrvPhone(e.target.value)}
+                onChange={(e) => setEditDrvPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
                 id="edit-input-drv-phone"
               />
@@ -292,7 +308,7 @@ export default function EditDriverForm({
                 type="text"
                 placeholder="(+260)"
                 value={editDrvNextOfKinPhone}
-                onChange={(e) => setEditDrvNextOfKinPhone(e.target.value)}
+                onChange={(e) => setEditDrvNextOfKinPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-505 font-medium text-gray-900"
                 id="edit-input-drv-next-of-kin-phone"
               />

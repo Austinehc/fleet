@@ -30,19 +30,39 @@ export function validateEmail(email: string): { valid: boolean; error?: string }
 }
 
 // Validate phone number
-export function validatePhone(phone: string): { valid: boolean; error?: string } {
-  const sanitized = sanitizeString(phone);
-  
-  if (!sanitized || sanitized === '(+260)') {
-    return { valid: false, error: 'Phone number is required' };
+export function validatePhone(phone: string): { valid: boolean; error?: string; value?: string } {
+  const sanitized = sanitizeString(phone).replace(/\D/g, '');
+
+  if (!sanitized) {
+    return { valid: true, value: '' };
   }
-  
-  const phoneRegex = /^\(\+260\)\s?\d{9}$/;
-  if (!phoneRegex.test(sanitized)) {
-    return { valid: false, error: 'Phone number must start with (+260) followed by 9 digits' };
+
+  if (sanitized.length > 10) {
+    return { valid: false, error: 'Phone number must not exceed 10 digits' };
   }
-  
-  return { valid: true };
+
+  if (!/^\d+$/.test(sanitized)) {
+    return { valid: false, error: 'Phone number can only contain digits 0-9' };
+  }
+
+  return { valid: true, value: sanitized };
+}
+
+// Validate vehicle plate number
+export function validatePlateNumber(plate: string): { valid: boolean; error?: string; value?: string } {
+  const sanitized = sanitizeString(plate).toUpperCase().trim();
+
+  if (!sanitized) {
+    return { valid: false, error: 'Plate number is required' };
+  }
+
+  const compact = sanitized.replace(/\s+/g, '');
+  if (!/^[A-Z]{3}\d{1,4}$/.test(compact)) {
+    return { valid: false, error: 'Plate number must be 3 letters followed by 1-4 numbers, e.g. AVC 123' };
+  }
+
+  const formatted = compact.length > 3 ? `${compact.slice(0, 3)} ${compact.slice(3)}` : compact;
+  return { valid: true, value: formatted };
 }
 
 // Validate NRC number

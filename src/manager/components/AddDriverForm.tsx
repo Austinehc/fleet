@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User, Info } from 'lucide-react';
 import { Driver, CarAsset } from '../../types';
-import { validateEmail, validateNRCNumber } from '../../lib/validation';
+import { validateEmail, validateNRCNumber, validatePhone } from '../../lib/validation';
 
 interface AddDriverFormProps {
   cars: CarAsset[];
@@ -154,6 +154,22 @@ export default function AddDriverForm({
       const emailValidation = validateEmail(newDrvEmail);
       if (!emailValidation.valid) {
         alert(emailValidation.error!);
+        return;
+      }
+    }
+
+    if (newDrvPhone.trim()) {
+      const phoneValidation = validatePhone(newDrvPhone);
+      if (!phoneValidation.valid) {
+        alert(phoneValidation.error!);
+        return;
+      }
+    }
+
+    if (newDrvNextOfKinPhone.trim()) {
+      const kinPhoneValidation = validatePhone(newDrvNextOfKinPhone);
+      if (!kinPhoneValidation.valid) {
+        alert(kinPhoneValidation.error!);
         return;
       }
     }
@@ -346,7 +362,7 @@ export default function AddDriverForm({
                 type="text"
                 placeholder="(+260)"
                 value={newDrvPhone}
-                onChange={(e) => setNewDrvPhone(e.target.value)}
+                onChange={(e) => setNewDrvPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 id="input-drv-phone"
               />
@@ -410,7 +426,7 @@ export default function AddDriverForm({
                 type="text"
                 placeholder="(+260)"
                 value={newDrvNextOfKinPhone}
-                onChange={(e) => setNewDrvNextOfKinPhone(e.target.value)}
+                onChange={(e) => setNewDrvNextOfKinPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 id="input-drv-next-of-kin-phone"
               />

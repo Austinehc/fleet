@@ -38,6 +38,7 @@ import {
   Camera,
   FileText
 } from 'lucide-react';
+import { validatePlateNumber } from '../../lib/validation';
 
 interface EditCarFormProps {
   car: CarAsset;
@@ -160,12 +161,18 @@ export default function EditCarForm({
       return;
     }
 
+    const plateValidation = validatePlateNumber(editCarPlate);
+    if (!plateValidation.valid) {
+      alert(plateValidation.error!);
+      return;
+    }
+
     const updatedCar: CarAsset = {
       ...car,
       make: editCarMake.trim(),
       model: editCarModel.trim(),
       year: Number(editCarYear),
-      plateNumber: editCarPlate.toUpperCase().trim(),
+      plateNumber: plateValidation.value!,
       color: editCarColor.trim(),
       mileage: Number(editCarMileage) || 0,
       status: editCarStatus,
@@ -772,7 +779,11 @@ export default function EditCarForm({
                       required
                       placeholder="e.g. NY-44X8"
                       value={editCarPlate}
-                      onChange={(e) => setEditCarPlate(e.target.value)}
+                      onChange={(e) => {
+                        const cleaned = e.target.value.toUpperCase().replace(/[^A-Z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+                        const compact = cleaned.replace(/\s/g, '').slice(0, 7);
+                        setEditCarPlate(compact.length > 3 ? `${compact.slice(0, 3)} ${compact.slice(3)}` : compact);
+                      }}
                       className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-gray-900 font-medium uppercase text-center"
                       id="edit-input-car-plate"
                     />

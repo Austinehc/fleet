@@ -5,7 +5,8 @@ import {
   validateVIN,  
   validateNumber, 
   sanitizeString,
-  validateDescription 
+  validateDescription,
+  validatePlateNumber 
 } from '../../lib/validation';
 
 interface AddCarFormProps {
@@ -45,6 +46,12 @@ export default function AddCarForm({
     // Basic validation
     if (!newCarMake.trim() || !newCarModel.trim() || !newCarPlate.trim() || !newCarColor.trim()) {
       alert('Please fill in all required fields (Make, Model, Plate, Color)');
+      return;
+    }
+
+    const plateValidation = validatePlateNumber(newCarPlate);
+    if (!plateValidation.valid) {
+      alert(plateValidation.error!);
       return;
     }
 
@@ -99,7 +106,7 @@ export default function AddCarForm({
       make: newCarMake.trim(),
       model: newCarModel.trim(),
       year: Number(newCarYear),
-      plateNumber: newCarPlate.trim().toUpperCase(),
+      plateNumber: plateValidation.value!,
       color: newCarColor.trim(),
       vin: newCarVin.trim().toUpperCase() || `VIN-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
       mileage: Number(newCarMileage) || 0,
@@ -221,7 +228,11 @@ export default function AddCarForm({
                 required
                 placeholder="e.g. ABC 123 or 1234"
                 value={newCarPlate}
-                onChange={(e) => setNewCarPlate(e.target.value)}
+                onChange={(e) => {
+                  const cleaned = e.target.value.toUpperCase().replace(/[^A-Z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+                  const compact = cleaned.replace(/\s/g, '').slice(0, 7);
+                  setNewCarPlate(compact.length > 3 ? `${compact.slice(0, 3)} ${compact.slice(3)}` : compact);
+                }}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-gray-850 font-medium uppercase text-center"
                 id="input-car-plate"
               />
