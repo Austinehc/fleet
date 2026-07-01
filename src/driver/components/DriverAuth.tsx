@@ -93,48 +93,27 @@ export default function DriverAuth({
     }
 
       try {
-        // Use secure PIN verification via RPC call - no local validation against stored PINs
+        // Server-side only PIN verification - no client-side driver matching
         const trimmedCode = enteredDriverCode.trim();
         
-        // Find driver first to get ID for verification
-        const matchedDriver = drivers.find(d => {
-          // Only match on active drivers for security
-          return d.status === 'Active' && d.accessCode; // Just check if they have any access code set
-        });
-        
-        if (!matchedDriver) {
-          // Record failed attempt
-          pinAttemptTracker.recordAttempt('driver_auth', false);
-          const newAttemptCount = attemptCount + 1;
-          setAttemptCount(newAttemptCount);
-
-          const remainingAttempts = AUTH_CONSTANTS.MAX_LOGIN_ATTEMPTS - newAttemptCount;
-          let errorMsg = 'No active driver found. Please contact your manager.';
-          
-          if (remainingAttempts > 0) {
-            errorMsg += ` ${remainingAttempts} attempts remaining.`;
-          } else {
-            errorMsg = 'Account temporarily locked due to multiple failed attempts.';
-            const lockoutMs = pinAttemptTracker.getRemainingLockoutTime('driver_auth');
-            setLockoutTime(lockoutMs);
-          }
-
-          setDriverLoginError(errorMsg);
-          if (triggerErrorToast) triggerErrorToast('Authentication failed');
-          return;
-        }
-
-        // Use secure PIN verification via RPC call - never validate PINs client-side
-        const authResult = await authService.authenticateDriver(matchedDriver.id, trimmedCode);
+        // Direct server-side authentication without client-side matching
+        const authResult = await authService.authenticateDriver(trimmedCode);
         
         if (authResult.success) {
           // Record successful attempt
           pinAttemptTracker.recordAttempt('driver_auth', true);
           
-          // Clear form and proceed
-          setEnteredDriverCode('');
-          setAttemptCount(0);
-          onAuthSuccess(matchedDriver.id, matchedDriver.fullName);
+          // Find driver details for UI (after successful auth)
+          const authenticatedDriver = drivers.find(d => d.id === authResult.data.driverId);
+          
+          if (authenticatedDriver) {
+            // Clear form and proceed
+            setEnteredDriverCode('');
+            setAttemptCount(0);
+            onAuthSuccess(authenticatedDriver.id, authenticatedDriver.fullName);
+          } else {
+            setDriverLoginError('Authentication successful but driver details not found. Please contact your manager.');
+          }
         } else {
           // Record failed attempt
           pinAttemptTracker.recordAttempt('driver_auth', false);
@@ -142,11 +121,11 @@ export default function DriverAuth({
           setAttemptCount(newAttemptCount);
 
           const remainingAttempts = AUTH_CONSTANTS.MAX_LOGIN_ATTEMPTS - newAttemptCount;
-          let errorMsg = authResult.error || 'Authentication failed. Please check your PIN.';
+          let errorMsg = authResult.error.message || 'Authentication failed. Please check your PIN.';
           
-          if (remainingAttempts > 0 && !authResult.error?.includes('locked')) {
+          if (remainingAttempts > 0 && !errorMsg.includes('locked')) {
             errorMsg += ` ${remainingAttempts} attempts remaining.`;
-          } else if (authResult.error?.includes('locked')) {
+          } else if (errorMsg.includes('locked')) {
             const lockoutMs = pinAttemptTracker.getRemainingLockoutTime('driver_auth');
             setLockoutTime(lockoutMs);
           }
@@ -163,9 +142,9 @@ export default function DriverAuth({
               'AUTH_FAILED',
               'medium',
               { 
-                attemptCount: newAttemptCount, 
-                driverId: matchedDriver.id,
-                hasPin: !!trimmedCode
+                attemptCount: newAttemptCount,
+                hasPin: !!trimmedCode,
+                errorType: authResult.error.type || 'unknown'
               }
             ),
             'Driver Authentication'

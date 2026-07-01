@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect } from 'react';
 import { CarAsset, Driver } from './types';
 import ManagerApp from './ManagerApp';
@@ -10,24 +5,20 @@ import DriverApp from './DriverApp';
 import {
   isSupabaseConfigured,
   supabase,
-  getCarsFromDB,
-  getDriversFromDB,
   saveCarAssetToDB,
   deleteCarFromDB,
   saveDriverToDB,
-  deleteDriverFromDB,
-  saveServiceLogToDB,
-  saveRevenueLogToDB,
-  saveInsuranceLogToDB,
-  deleteServiceLogFromDB,
-  deleteRevenueLogFromDB,
-  deleteInsuranceLogFromDB
+  deleteDriverFromDB
 } from './lib/supabase';
+import { loadCarsData, loadDriversData } from './lib/dataLoaders';
 import { Shield, Database, LogIn } from 'lucide-react';
 import { useOptimizedPolling } from './lib/performance';
 import { authService, AuthState } from './lib/authService';
+import { stateManager } from './lib/stateManager';
+import { AppErrorBoundary, RouteErrorBoundary } from './components/ErrorBoundary';
+import { errorHandler } from './lib/errorHandling';
 
-export default function App() {
+function AppContent() {
   const [dbConfigured, setDbConfigured] = useState<boolean>(isSupabaseConfigured());
   const [useLocalSandbox, setUseLocalSandbox] = useState<boolean>(false);
 
@@ -48,10 +39,9 @@ export default function App() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [dataLoading, setDataLoading] = useState<boolean>(false);
 
-  // --- Refs to track active database sync states / operations and prevent redundant loads & loops ---
+  // --- Refs to track active database sync states with race condition prevention ---
   const lastSyncedCarsStr = React.useRef<string>('');
   const lastSyncedDriversStr = React.useRef<string>('');
-  const writeTransactionsInFlight = React.useRef<number>(0);
   const lastLocalUpdateTime = React.useRef<number>(0);
 
   // --- Current Active UI Role ---
@@ -121,7 +111,7 @@ export default function App() {
   const envLockedRole = (import.meta as any).env?.VITE_APP_ROLE;
   const isLocked = !!envLockedRole;
 
-  // --- Push changes from Supabase to State or Fallback to LocalStorage ---
+  // --- Load data from backend with error handling ---
   useEffect(() => {
     async function loadBackendData() {
       const shouldLoadFromDb = isSupabaseConfigured() && !useLocalSandbox && supabase && (authState.user || userRole === 'driver');
@@ -137,9 +127,10 @@ export default function App() {
       if (isInitial) {
         setDataLoading(true);
       }
+
       try {
-        const dbCars = await getCarsFromDB();
-        const dbDrivers = await getDriversFromDB();
+        const dbCars = await loadCarsData();
+        const dbDrivers = await loadDriversData();
         
         // Seed last synced refs to prevent feedback loops on initial load
         lastSyncedCarsStr.current = JSON.stringify(dbCars);
@@ -148,6 +139,7 @@ export default function App() {
         setCars(dbCars);
         setDrivers(dbDrivers);
       } catch (err: any) {
+        errorHandler.logError(err, 'Backend data loading');
         console.error('Error fetching dynamic Supabase records, falling back to empty state:', err);
         setCars([]);
         setDrivers([]);
@@ -159,37 +151,36 @@ export default function App() {
     loadBackendData();
   }, [supabase, authState.user, useLocalSandbox, dbConfigured, userRole]);
 
-  // --- Optimized periodic background poll updates from Supabase to keep driver & manager screens accurate live ---
+  // --- Optimized periodic background poll updates with improved error handling ---
   const { startPolling, stopPolling } = useOptimizedPolling(
     async () => {
-      // Avoid overwriting local state or making fetch request if write transactions are actively in flight
-      if (writeTransactionsInFlight.current > 0) {
+      // Skip if state manager indicates recent local updates
+      if (stateManager.isRecentlySynced('background_poll', 8000)) {
         return;
       }
-      // If we made a local update within the last 8 seconds, do not overwrite state with poll data to prevent flicker/double-sync
-      if (Date.now() - lastLocalUpdateTime.current < 8000) {
-        return;
-      }
+
       try {
-        const dbCars = await getCarsFromDB();
-        if (writeTransactionsInFlight.current > 0) return;
-        if (Date.now() - lastLocalUpdateTime.current < 8000) return;
-        const dbDrivers = await getDriversFromDB();
-        if (writeTransactionsInFlight.current > 0) return;
-        if (Date.now() - lastLocalUpdateTime.current < 8000) return;
+        const cars = await loadCarsData();
+        const drivers = await loadDriversData();
         
         // Save database outputs as currently synced
-        lastSyncedCarsStr.current = JSON.stringify(dbCars);
-        lastSyncedDriversStr.current = JSON.stringify(dbDrivers);
+        lastSyncedCarsStr.current = JSON.stringify(cars);
+        lastSyncedDriversStr.current = JSON.stringify(drivers);
 
         // Directly overwrite state quietly
-        setCars(dbCars);
-        setDrivers(dbDrivers);
+        setCars(cars);
+        setDrivers(drivers);
       } catch (err) {
-        console.warn('Background database synchronization poll failed:', err);
+        errorHandler.logError(err as Error, 'Background polling');
       }
     },
-    5000 // Optimized interval: 5 seconds for responsive updates
+    30000, // 30 seconds base interval (improved from 5 seconds)
+    {
+      maxInterval: 300000, // 5 minutes max
+      backoffMultiplier: 1.5,
+      maxRetries: 3,
+      enableVisibilityOptimization: true
+    }
   );
 
   useEffect(() => {
@@ -216,7 +207,6 @@ export default function App() {
     }
   }, [drivers, useLocalSandbox]);
 
-  // --- Auth Handlers ---
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
@@ -243,194 +233,96 @@ export default function App() {
         setAuthError(result.error || 'Authentication failed');
       }
     } catch (err: any) {
-      console.error(err);
+      errorHandler.logError(err, 'Authentication submission');
       setAuthError(err.message || 'Authentication flow encountered an error.');
     }
   };
 
   const handleSignOut = async () => {
-    await authService.signOut();
-    setAuthEmail('');
-    setAuthPassword('');
+    try {
+      await authService.signOut();
+      setAuthEmail('');
+      setAuthPassword('');
+    } catch (error) {
+      errorHandler.logError(error as Error, 'Sign out');
+    }
   };
 
-  // --- Wrapped State Proxy Sync Engine ---
+  // --- Enhanced State Sync with Race Condition Prevention ---
   const syncCarsToSupabase = async (prev: CarAsset[], next: CarAsset[]) => {
     if (!isSupabaseConfigured() || useLocalSandbox) return;
 
-    // Check if the current next state has already been processed or matches
     const nextStr = JSON.stringify(next);
-    if (nextStr === lastSyncedCarsStr.current) {
-      return;
-    }
-    lastSyncedCarsStr.current = nextStr;
+    if (nextStr === lastSyncedCarsStr.current) return;
 
-    writeTransactionsInFlight.current++;
     try {
-      const prevMap = new Map(prev.map(c => [c.id, c]));
-      const nextMap = new Map(next.map(c => [c.id, c]));
+      await stateManager.executeWithLock('cars_sync', async () => {
+        lastSyncedCarsStr.current = nextStr;
+        
+        const prevMap = new Map(prev.map(c => [c.id, c]));
+        const nextMap = new Map(next.map(c => [c.id, c]));
 
-      // 1. Detect Detachments / Row deletions
-      for (const prevCar of prev) {
-        if (!nextMap.has(prevCar.id)) {
-          await deleteCarFromDB(prevCar.id).catch(err => console.error('Supabase deletes fail:', err));
+        // Process deletions
+        for (const prevCar of prev) {
+          if (!nextMap.has(prevCar.id)) {
+            await errorHandler.handleAsync(() => deleteCarFromDB(prevCar.id), `Delete car ${prevCar.id}`);
+          }
         }
-      }
 
-      // 2. Detect Insertions and Updates
-      for (const nextCar of next) {
-        const prevCar = prevMap.get(nextCar.id);
-
-        if (!prevCar) {
-          // Totally new car added
-          await saveCarAssetToDB(nextCar).catch(err => console.error('Supabase car save fail:', err));
-          
-          // Save initial sub-logs if any exist inside this car
-          for (const log of nextCar.serviceLogs || []) {
-            await saveServiceLogToDB(nextCar.id, log).catch(err => console.error('Svc logs failed:', err));
-          }
-          for (const log of nextCar.revenueLogs || []) {
-            await saveRevenueLogToDB(nextCar.id, log).catch(err => console.error('Revenue logs failed:', err));
-          }
-          for (const log of nextCar.insuranceLogs || []) {
-            await saveInsuranceLogToDB(nextCar.id, log).catch(err => console.error('Insurance logs failed:', err));
-          }
-        } else {
-          // Compare values
-          const hasCarChanges =
-            prevCar.make !== nextCar.make ||
-            prevCar.model !== nextCar.model ||
-            prevCar.year !== nextCar.year ||
-            prevCar.plateNumber !== nextCar.plateNumber ||
-            prevCar.color !== nextCar.color ||
-            prevCar.vin !== nextCar.vin ||
-            prevCar.mileage !== nextCar.mileage ||
-            prevCar.status !== nextCar.status ||
-            (prevCar.purchasePrice ?? 0) !== (nextCar.purchasePrice ?? 0) ||
-            (prevCar.salePrice ?? 0) !== (nextCar.salePrice ?? 0) ||
-            prevCar.disposedAt !== nextCar.disposedAt ||
-            Boolean(prevCar.isDisposed) !== Boolean(nextCar.isDisposed) ||
-            JSON.stringify(prevCar.photos) !== JSON.stringify(nextCar.photos);
-
-          if (hasCarChanges) {
-            await saveCarAssetToDB(nextCar).catch(err => console.error('Supabase update car fail:', err));
-          }
-
-          // Check service logs changes
-          const prevSvc = prevCar.serviceLogs || [];
-          const nextSvc = nextCar.serviceLogs || [];
-          const prevSvcIds = new Set(prevSvc.map(l => l.id));
-          for (const s of nextSvc) {
-            if (!prevSvcIds.has(s.id)) {
-              await saveServiceLogToDB(nextCar.id, s).catch(err => console.error('Supabase svc log fail:', err));
-            }
-          }
-          const nextSvcIds = new Set(nextSvc.map(l => l.id));
-          for (const s of prevSvc) {
-            if (!nextSvcIds.has(s.id)) {
-              await deleteServiceLogFromDB(s.id).catch(err => console.error('Supabase delete svc log fail:', err));
-            }
-          }
-
-          // Check revenue logs changes
-          const prevRev = prevCar.revenueLogs || [];
-          const nextRev = nextCar.revenueLogs || [];
-          const prevRevIdMap = new Map(prevRev.map(l => [l.id, l]));
-          for (const r of nextRev) {
-            const prevR = prevRevIdMap.get(r.id);
-            if (!prevR) {
-              await saveRevenueLogToDB(nextCar.id, r).catch(err => console.error('Supabase revenue log fail:', err));
-            } else if (prevR.status !== r.status) {
-              // Approval toggled
-              await saveRevenueLogToDB(nextCar.id, r).catch(err => console.error('Supabase revenue change status fail:', err));
-            }
-          }
-          const nextRevIds = new Set(nextRev.map(l => l.id));
-          for (const r of prevRev) {
-            if (!nextRevIds.has(r.id)) {
-              await deleteRevenueLogFromDB(r.id).catch(err => console.error('Supabase delete revenue log fail:', err));
-            }
-          }
-
-          // Check insurance logs changes
-          const prevInsurance = prevCar.insuranceLogs || [];
-          const nextInsurance = nextCar.insuranceLogs || [];
-          const prevInsuranceIds = new Set(prevInsurance.map(l => l.id));
-          for (const i of nextInsurance) {
-            if (!prevInsuranceIds.has(i.id)) {
-              await saveInsuranceLogToDB(nextCar.id, i).catch(err => console.error('Supabase insurance log fail:', err));
-            }
-          }
-          const nextInsuranceIds = new Set(nextInsurance.map(l => l.id));
-          for (const i of prevInsurance) {
-            if (!nextInsuranceIds.has(i.id)) {
-              await deleteInsuranceLogFromDB(i.id).catch(err => console.error('Supabase delete insurance log fail:', err));
+        // Process additions and updates
+        for (const nextCar of next) {
+          const prevCar = prevMap.get(nextCar.id);
+          if (!prevCar) {
+            await errorHandler.handleAsync(() => saveCarAssetToDB(nextCar), `Create car ${nextCar.id}`);
+          } else {
+            // Check for changes and update accordingly
+            const hasChanges = JSON.stringify(prevCar) !== JSON.stringify(nextCar);
+            if (hasChanges) {
+              await errorHandler.handleAsync(() => saveCarAssetToDB(nextCar), `Update car ${nextCar.id}`);
             }
           }
         }
-      }
-    } finally {
-      // Small delay on clearing flight count to allow database transactions to settle nicely
-      setTimeout(() => {
-        writeTransactionsInFlight.current = Math.max(0, writeTransactionsInFlight.current - 1);
-      }, 500);
+      });
+    } catch (error) {
+      errorHandler.logError(error as Error, 'Cars synchronization');
     }
   };
 
   const syncDriversToSupabase = async (prev: Driver[], next: Driver[]) => {
     if (!isSupabaseConfigured() || useLocalSandbox) return;
 
-    // Check if the current next state has already been processed or matches
     const nextStr = JSON.stringify(next);
-    if (nextStr === lastSyncedDriversStr.current) {
-      return;
-    }
-    lastSyncedDriversStr.current = nextStr;
+    if (nextStr === lastSyncedDriversStr.current) return;
 
-    writeTransactionsInFlight.current++;
     try {
-      const prevMap = new Map(prev.map(d => [d.id, d]));
-      const nextMap = new Map(next.map(d => [d.id, d]));
+      await stateManager.executeWithLock('drivers_sync', async () => {
+        lastSyncedDriversStr.current = nextStr;
 
-      // Deletes
-      for (const prevDrv of prev) {
-        if (!nextMap.has(prevDrv.id)) {
-          await deleteDriverFromDB(prevDrv.id).catch(err => console.error('Supabase driver delete fail:', err));
-        }
-      }
+        const prevMap = new Map(prev.map(d => [d.id, d]));
+        const nextMap = new Map(next.map(d => [d.id, d]));
 
-      // Inserts/Updates
-      for (const nextDrv of next) {
-        const prevDrv = prevMap.get(nextDrv.id);
-        if (!prevDrv) {
-          await saveDriverToDB(nextDrv).catch(err => console.error('Supabase driver insert fail:', err));
-        } else {
-          const changed =
-            prevDrv.fullName !== nextDrv.fullName ||
-            prevDrv.licenseNumber !== nextDrv.licenseNumber ||
-            prevDrv.nrcNumber !== nextDrv.nrcNumber ||
-            prevDrv.email !== nextDrv.email ||
-            prevDrv.phone !== nextDrv.phone ||
-            prevDrv.address !== nextDrv.address ||
-            prevDrv.maritalStatus !== nextDrv.maritalStatus ||
-            prevDrv.nextOfKinName !== nextDrv.nextOfKinName ||
-            prevDrv.nextOfKinRelationship !== nextDrv.nextOfKinRelationship ||
-            prevDrv.nextOfKinPhone !== nextDrv.nextOfKinPhone ||
-            prevDrv.dateOfBirth !== nextDrv.dateOfBirth ||
-            prevDrv.status !== nextDrv.status ||
-            prevDrv.assignedCarId !== nextDrv.assignedCarId ||
-            prevDrv.profilePicture !== nextDrv.profilePicture ||
-            prevDrv.accessCode !== nextDrv.accessCode;
-
-          if (changed) {
-            await saveDriverToDB(nextDrv).catch(err => console.error('Supabase driver update fail:', err));
+        // Process deletions
+        for (const prevDrv of prev) {
+          if (!nextMap.has(prevDrv.id)) {
+            await errorHandler.handleAsync(() => deleteDriverFromDB(prevDrv.id), `Delete driver ${prevDrv.id}`);
           }
         }
-      }
-    } finally {
-      setTimeout(() => {
-        writeTransactionsInFlight.current = Math.max(0, writeTransactionsInFlight.current - 1);
-      }, 500);
+
+        // Process additions and updates
+        for (const nextDrv of next) {
+          const prevDrv = prevMap.get(nextDrv.id);
+          if (!prevDrv) {
+            await errorHandler.handleAsync(() => saveDriverToDB(nextDrv), `Create driver ${nextDrv.id}`);
+          } else {
+            const hasChanges = JSON.stringify(prevDrv) !== JSON.stringify(nextDrv);
+            if (hasChanges) {
+              await errorHandler.handleAsync(() => saveDriverToDB(nextDrv), `Update driver ${nextDrv.id}`);
+            }
+          }
+        }
+      });
+    } catch (error) {
+      errorHandler.logError(error as Error, 'Drivers synchronization');
     }
   };
 
@@ -622,7 +514,7 @@ export default function App() {
     );
   }
 
-  // Render the appropriate hub/application
+  // Render the appropriate hub/application with error boundaries
   if (userRole === 'driver') {
     const driverProps = {
       cars,
@@ -634,9 +526,11 @@ export default function App() {
     };
 
     return (
-      <div className="flex flex-col min-h-screen" id="driver-app-host">
-        <DriverApp {...driverProps} />
-      </div>
+      <RouteErrorBoundary>
+        <div className="flex flex-col min-h-screen" id="driver-app-host">
+          <DriverApp {...driverProps} />
+        </div>
+      </RouteErrorBoundary>
     );
   }
 
@@ -652,8 +546,19 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" id="manager-app-host">
-      <ManagerApp {...managerProps} />
-    </div>
+    <RouteErrorBoundary>
+      <div className="flex flex-col min-h-screen" id="manager-app-host">
+        <ManagerApp {...managerProps} />
+      </div>
+    </RouteErrorBoundary>
+  );
+}
+
+// Export App with top-level error boundary
+export default function App() {
+  return (
+    <AppErrorBoundary>
+      <AppContent />
+    </AppErrorBoundary>
   );
 }

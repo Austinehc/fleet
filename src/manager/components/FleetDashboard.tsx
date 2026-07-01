@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SlidersHorizontal, Search, AlertTriangle, User, Gauge, Edit, Car, Trash2 } from 'lucide-react';
 import { CarAsset, Driver } from '../../types';
+import { createSafeCar, createSafeDriver, safeFind } from '../../lib/typeSafety';
 
 interface FleetDashboardProps {
   cars: CarAsset[];
@@ -252,29 +253,21 @@ export default function FleetDashboard({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="vehicles-grid">
             {filteredCars.length > 0 ? (
               filteredCars.map((car) => {
-                const driverAssigned = drivers.find(d => d.assignedCarId === car.id);
+                // Use type-safe car wrapper
+                const safeCar = createSafeCar(car);
+                const driverAssigned = safeFind(drivers, d => d.assignedCarId === car.id);
+                const safeDriver = createSafeDriver(driverAssigned);
                 
-                // Check for expiring insurance
-                const insuranceLogs = car.insuranceLogs || [];
-                const now = new Date();
-                const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-                
-                const expiringInsurance = insuranceLogs.filter(log => {
-                  const expiryDate = new Date(log.expiryDate);
-                  return expiryDate > now && expiryDate <= thirtyDaysFromNow;
-                });
-                
-                const expiredInsurance = insuranceLogs.filter(log => {
-                  const expiryDate = new Date(log.expiryDate);
-                  return expiryDate <= now;
-                });
+                // Check for expiring insurance using safe methods
+                const expiringInsurance = safeCar.getExpiringInsurance(30);
+                const expiredInsurance = safeCar.getExpiredInsurance();
                 
                 return (
                     <div
-                    key={car.id}
+                    key={safeCar.id}
                     onClick={() => car.status !== 'Disposed' && onEditCar(car)}
                     className={`group bg-white rounded-2xl border border-gray-200/75 hover:border-indigo-300 hover:shadow-xs transition-all overflow-hidden relative flex flex-col justify-between ${car.status === 'Disposed' ? 'cursor-not-allowed opacity-90' : 'cursor-pointer'}`}
-                    id={`car-card-${car.id}`}
+                    id={`car-card-${safeCar.id}`}
                   >
                     {/* Insurance Alert Banner */}
                     {(expiredInsurance.length > 0 || expiringInsurance.length > 0) && (
@@ -297,11 +290,11 @@ export default function FleetDashboard({
                       </div>
                     )}
                     {/* Picture Header (Renders uploaded vehicle photo or elegant fallback) */}
-                    <div className="h-32 bg-slate-50 relative overflow-hidden shrink-0 border-b border-gray-100" id={`card-pic-${car.id}`}>
-                      {car.photos && car.photos.length > 0 ? (
+                    <div className="h-32 bg-slate-50 relative overflow-hidden shrink-0 border-b border-gray-100" id={`card-pic-${safeCar.id}`}>
+                      {safeCar.hasPhotos ? (
                         <img
-                          src={car.photos[0]}
-                          alt={`${car.make} ${car.model}`}
+                          src={safeCar.primaryPhoto!}
+                          alt={safeCar.displayName}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           referrerPolicy="no-referrer"
                         />
@@ -314,16 +307,16 @@ export default function FleetDashboard({
                       
                       {/* Floating badgifiers */}
                       <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10 select-none">
-                        <span className="bg-white/95 backdrop-blur-xs border border-gray-250 text-gray-805 font-mono font-bold text-[9px] px-1.5 py-0.5 rounded shadow-3xs uppercase" id={`plate-lbl-${car.id}`}>
-                          {car.plateNumber}
+                        <span className="bg-white/95 backdrop-blur-xs border border-gray-250 text-gray-805 font-mono font-bold text-[9px] px-1.5 py-0.5 rounded shadow-3xs uppercase" id={`plate-lbl-${safeCar.id}`}>
+                          {safeCar.plateNumber}
                         </span>
                         <span className={`text-[8px] font-black tracking-wide px-2 py-0.5 rounded-full uppercase shadow-3xs ${
-                          car.status === 'Available' ? 'bg-emerald-500 text-white' :
-                          car.status === 'Assigned' ? 'bg-indigo-600 text-white' :
-                          car.status === 'Maintenance' ? 'bg-amber-500 text-white' :
+                          safeCar.status === 'Available' ? 'bg-emerald-500 text-white' :
+                          safeCar.status === 'Assigned' ? 'bg-indigo-600 text-white' :
+                          safeCar.status === 'Maintenance' ? 'bg-amber-500 text-white' :
                           'bg-rose-500 text-white'
-                        }`} id={`status-tag-${car.id}`}>
-                          {car.status}
+                        }`} id={`status-tag-${safeCar.id}`}>
+                          {safeCar.status}
                         </span>
                       </div>
 
@@ -334,32 +327,32 @@ export default function FleetDashboard({
                     </div>
 
                     {/* Card Content Box */}
-                    <div className="p-4 flex-1 flex flex-col justify-between text-left" id={`card-body-${car.id}`}>
+                    <div className="p-4 flex-1 flex flex-col justify-between text-left" id={`card-body-${safeCar.id}`}>
                       <div>
-                        <div className="flex items-center justify-between" id={`card-title-row-${car.id}`}>
+                        <div className="flex items-center justify-between" id={`card-title-row-${safeCar.id}`}>
                           <h3 className="font-extrabold text-gray-950 group-hover:text-indigo-600 transition-colors text-sm truncate uppercase tracking-tight">
-                            {car.make} {car.model}
+                            {safeCar.make} {safeCar.model}
                           </h3>
-                          <span className="text-xs font-mono text-gray-400 font-bold">{car.year}</span>
+                          <span className="text-xs font-mono text-gray-400 font-bold">{safeCar.year}</span>
                         </div>
-                        <p className="text-[11px] text-gray-550 mt-1 flex items-center gap-1 bg-slate-50 py-1 px-1.5 rounded" id={`card-details-row-${car.id}`}>
+                        <p className="text-[11px] text-gray-550 mt-1 flex items-center gap-1 bg-slate-50 py-1 px-1.5 rounded" id={`card-details-row-${safeCar.id}`}>
                           <Gauge className="w-3.5 h-3.5 text-gray-400" />
-                          <span className="font-mono font-bold">{car.mileage.toLocaleString()} km</span>
+                          <span className="font-mono font-bold">{safeCar.mileage.toLocaleString()} km</span>
                           <span className="text-gray-300">|</span>
-                          <span className="font-mono text-gray-450 text-[10px] truncate max-w-[120px]">VIN: {car.vin.substring(0, 10)}...</span>
+                          <span className="font-mono text-gray-450 text-[10px] truncate max-w-[120px]">VIN: {safeCar.vin.substring(0, 10)}...</span>
                         </p>
                       </div>
 
                       {/* Driver assignment footer */}
-                      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2" id={`card-driver-sec-${car.id}`}>
-                        <div className="flex items-center gap-2 text-left" id={`driver-meta-${car.id}`}>
-                          <div className={`p-1.5 rounded-lg ${driverAssigned ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-400'}`}>
+                      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2" id={`card-driver-sec-${safeCar.id}`}>
+                        <div className="flex items-center gap-2 text-left" id={`driver-meta-${safeCar.id}`}>
+                          <div className={`p-1.5 rounded-lg ${safeDriver.isActive && safeDriver.hasAssignedCar ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-400'}`}>
                             <User className="w-3.5 h-3.5" />
                           </div>
                           <div className="text-left font-sans">
                             <p className="text-[9px] uppercase tracking-wide font-bold text-gray-400">Driver Assignment</p>
                             <p className="text-xs font-extrabold text-gray-800 line-clamp-1 font-sans">
-                              {driverAssigned ? driverAssigned.fullName : 'No Driver Assigned'}
+                              {safeDriver.fullName || 'No Driver Assigned'}
                             </p>
                           </div>
                         </div>
@@ -368,7 +361,7 @@ export default function FleetDashboard({
                           onClick={(e) => {
                             e.stopPropagation();
                             setDisposeTargetCar(car);
-                            setDisposeAction(car.status === 'Disposed' ? 'delete' : null);
+                            setDisposeAction(safeCar.isDisposed ? 'delete' : null);
                             setDisposeSalePrice('');
                             setDisposeError('');
                             setDeleteExportConfirmed(false);
@@ -376,7 +369,7 @@ export default function FleetDashboard({
                           className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-700 hover:bg-rose-100 cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" />
-                          {car.status === 'Disposed' ? 'Delete' : 'Dispose'}
+                          {safeCar.isDisposed ? 'Delete' : 'Dispose'}
                         </button>
                       </div>
                     </div>

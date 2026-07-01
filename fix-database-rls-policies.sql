@@ -17,8 +17,6 @@ DROP POLICY IF EXISTS "Managers can manage service logs" ON public.service_logs;
 DROP POLICY IF EXISTS "Drivers can view own car service logs" ON public.service_logs;
 DROP POLICY IF EXISTS "Managers can manage revenue logs" ON public.revenue_logs;
 DROP POLICY IF EXISTS "Drivers can view/create own revenue logs" ON public.revenue_logs;
-DROP POLICY IF EXISTS "Managers can manage fuel logs" ON public.fuel_logs;
-DROP POLICY IF EXISTS "Drivers can view/create own fuel logs" ON public.fuel_logs;
 DROP POLICY IF EXISTS "Managers can manage driver auth" ON public.driver_auth;
 DROP POLICY IF EXISTS "Drivers can verify own PIN" ON public.driver_auth;
 DROP POLICY IF EXISTS "Managers can view audit logs" ON public.audit_logs;
@@ -32,8 +30,6 @@ DROP POLICY IF EXISTS "Allow read access of service_logs to all" ON public.servi
 DROP POLICY IF EXISTS "Allow write access of service_logs to all" ON public.service_logs;
 DROP POLICY IF EXISTS "Allow read access of revenue_logs to all" ON public.revenue_logs;
 DROP POLICY IF EXISTS "Allow write access of revenue_logs to all" ON public.revenue_logs;
-DROP POLICY IF EXISTS "Allow read access of fuel_logs to all" ON public.fuel_logs;
-DROP POLICY IF EXISTS "Allow write access of fuel_logs to all" ON public.fuel_logs;
 DROP POLICY IF EXISTS "Allow read access of insurance_logs to all" ON public.insurance_logs;
 DROP POLICY IF EXISTS "Allow write access of insurance_logs to all" ON public.insurance_logs;
 
@@ -146,35 +142,8 @@ CREATE POLICY "Drivers can manage own revenue logs only" ON public.revenue_logs
         )
     );
 
--- Fuel logs: Managers full access, drivers can only manage own car logs
-CREATE POLICY "Managers can manage fuel logs" ON public.fuel_logs
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.user_profiles 
-            WHERE auth_user_id = auth.uid() AND role = 'manager'
-        )
-    );
 
-CREATE POLICY "Drivers can manage own car fuel logs only" ON public.fuel_logs
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.drivers d
-            JOIN public.user_profiles up ON up.email = d.email
-            WHERE up.auth_user_id = auth.uid() 
-            AND up.role = 'driver'
-            AND d.assigned_car_id = fuel_logs.car_id
-            AND d.status = 'Active'
-        )
-    );
 
--- Insurance logs: Only managers can manage
-CREATE POLICY "Managers can manage insurance logs" ON public.insurance_logs
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.user_profiles 
-            WHERE auth_user_id = auth.uid() AND role = 'manager'
-        )
-    );
 
 -- Driver auth: Only managers can manage, system can verify PINs
 CREATE POLICY "Managers can manage driver auth" ON public.driver_auth

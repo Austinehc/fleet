@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Info } from 'lucide-react';
-import { Driver, CarAsset } from '../../types';
+import { Driver, CarAsset, DriverInput } from '../../types';
 import { validateEmail, validateNRCNumber, validatePhone } from '../../lib/validation';
 
 interface AddDriverFormProps {
@@ -177,7 +177,7 @@ export default function AddDriverForm({
     const newDriverId = `driver-${Date.now()}`;
     const code = generateAccessCode();
 
-    const createdDriver: Driver = {
+    const createdDriver: DriverInput = {
       id: newDriverId,
       fullName: newDrvName,
       licenseNumber: newDrvLicense.toUpperCase(),
@@ -227,7 +227,7 @@ export default function AddDriverForm({
     }
 
     // Update state
-    setDrivers(prev => [createdDriver, ...prev]);
+    setDrivers(prev => [createdDriver as Driver, ...prev]);
 
     alert(`Staff Profile Created For ${createdDriver.fullName}!\n\n🔑 Generated 6-digit access code: ${code}\n\nDeliver this secure access key to the driver. They will use this code on the Driver Station login.`);
 

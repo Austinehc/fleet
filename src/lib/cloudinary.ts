@@ -1,13 +1,15 @@
 // Cloudinary Client Direct Unsigned Uploads Helper
+import { getOptionalEnvVar } from './typeGuards';
+
 export const isCloudinaryConfigured = (): boolean => {
-  const cloudName = (import.meta as any).env?.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = (import.meta as any).env?.VITE_CLOUDINARY_UPLOAD_PRESET;
+  const cloudName = getOptionalEnvVar('VITE_CLOUDINARY_CLOUD_NAME');
+  const uploadPreset = getOptionalEnvVar('VITE_CLOUDINARY_UPLOAD_PRESET');
   return !!(cloudName && uploadPreset && cloudName.indexOf('placeholder') === -1);
 };
 
 export async function uploadToCloudinary(base64OrBlob: string): Promise<string> {
-  const cloudName = (import.meta as any).env?.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = (import.meta as any).env?.VITE_CLOUDINARY_UPLOAD_PRESET;
+  const cloudName = getOptionalEnvVar('VITE_CLOUDINARY_CLOUD_NAME');
+  const uploadPreset = getOptionalEnvVar('VITE_CLOUDINARY_UPLOAD_PRESET');
 
   if (!isCloudinaryConfigured()) {
     console.warn('Cloudinary is not configured. Keeping file in local state mode.');

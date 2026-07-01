@@ -7,7 +7,7 @@ import { ERROR_MESSAGES } from './constants';
 export interface AppError {
   code: string;
   message: string;
-  details?: any;
+  details?: Record<string, unknown> | undefined;
   timestamp: number;
   stack: string;
 }
@@ -18,13 +18,13 @@ export class FleetError extends Error {
   public readonly code: string;
   public readonly severity: ErrorSeverity;
   public readonly timestamp: number;
-  public readonly details?: any;
+  public readonly details?: Record<string, unknown> | undefined;
 
   constructor(
     message: string,
     code: string = 'UNKNOWN_ERROR',
     severity: ErrorSeverity = 'medium',
-    details?: any
+    details?: Record<string, unknown> | undefined
   ) {
     super(message);
     this.name = 'FleetError';
@@ -44,7 +44,7 @@ class ErrorHandler {
     const appError: AppError = {
       code: error instanceof FleetError ? error.code : 'UNKNOWN_ERROR',
       message: error.message,
-      details: error instanceof FleetError ? error.details : { context },
+      details: error instanceof FleetError ? error.details : (context ? { context } : undefined),
       timestamp: Date.now(),
       stack: error.stack || '',
     };

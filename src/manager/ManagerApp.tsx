@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CarAsset, Driver } from '../types';
+import { CarAsset, Driver, DriverInput } from '../types';
 import { initializeSessionManager, clearSessionTimer } from '../lib/sessionManager';
 import ManagerHeader from './components/ManagerHeader';
 import FleetDashboard from './components/FleetDashboard';
@@ -65,8 +65,33 @@ export default function ManagerApp({
   // Fleet dashboard highlight car selection
   const [selectedCarId, setSelectedCarId] = useState<string | null>(null);
 
-  const handleUpdateDriver = (updatedDrv: Driver) => {
-    setDrivers(prev => prev.map(d => d.id === updatedDrv.id ? updatedDrv : d));
+  const handleUpdateDriver = (updatedDrv: DriverInput) => {
+    // Convert DriverInput to Driver for the state
+    const driverData: Driver = {
+      id: updatedDrv.id || '',
+      fullName: updatedDrv.fullName,
+      licenseNumber: updatedDrv.licenseNumber,
+      nrcNumber: updatedDrv.nrcNumber,
+      email: updatedDrv.email,
+      phone: updatedDrv.phone,
+      address: updatedDrv.address || '',
+      maritalStatus: updatedDrv.maritalStatus || '',
+      nextOfKinName: updatedDrv.nextOfKinName || '',
+      nextOfKinRelationship: updatedDrv.nextOfKinRelationship || '',
+      nextOfKinPhone: updatedDrv.nextOfKinPhone || '',
+      dateOfBirth: updatedDrv.dateOfBirth || '',
+      status: updatedDrv.status,
+      assignedCarId: updatedDrv.assignedCarId,
+      profilePicture: updatedDrv.profilePicture || '',
+      accessCode: updatedDrv.accessCode || '',
+      nrcFront: updatedDrv.nrcFront || '',
+      nrcBack: updatedDrv.nrcBack || '',
+      licenseFront: updatedDrv.licenseFront || '',
+      licenseBack: updatedDrv.licenseBack || '',
+      createdAt: updatedDrv.createdAt || new Date().toISOString()
+    };
+    
+    setDrivers(prev => prev.map(d => d.id === driverData.id ? driverData : d));
     setEditingDriver(null);
   };
 

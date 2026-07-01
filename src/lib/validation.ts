@@ -3,7 +3,7 @@
  * Prevents XSS, SQL injection, and other security vulnerabilities
  */
 
-// Comprehensive XSS prevention
+// Comprehensive XSS prevention with enhanced protection
 export function sanitizeString(input: string): string {
   if (!input) return '';
   
@@ -11,30 +11,43 @@ export function sanitizeString(input: string): string {
     .trim()
     // Remove all HTML tags and script content
     .replace(/<[^>]*>/g, '')
-    // Remove potential script injection patterns
+    // Remove potential script injection patterns (case insensitive)
     .replace(/javascript:/gi, '')
-    .replace(/on\w+\s*=/gi, '')
-    .replace(/data:/gi, '')
     .replace(/vbscript:/gi, '')
+    .replace(/data:/gi, '')
+    .replace(/livescript:/gi, '')
+    .replace(/mocha:/gi, '')
+    // Remove event handlers and dangerous attributes
+    .replace(/on\w+\s*=/gi, '')
+    .replace(/style\s*=/gi, '')
+    .replace(/href\s*=/gi, '')
+    .replace(/src\s*=/gi, '')
+    // Remove dangerous CSS expressions
+    .replace(/expression\s*\(/gi, '')
+    .replace(/javascript\s*:/gi, '')
+    .replace(/vbscript\s*:/gi, '')
     // Encode special characters that could be used for injection
-    .replace(/[&<>"'\/]/g, (match) => {
+    .replace(/[&<>"'\/\\]/g, (match) => {
       const htmlEntities: { [key: string]: string } = {
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
         '"': '&quot;',
         "'": '&#x27;',
-        '/': '&#x2F;'
+        '/': '&#x2F;',
+        '\\': '&#x5C;'
       };
       return htmlEntities[match] || match;
     })
-    // Remove null bytes and other control characters
+    // Remove null bytes and control characters
     .replace(/[\x00-\x1F\x7F]/g, '')
+    // Remove Unicode directional override characters (potential for spoofing)
+    .replace(/[\u202A-\u202E\u2066-\u2069]/g, '')
     // Limit length to prevent buffer overflow attacks
     .substring(0, 1000);
 }
 
-// Sanitize for database queries (additional SQL injection prevention)
+// Enhanced database sanitization with SQL injection prevention
 export function sanitizeForDatabase(input: string): string {
   if (!input) return '';
   
@@ -46,8 +59,12 @@ export function sanitizeForDatabase(input: string): string {
     .replace(/--/g, '') // Remove SQL comments
     .replace(/\/\*/g, '') // Remove SQL block comments start
     .replace(/\*\//g, '') // Remove SQL block comments end
-    .replace(/union/gi, 'union_blocked')
-    .replace(/select/gi, 'select_blocked')
+    // Block dangerous SQL keywords (case insensitive)
+    .replace(/\b(union|select|insert|update|delete|drop|exec|execute|sp_|xp_)\b/gi, (match) => match + '_blocked')
+    // Block common injection patterns
+    .replace(/(\w+)\s*\(\s*\)/gi, '$1_func_blocked') // Function calls
+    .replace(/\b(or|and)\s+['"]\w*['"]\s*=\s*['"]\w*['"]/gi, 'condition_blocked') // OR/AND conditions
+    .replace(/\b\d+\s*=\s*\d+/g, 'numeric_condition_blocked') // Numeric conditions like 1=1
     .replace(/insert/gi, 'insert_blocked')
     .replace(/update/gi, 'update_blocked')
     .replace(/delete/gi, 'delete_blocked')
@@ -56,27 +73,36 @@ export function sanitizeForDatabase(input: string): string {
     .substring(0, 500); // Reasonable limit for most fields
 }
 
+// Enhanced validation functions using security middleware
+import { securityMiddleware } from './securityMiddleware';
+
 // Validate PIN format with strict requirements
 export function validatePinFormat(pin: string): { valid: boolean; error?: string } {
   if (!pin) {
     return { valid: false, error: 'PIN is required' };
   }
 
-  // Remove any whitespace
-  const cleanPin = pin.trim();
+  // Sanitize input first
+  const cleanPin = securityMiddleware.sanitizeInput(pin, 'pin');
   
   if (cleanPin.length !== 6) {
     return { valid: false, error: 'PIN must be exactly 6 characters' };
   }
   
   // Only allow alphanumeric characters (no special chars to prevent injection)
-  if (!/^[A-Za-z0-9]{6}$/.test(cleanPin)) {
+  if (!/^[A-Z0-9]{6}$/.test(cleanPin)) {
     return { valid: false, error: 'PIN can only contain letters and numbers' };
   }
   
   // Ensure at least one number and one letter for security
-  if (!/(?=.*[0-9])(?=.*[A-Za-z])/.test(cleanPin)) {
+  if (!/(?=.*[0-9])(?=.*[A-Z])/.test(cleanPin)) {
     return { valid: false, error: 'PIN must contain at least one letter and one number' };
+  }
+
+  // Additional security checks
+  const xssCheck = securityMiddleware.detectXSS(cleanPin);
+  if (!xssCheck.isSafe) {
+    return { valid: false, error: 'PIN contains invalid characters' };
   }
   
   return { valid: true };
@@ -84,7 +110,7 @@ export function validatePinFormat(pin: string): { valid: boolean; error?: string
 
 // Validate email format with enhanced security
 export function validateEmail(email: string): { valid: boolean; error?: string } {
-  const sanitized = sanitizeForDatabase(email.toLowerCase());
+  const sanitized = securityMiddleware.sanitizeInput(email, 'email');
   
   if (!sanitized) {
     return { valid: false, error: 'Email is required' };
@@ -168,7 +194,7 @@ export function validateNRCNumber(nrc: string): { valid: boolean; error?: string
 
 // Validate VIN with security considerations
 export function validateVIN(vin: string): { valid: boolean; error?: string } {
-  const sanitized = sanitizeForDatabase(vin).toUpperCase();
+  const sanitized = securityMiddleware.sanitizeInput(vin, 'vin');
   
   if (!sanitized) {
     return { valid: false, error: 'VIN is required' };
@@ -182,17 +208,35 @@ export function validateVIN(vin: string): { valid: boolean; error?: string } {
   if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(sanitized)) {
     return { valid: false, error: 'VIN contains invalid characters (no I, O, Q allowed)' };
   }
+
+  // Additional security check
+  const xssCheck = securityMiddleware.detectXSS(sanitized);
+  if (!xssCheck.isSafe) {
+    return { valid: false, error: 'VIN contains invalid characters' };
+  }
   
   return { valid: true };
 }
 
 // Validate license number with enhanced security
 export function validateLicenseNumber(license: string): { valid: boolean; error?: string } {
-  const sanitized = sanitizeForDatabase(license);
+  const sanitized = securityMiddleware.sanitizeInput(license, 'text');
   
   if (!sanitized) {
     return { valid: false, error: 'License number is required' };
   }
+  
+  // Basic format validation
+  if (sanitized.length < 5 || sanitized.length > 20) {
+    return { valid: false, error: 'License number must be between 5 and 20 characters' };
+  }
+  
+  // Only allow alphanumeric and hyphens
+  if (!/^[A-Z0-9\-]+$/.test(sanitized)) {
+    return { valid: false, error: 'License number can only contain letters, numbers, and hyphens' };
+  }
+  
+  return { valid: true };
   
   if (sanitized.length < 5 || sanitized.length > 20) {
     return { valid: false, error: 'License number must be 5-20 characters' };

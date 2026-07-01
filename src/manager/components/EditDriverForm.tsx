@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Driver } from '../../types';
+import { Driver, DriverInput } from '../../types';
 import { Camera, Upload } from 'lucide-react';
 import { validateEmail, validateNRCNumber, validatePhone } from '../../lib/validation';
 
 interface EditDriverFormProps {
   driver: Driver;
-  onSave: (updatedDriver: Driver) => void;
+  onSave: (updatedDriver: DriverInput) => void;
   onClose: () => void;
 }
 
@@ -99,7 +99,7 @@ export default function EditDriverForm({
       }
     }
 
-    const updatedDriver: Driver = {
+    const updatedDriver: DriverInput = {
       ...driver,
       fullName: editDrvName.trim(),
       nrcNumber: editDrvNrc.trim().toUpperCase(),
@@ -107,32 +107,15 @@ export default function EditDriverForm({
       email: editDrvEmail.trim(),
       phone: editDrvPhone.trim(),
       status: editDrvStatus,
-      accessCode: editDrvAccessCode ? editDrvAccessCode.trim().toUpperCase() : ''
+      accessCode: editDrvAccessCode ? editDrvAccessCode.trim().toUpperCase() : '',
+      address: editDrvAddress.trim(),
+      maritalStatus: editDrvMaritalStatus.trim(),
+      nextOfKinName: editDrvNextOfKinName.trim(),
+      nextOfKinRelationship: editDrvNextOfKinRelationship.trim(),
+      nextOfKinPhone: editDrvNextOfKinPhone.trim(),
+      dateOfBirth: editDrvDateOfBirth,
+      profilePicture: editDrvPhoto
     };
-
-    if (editDrvAddress.trim()) {
-      updatedDriver.address = editDrvAddress.trim();
-    }
-    if (editDrvMaritalStatus.trim()) {
-      updatedDriver.maritalStatus = editDrvMaritalStatus.trim();
-    }
-    if (editDrvNextOfKinName.trim()) {
-      updatedDriver.nextOfKinName = editDrvNextOfKinName.trim();
-    }
-    if (editDrvNextOfKinRelationship.trim()) {
-      updatedDriver.nextOfKinRelationship = editDrvNextOfKinRelationship.trim();
-    }
-    if (editDrvNextOfKinPhone.trim()) {
-      updatedDriver.nextOfKinPhone = editDrvNextOfKinPhone.trim();
-    }
-    if (editDrvDateOfBirth) {
-      updatedDriver.dateOfBirth = editDrvDateOfBirth;
-    }
-    
-    // Add profilePicture only if provided
-    if (editDrvPhoto) {
-      updatedDriver.profilePicture = editDrvPhoto;
-    }
 
     onSave(updatedDriver);
   };

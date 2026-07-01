@@ -1,9 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
 import { CarAsset, Driver, ServiceLog, RevenueLog, InsuranceLog } from '../types';
-import { errorHandler } from './errorHandling';
+import { 
+  getOptionalEnvVar,
+  DatabaseCarRow,
+  DatabaseDriverRow,
+  DatabaseServiceLogRow,
+  DatabaseRevenueLogRow,
+  DatabaseInsuranceLogRow,
+  convertDatabaseCarRow,
+  convertDatabaseDriverRow,
+  convertDatabaseServiceLogRow,
+  mapWithValidation
+} from './typeGuards';
+import { 
+  safeAsync, 
+  createSafeError,
+  SafeResult,
+  SafeError,
+  safeString,
+  safeNumber
+} from './typeSafety';
 
-const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = getOptionalEnvVar('VITE_SUPABASE_URL');
+const supabaseAnonKey = getOptionalEnvVar('VITE_SUPABASE_ANON_KEY');
 
 export const isSupabaseConfigured = () => {
   return !!(supabaseUrl && supabaseAnonKey && supabaseUrl.indexOf('placeholder') === -1);
@@ -20,148 +39,165 @@ export const supabase = isSupabaseConfigured()
     })
   : null;
 
-// Helper to convert DB snake_case columns back to CarAsset type
-export async function getCarsFromDB(): Promise<CarAsset[]> {
-  if (!supabase) return [];
-
-  const { data, error } = await errorHandler.handleAsync(
-    async () => {
-      const { data: dbCars, error: carsError } = await supabase!
-        .from('cars')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (carsError) throw carsError;
-
-      // Load all sub-records with error handling
-      const [svcResult, revResult, insuranceResult] = await Promise.allSettled([
-        supabase!.from('service_logs').select('*').order('date', { ascending: false }),
-        supabase!.from('revenue_logs').select('*').order('date', { ascending: false }),
-        supabase!.from('insurance_logs').select('*').order('date', { ascending: false })
-      ]);
-
-      const dbSvc = svcResult.status === 'fulfilled' ? svcResult.value.data || [] : [];
-      const dbRev = revResult.status === 'fulfilled' ? revResult.value.data || [] : [];
-      const dbInsurance = insuranceResult.status === 'fulfilled' ? insuranceResult.value.data || [] : [];
-
-      return { dbCars, dbSvc, dbRev, dbInsurance };
-    },
-    'Load cars from database'
-  );
-
-  if (error) {
-    console.error('Error loading cars:', error);
-    throw error;
+// Helper to convert DB snake_case columns back to CarAsset type with full validation
+export async function getCarsFromDB(): Promise<SafeResult<CarAsset[], SafeError>> {
+  if (!supabase) {
+    return createSafeError({
+      type: 'DATABASE_ERROR',
+      message: 'Supabase not configured'
+    });
   }
 
-  const { dbCars, dbSvc, dbRev, dbInsurance } = data!;
+  return safeAsync(async () => {
+    const { data: dbCars, error: carsError } = await supabase!
+      .from('cars')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  const serviceLogsMap = (dbSvc || []).reduce((acc: any, log: any) => {
-    if (!acc[log.car_id]) acc[log.car_id] = [];
-    acc[log.car_id].push({
-      id: log.id,
-      date: log.date,
-      category: log.category,
-      description: log.description,
-      cost: Number(log.cost),
-      mileage: Number(log.mileage),
-      performedBy: log.performed_by,
-      receiptUrl: log.receipt_url || undefined
-    });
-    return acc;
-  }, {});
+    if (carsError) {
+      throw new Error(`Failed to load cars: ${carsError.message}`);
+    }
 
-  const revenueLogsMap = (dbRev || []).reduce((acc: any, log: any) => {
-    if (!acc[log.car_id]) acc[log.car_id] = [];
-    acc[log.car_id].push({
-      id: log.id,
-      date: log.date,
-      amount: Number(log.amount),
-      category: log.category,
-      description: log.description,
-      driverId: log.driver_id,
-      driverName: log.driver_name,
-      status: log.status
-    });
-    return acc;
-  }, {});
+    // Load all sub-records with error handling
+    const [svcResult, revResult, insuranceResult] = await Promise.allSettled([
+      supabase!.from('service_logs').select('*').order('date', { ascending: false }),
+      supabase!.from('revenue_logs').select('*').order('date', { ascending: false }),
+      supabase!.from('insurance_logs').select('*').order('date', { ascending: false })
+    ]);
 
+    const dbSvc = svcResult.status === 'fulfilled' ? svcResult.value.data || [] : [];
+    const dbRev = revResult.status === 'fulfilled' ? revResult.value.data || [] : [];
+    const dbInsurance = insuranceResult.status === 'fulfilled' ? insuranceResult.value.data || [] : [];
 
+    // Type-safe mapping with validation
+    const serviceLogsMap: Record<string, ServiceLog[]> = {};
+    const { valid: validServiceLogs, invalid: invalidServiceLogs } = mapWithValidation(
+      dbSvc as DatabaseServiceLogRow[], 
+      convertDatabaseServiceLogRow
+    );
 
-  const insuranceLogsMap = (dbInsurance || []).reduce((acc: any, log: any) => {
-    if (!acc[log.car_id]) acc[log.car_id] = [];
-    acc[log.car_id].push({
-      id: log.id,
-      date: log.date,
-      type: log.type,
-      amount: Number(log.amount),
-      expiryDate: log.expiry_date,
-      description: log.description,
-      performedBy: log.performed_by
-    });
-    return acc;
-  }, {});
+    if (invalidServiceLogs.length > 0) {
+      console.warn('Invalid service logs found:', invalidServiceLogs);
+    }
 
-  return (dbCars || []).map((car: any) => ({
-    id: car.id,
-    make: car.make,
-    model: car.model,
-    year: Number(car.year),
-    plateNumber: car.plate_number,
-    color: car.color,
-    vin: car.vin,
-    mileage: Number(car.mileage),
-    status: car.status as any,
-    photos: car.photos || [],
-    serviceLogs: serviceLogsMap[car.id] || [],
-    revenueLogs: revenueLogsMap[car.id] || [],
+    for (const log of validServiceLogs) {
+      const carId = dbSvc.find(dbLog => dbLog.id === log.id)?.car_id;
+      if (carId) {
+        if (!serviceLogsMap[carId]) serviceLogsMap[carId] = [];
+        serviceLogsMap[carId].push(log);
+      }
+    }
 
-    insuranceLogs: insuranceLogsMap[car.id] || [],
-    purchasePrice: car.purchase_price != null ? Number(car.purchase_price) : 0,
-    salePrice: car.sale_price != null ? Number(car.sale_price) : 0,
-    disposedAt: car.disposed_at || '',
-    isDisposed: Boolean(car.is_disposed),
-    createdAt: car.created_at
-  }));
+    // Type-safe revenue logs mapping with proper null checking
+    const revenueLogsMap: Record<string, RevenueLog[]> = {};
+    for (const dbLog of (dbRev as DatabaseRevenueLogRow[])) {
+      if (!revenueLogsMap[dbLog.car_id]) revenueLogsMap[dbLog.car_id] = [];
+      
+      // Create a mutable version to construct the revenue log
+      const revenueLogData: {
+        id: string;
+        date: string;
+        amount: number;
+        category: RevenueLog['category'];
+        description: string;
+        status?: RevenueLog['status'];
+        driverId?: string;
+        driverName?: string;
+      } = {
+        id: safeString(dbLog.id),
+        date: safeString(dbLog.date),
+        amount: safeNumber(dbLog.amount),
+        category: dbLog.category as RevenueLog['category'],
+        description: safeString(dbLog.description)
+      };
+      
+      // Add optional fields if they have values (safe null checking)
+      if (dbLog.status && dbLog.status.trim()) {
+        revenueLogData.status = dbLog.status as RevenueLog['status'];
+      }
+      if (dbLog.driver_id && dbLog.driver_id.trim()) {
+        revenueLogData.driverId = dbLog.driver_id;
+      }
+      if (dbLog.driver_name && dbLog.driver_name.trim()) {
+        revenueLogData.driverName = dbLog.driver_name;
+      }
+      
+      const revenueLog = revenueLogData as RevenueLog;
+      revenueLogsMap[dbLog.car_id]!.push(revenueLog);
+    }
+
+    // Type-safe insurance logs mapping with null checking
+    const insuranceLogsMap: Record<string, InsuranceLog[]> = {};
+    for (const dbLog of (dbInsurance as DatabaseInsuranceLogRow[])) {
+      if (!insuranceLogsMap[dbLog.car_id]) insuranceLogsMap[dbLog.car_id] = [];
+      
+      const insuranceLog: InsuranceLog = {
+        id: safeString(dbLog.id),
+        date: safeString(dbLog.date),
+        type: dbLog.type as InsuranceLog['type'],
+        amount: safeNumber(dbLog.amount),
+        expiryDate: safeString(dbLog.expiry_date),
+        description: safeString(dbLog.description),
+        performedBy: safeString(dbLog.performed_by)
+      };
+      insuranceLogsMap[dbLog.car_id]!.push(insuranceLog);
+    }
+
+    // Convert cars with full validation and null checking
+    const { valid: validCars, invalid: invalidCars } = mapWithValidation(
+      (dbCars || []) as DatabaseCarRow[], 
+      convertDatabaseCarRow
+    );
+
+    if (invalidCars.length > 0) {
+      console.error('Invalid car records found:', invalidCars);
+    }
+
+    // Attach logs to cars with safe access
+    const carsWithLogs = validCars.map(car => ({
+      ...car,
+      serviceLogs: serviceLogsMap[car.id] || [],
+      revenueLogs: revenueLogsMap[car.id] || [],
+      insuranceLogs: insuranceLogsMap[car.id] || []
+    }));
+
+    return carsWithLogs;
+  }, 'Load cars from database');
 }
 
-// Convert DB snake_case columns back to Driver type
-export async function getDriversFromDB(): Promise<Driver[]> {
-  if (!supabase) return [];
-
-  const { data: dbDrivers, error } = await supabase
-    .from('drivers')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error loading drivers:', error);
-    throw error;
+// Convert DB snake_case columns back to Driver type with full validation
+export async function getDriversFromDB(): Promise<SafeResult<Driver[], SafeError>> {
+  if (!supabase) {
+    return createSafeError({
+      type: 'DATABASE_ERROR',
+      message: 'Supabase not configured'
+    });
   }
 
-  return (dbDrivers || []).map((drv: any) => ({
-    id: drv.id,
-    fullName: drv.full_name,
-    licenseNumber: drv.license_number,
-    nrcNumber: drv.nrc_number,
-    email: drv.email,
-    phone: drv.phone,
-    address: drv.address,
-    maritalStatus: drv.marital_status,
-    nextOfKinName: drv.next_of_kin_name,
-    nextOfKinRelationship: drv.next_of_kin_relationship,
-    nextOfKinPhone: drv.next_of_kin_phone,
-    dateOfBirth: drv.date_of_birth,
-    status: drv.status as any,
-    assignedCarId: drv.assigned_car_id,
-    profilePicture: drv.profile_picture,
-    accessCode: drv.access_code,
-    nrcFront: drv.nrc_front,
-    nrcBack: drv.nrc_back,
-    licenseFront: drv.license_front,
-    licenseBack: drv.license_back,
-    createdAt: drv.created_at
-  }));
+  return safeAsync(async () => {
+    const { data: dbDrivers, error } = await supabase!
+      .from('drivers')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to load drivers: ${error.message}`);
+    }
+
+    const typedDbDrivers = (dbDrivers || []) as DatabaseDriverRow[];
+    
+    // Convert with full validation and safe null checking
+    const { valid: validDrivers, invalid: invalidDrivers } = mapWithValidation(
+      typedDbDrivers, 
+      convertDatabaseDriverRow
+    );
+
+    if (invalidDrivers.length > 0) {
+      console.error('Invalid driver records found:', invalidDrivers);
+    }
+
+    return validDrivers;
+  }, 'Load drivers from database');
 }
 
 // Upsert Car in DB

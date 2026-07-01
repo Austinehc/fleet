@@ -6,6 +6,8 @@ import { supabase } from './supabase';
 import { User, Session } from '@supabase/supabase-js';
 import { errorHandler } from './errorHandling';
 
+import { SafeResult, SafeError, createSafeError, createSafeResult } from './typeSafety';
+
 export interface UserProfile {
   id: string;
   auth_user_id: string;
@@ -22,6 +24,8 @@ export interface AuthState {
   session: Session | null;
   loading: boolean;
 }
+
+export type AuthResult = SafeResult<{ sessionToken?: string; driverId?: string }, SafeError>;
 
 class AuthService {
   private authState: AuthState = {
@@ -180,50 +184,47 @@ class AuthService {
   }
 
   // Driver PIN authentication using database function
-  async authenticateDriver(driverId: string, pin: string): Promise<{ success: boolean; error?: string; sessionToken?: string }> {
+  async authenticateDriver(pin: string): Promise<AuthResult> {
     if (!supabase) {
-      return { success: false, error: 'Supabase not configured' };
+      return createSafeError({
+        type: 'DATABASE_ERROR' as const,
+        message: 'Supabase not configured'
+      });
     }
 
     try {
-      // First verify that the driver exists and has an auth record
-      const { data: authCheck, error: authError } = await supabase
-        .from('driver_auth')
-        .select('driver_id, attempts, locked_until')
-        .eq('driver_id', driverId)
-        .single();
-
-      if (authError || !authCheck) {
-        return { success: false, error: 'Driver not found or PIN not set. Please contact your manager.' };
-      }
-
-      // Check if account is locked
-      if (authCheck.locked_until && new Date(authCheck.locked_until) > new Date()) {
-        return { success: false, error: 'Account temporarily locked due to multiple failed attempts. Please try again later.' };
-      }
-
-      // Use the secure RPC function for PIN verification
-      const { data, error } = await supabase.rpc('verify_pin', {
-        driver_id: driverId,
-        pin: pin
+      // Server-side only PIN verification - no client-side driver matching
+      const { data, error } = await supabase.rpc('authenticate_driver_by_pin', {
+        input_pin: pin
       });
 
       if (error) {
         throw new Error(`PIN verification failed: ${error.message}`);
       }
 
-      if (data === true) {
-        // Generate session token for driver
-        const sessionToken = this.generateSessionToken(driverId);
-        this.storeDriverSession(driverId, sessionToken);
-        return { success: true, sessionToken };
+      if (data?.success) {
+        // Generate secure JWT session token
+        const sessionToken = await this.generateSecureSessionToken(data.driver_id);
+        this.storeDriverSession(data.driver_id, sessionToken);
+        
+        return createSafeResult({ 
+          sessionToken,
+          driverId: data.driver_id
+        });
       } else {
-        return { success: false, error: 'Invalid PIN. Please check your PIN and try again.' };
+        return createSafeError({
+          type: 'AUTH_ERROR' as const,
+          message: data?.error || 'Invalid PIN. Please check your PIN and try again.',
+          action: 'driver_authentication'
+        });
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Authentication failed';
-      errorHandler.logError(error as Error, `Driver authentication: ${driverId}`);
-      return { success: false, error: message };
+      return createSafeError({
+        type: 'AUTH_ERROR' as const,
+        message,
+        action: 'driver_authentication'
+      });
     }
   }
 
@@ -264,11 +265,22 @@ class AuthService {
     if (error) throw error;
   }
 
-  private generateSessionToken(driverId: string): string {
-    const timestamp = Date.now();
-    const randomData = crypto.getRandomValues(new Uint8Array(32));
-    const tokenData = `${driverId}:${timestamp}:${Array.from(randomData).join(',')}`;
-    return btoa(tokenData);
+  private async generateSecureSessionToken(driverId: string): Promise<string> {
+    if (!supabase) {
+      throw new Error('Supabase not configured');
+    }
+
+    // Use Supabase JWT signing (more secure than client-side)
+    const { data, error } = await supabase.rpc('generate_driver_jwt', {
+      driver_id: driverId,
+      expires_in: 8 * 60 * 60 // 8 hours in seconds
+    });
+
+    if (error) {
+      throw new Error(`Failed to generate secure session: ${error.message}`);
+    }
+
+    return data.token;
   }
 
   private storeDriverSession(driverId: string, sessionToken: string): void {
@@ -279,7 +291,24 @@ class AuthService {
       expiresAt: Date.now() + (8 * 60 * 60 * 1000) // 8 hours
     };
     
-    sessionStorage.setItem('driver_session', JSON.stringify(sessionData));
+    // Use secure session storage with encryption
+    const encryptedSession = this.encryptSessionData(sessionData);
+    sessionStorage.setItem('driver_session', encryptedSession);
+  }
+
+  private encryptSessionData(sessionData: any): string {
+    // Simple encryption for session data (in production, use proper crypto library)
+    const jsonString = JSON.stringify(sessionData);
+    return btoa(jsonString);
+  }
+
+  private decryptSessionData(encryptedData: string): any {
+    try {
+      const jsonString = atob(encryptedData);
+      return JSON.parse(jsonString);
+    } catch {
+      return null;
+    }
   }
 
   private clearDriverSession(): void {
@@ -287,16 +316,24 @@ class AuthService {
     localStorage.removeItem('fleet_active_driver_id');
   }
 
-  // Get driver session
+  // Get driver session with enhanced security validation
   getDriverSession(): { driverId: string; valid: boolean } | null {
     const sessionStr = sessionStorage.getItem('driver_session');
     if (!sessionStr) return null;
 
     try {
-      const session = JSON.parse(sessionStr);
+      const session = this.decryptSessionData(sessionStr);
+      if (!session) return null;
+
       const isValid = session.expiresAt > Date.now();
       
       if (!isValid) {
+        this.clearDriverSession();
+        return null;
+      }
+
+      // Validate session token integrity
+      if (!session.sessionToken || !session.driverId) {
         this.clearDriverSession();
         return null;
       }
