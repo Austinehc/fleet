@@ -186,6 +186,22 @@ class AuthService {
     }
 
     try {
+      // First verify that the driver exists and has an auth record
+      const { data: authCheck, error: authError } = await supabase
+        .from('driver_auth')
+        .select('driver_id, attempts, locked_until')
+        .eq('driver_id', driverId)
+        .single();
+
+      if (authError || !authCheck) {
+        return { success: false, error: 'Driver not found or PIN not set. Please contact your manager.' };
+      }
+
+      // Check if account is locked
+      if (authCheck.locked_until && new Date(authCheck.locked_until) > new Date()) {
+        return { success: false, error: 'Account temporarily locked due to multiple failed attempts. Please try again later.' };
+      }
+
       // Use the secure RPC function for PIN verification
       const { data, error } = await supabase.rpc('verify_pin', {
         driver_id: driverId,
@@ -202,7 +218,7 @@ class AuthService {
         this.storeDriverSession(driverId, sessionToken);
         return { success: true, sessionToken };
       } else {
-        return { success: false, error: 'Invalid PIN or account locked due to multiple failed attempts' };
+        return { success: false, error: 'Invalid PIN. Please check your PIN and try again.' };
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Authentication failed';

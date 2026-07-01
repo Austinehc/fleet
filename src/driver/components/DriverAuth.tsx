@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { UserCheck, Shield, Clock} from 'lucide-react';
 import { Driver } from '../../types';
-import { validatePinFormat, pinAttemptTracker } from '../../lib/auth';
+import { validatePinFormat } from '../../lib/validation';
+import { pinAttemptTracker } from '../../lib/auth';
 import { errorHandler, FleetError } from '../../lib/errorHandling';
 import { ERROR_MESSAGES, AUTH_CONSTANTS } from '../../lib/constants';
 import { useDebouncedCallback } from '../../lib/performance';
@@ -92,9 +93,14 @@ export default function DriverAuth({
     }
 
       try {
-        // Find driver by access code first
-        const trimmedCode = enteredDriverCode.trim().toUpperCase();
-        const matchedDriver = drivers.find(d => d.accessCode?.trim().toUpperCase() === trimmedCode);
+        // Use secure PIN verification via RPC call - no local validation against stored PINs
+        const trimmedCode = enteredDriverCode.trim();
+        
+        // Find driver first to get ID for verification
+        const matchedDriver = drivers.find(d => {
+          // Only match on active drivers for security
+          return d.status === 'Active' && d.accessCode; // Just check if they have any access code set
+        });
         
         if (!matchedDriver) {
           // Record failed attempt
@@ -103,7 +109,7 @@ export default function DriverAuth({
           setAttemptCount(newAttemptCount);
 
           const remainingAttempts = AUTH_CONSTANTS.MAX_LOGIN_ATTEMPTS - newAttemptCount;
-          let errorMsg = 'Invalid access code. Please verify and try again.';
+          let errorMsg = 'No active driver found. Please contact your manager.';
           
           if (remainingAttempts > 0) {
             errorMsg += ` ${remainingAttempts} attempts remaining.`;
@@ -118,7 +124,7 @@ export default function DriverAuth({
           return;
         }
 
-        // Use secure PIN verification via RPC call
+        // Use secure PIN verification via RPC call - never validate PINs client-side
         const authResult = await authService.authenticateDriver(matchedDriver.id, trimmedCode);
         
         if (authResult.success) {
@@ -136,7 +142,7 @@ export default function DriverAuth({
           setAttemptCount(newAttemptCount);
 
           const remainingAttempts = AUTH_CONSTANTS.MAX_LOGIN_ATTEMPTS - newAttemptCount;
-          let errorMsg = authResult.error || 'Invalid access code. Please verify and try again.';
+          let errorMsg = authResult.error || 'Authentication failed. Please check your PIN.';
           
           if (remainingAttempts > 0 && !authResult.error?.includes('locked')) {
             errorMsg += ` ${remainingAttempts} attempts remaining.`;
@@ -150,7 +156,7 @@ export default function DriverAuth({
             triggerErrorToast('Authentication failed');
           }
 
-          // Log security event
+          // Log security event (without exposing PIN details)
           errorHandler.logError(
             new FleetError(
               'Driver authentication failed via secure RPC',
@@ -159,7 +165,7 @@ export default function DriverAuth({
               { 
                 attemptCount: newAttemptCount, 
                 driverId: matchedDriver.id,
-                code: trimmedCode.substring(0, 2) + '****' 
+                hasPin: !!trimmedCode
               }
             ),
             'Driver Authentication'

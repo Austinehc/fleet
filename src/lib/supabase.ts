@@ -213,7 +213,7 @@ export async function deleteCarFromDB(carId: string): Promise<void> {
 export async function saveDriverToDB(driver: Driver): Promise<void> {
   if (!supabase) return;
 
-  // Save the driver data
+  // Save the driver data (without access_code in the main table)
   const { error } = await supabase
     .from('drivers')
     .upsert({
@@ -232,7 +232,7 @@ export async function saveDriverToDB(driver: Driver): Promise<void> {
       status: driver.status,
       assigned_car_id: driver.assignedCarId,
       profile_picture: driver.profilePicture,
-      access_code: driver.accessCode,
+      access_code: null, // Never store PIN in plain text
       nrc_front: driver.nrcFront,
       nrc_back: driver.nrcBack,
       license_front: driver.licenseFront,
@@ -248,18 +248,22 @@ export async function saveDriverToDB(driver: Driver): Promise<void> {
   // If driver has an access code, securely hash it using the database function
   if (driver.accessCode) {
     try {
-      const { error: pinError } = await supabase.rpc('set_driver_pin', {
+      const { data: pinResult, error: pinError } = await supabase.rpc('set_driver_pin', {
         driver_id: driver.id,
         pin: driver.accessCode
       });
 
-      if (pinError) {
-        console.warn('PIN hashing failed, but driver created:', pinError.message);
-        // Don't throw error here to avoid breaking driver creation if PIN function is missing
+      if (pinError || !pinResult) {
+        console.error('PIN hashing failed:', pinError?.message || 'Unknown error');
+        throw new Error(`Failed to set secure PIN for driver: ${pinError?.message || 'Database function unavailable'}`);
       }
+      
+      console.log('Driver PIN securely hashed and stored');
     } catch (pinError) {
-      console.warn('PIN hashing not available, storing access code in plain text:', pinError);
-      // Fallback: PIN functions might not be deployed yet
+      console.error('Critical: PIN security failed:', pinError);
+      // Revert driver creation if PIN cannot be secured
+      await supabase.from('drivers').delete().eq('id', driver.id);
+      throw new Error('Driver creation failed: Unable to secure PIN. Please try again.');
     }
   }
 }
